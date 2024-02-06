@@ -10,7 +10,7 @@ def main():
     person.birthday = datetime(1980, 1, 15)
     # person.nothing = "something"
     print(person.name)
-    print(person.birthday)
+    print(person.birthday.get_uri())
     # print(person.nothing)
 
 
