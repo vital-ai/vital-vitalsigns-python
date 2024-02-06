@@ -19,7 +19,8 @@ class VITALNode:
                 if value is None:
                     self._properties.pop(uri, None)
                 else:
-                    self._properties[uri] = prop_class(value)
+                    self._properties[uri] = VitalSignsImpl.create_property_with_trait(prop_class, uri, value)
+ #  prop_class(value)
                 return
 
         raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
