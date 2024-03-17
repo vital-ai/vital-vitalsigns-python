@@ -14,5 +14,10 @@ from vital_ai_vitalsigns_core.model.VitalServiceConfig import VitalServiceConfig
 
 
 class VitalServiceSaaSConfig(VitalServiceConfig):
-    allowed_properties = [
+    _allowed_properties = [
     ]
+
+    @classmethod
+    def get_allowed_properties(cls):
+        return super().get_allowed_properties() + VitalServiceSaaSConfig._allowed_properties
+

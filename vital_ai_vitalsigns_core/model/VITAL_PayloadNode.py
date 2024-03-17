@@ -14,7 +14,12 @@ from vital_ai_vitalsigns.model.VITAL_Node import VITAL_Node
 
 
 class VITAL_PayloadNode(VITAL_Node):
-    allowed_properties = [
+    _allowed_properties = [
         {'uri': 'http://vital.ai/ontology/vital-core#hasSerializedJSON', 'prop_class': StringProperty}, 
         {'uri': 'http://vital.ai/ontology/vital-core#hasSerializedRDF', 'prop_class': StringProperty}, 
     ]
+
+    @classmethod
+    def get_allowed_properties(cls):
+        return super().get_allowed_properties() + VITAL_PayloadNode._allowed_properties
+

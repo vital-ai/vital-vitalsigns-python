@@ -14,6 +14,11 @@ from vital_ai_vitalsigns_core.model.DatabaseConnection import DatabaseConnection
 
 
 class SqlDatabaseConnection(DatabaseConnection):
-    allowed_properties = [
+    _allowed_properties = [
         {'uri': 'http://vital.ai/ontology/vital-core#hasDatabase', 'prop_class': StringProperty}, 
     ]
+
+    @classmethod
+    def get_allowed_properties(cls):
+        return super().get_allowed_properties() + SqlDatabaseConnection._allowed_properties
+

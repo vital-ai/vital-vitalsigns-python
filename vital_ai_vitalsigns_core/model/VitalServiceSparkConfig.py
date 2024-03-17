@@ -14,6 +14,11 @@ from vital_ai_vitalsigns_core.model.VitalServiceConfig import VitalServiceConfig
 
 
 class VitalServiceSparkConfig(VitalServiceConfig):
-    allowed_properties = [
+    _allowed_properties = [
         {'uri': 'http://vital.ai/ontology/vital-core#hasEndpointURL', 'prop_class': StringProperty}, 
     ]
+
+    @classmethod
+    def get_allowed_properties(cls):
+        return super().get_allowed_properties() + VitalServiceSparkConfig._allowed_properties
+

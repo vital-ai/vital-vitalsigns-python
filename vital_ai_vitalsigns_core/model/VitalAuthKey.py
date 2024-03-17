@@ -14,6 +14,11 @@ from vital_ai_vitalsigns.model.VITAL_Node import VITAL_Node
 
 
 class VitalAuthKey(VITAL_Node):
-    allowed_properties = [
+    _allowed_properties = [
         {'uri': 'http://vital.ai/ontology/vital-core#hasKey', 'prop_class': StringProperty}, 
     ]
+
+    @classmethod
+    def get_allowed_properties(cls):
+        return super().get_allowed_properties() + VitalAuthKey._allowed_properties
+

@@ -14,6 +14,11 @@ from vital_ai_vitalsigns.model.VITAL_Node import VITAL_Node
 
 
 class VitalOrganization(VITAL_Node):
-    allowed_properties = [
+    _allowed_properties = [
         {'uri': 'http://vital.ai/ontology/vital-core#hasOrganizationID', 'prop_class': StringProperty}, 
     ]
+
+    @classmethod
+    def get_allowed_properties(cls):
+        return super().get_allowed_properties() + VitalOrganization._allowed_properties
+

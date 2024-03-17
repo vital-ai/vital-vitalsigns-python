@@ -14,6 +14,11 @@ from vital_ai_vitalsigns.model.VITAL_Node import VITAL_Node
 
 
 class SqlUpdateResponse(VITAL_Node):
-    allowed_properties = [
+    _allowed_properties = [
         {'uri': 'http://vital.ai/ontology/vital-core#hasUpdatedRowsCount', 'prop_class': IntegerProperty}, 
     ]
+
+    @classmethod
+    def get_allowed_properties(cls):
+        return super().get_allowed_properties() + SqlUpdateResponse._allowed_properties
+

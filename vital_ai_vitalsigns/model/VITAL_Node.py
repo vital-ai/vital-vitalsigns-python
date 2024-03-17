@@ -8,7 +8,7 @@ from vital_ai_vitalsigns.model.trait.PropertyTrait import PropertyTrait
 
 
 class VITAL_Node(GraphObject):
-    allowed_properties = [
+    _allowed_properties = [
         # {'uri': 'http://vital.ai/ontology/vital-core#URIProp', 'prop_class': URIProperty},
         {'uri': 'http://vital.ai/ontology/vital-core#isActive', 'prop_class': BooleanProperty},
         {'uri': 'http://vital.ai/ontology/vital-core#hasVersionIRI', 'prop_class': URIProperty},
@@ -20,3 +20,8 @@ class VITAL_Node(GraphObject):
         {'uri': 'http://vital.ai/ontology/vital-core#vitaltype', 'prop_class': URIProperty},
         {'uri': 'http://vital.ai/ontology/vital-core#types', 'prop_class': URIProperty}
     ]
+
+    @classmethod
+    def get_allowed_properties(cls):
+        return super().get_allowed_properties() + VITAL_Node._allowed_properties
+

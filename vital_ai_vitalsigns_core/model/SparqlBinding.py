@@ -14,5 +14,10 @@ from vital_ai_vitalsigns_core.model.VITAL_GraphContainerObject import VITAL_Grap
 
 
 class SparqlBinding(VITAL_GraphContainerObject):
-    allowed_properties = [
+    _allowed_properties = [
     ]
+
+    @classmethod
+    def get_allowed_properties(cls):
+        return super().get_allowed_properties() + SparqlBinding._allowed_properties
+

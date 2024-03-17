@@ -14,7 +14,12 @@ from vital_ai_vitalsigns_core.model.VitalServiceConfig import VitalServiceConfig
 
 
 class VitalServiceIndexedDBConfig(VitalServiceConfig):
-    allowed_properties = [
+    _allowed_properties = [
         {'uri': 'http://vital.ai/ontology/vital-core#hasGraphQueries', 'prop_class': StringProperty}, 
         {'uri': 'http://vital.ai/ontology/vital-core#hasSelectQueries', 'prop_class': StringProperty}, 
     ]
+
+    @classmethod
+    def get_allowed_properties(cls):
+        return super().get_allowed_properties() + VitalServiceIndexedDBConfig._allowed_properties
+

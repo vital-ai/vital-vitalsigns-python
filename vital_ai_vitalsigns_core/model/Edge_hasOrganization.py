@@ -14,5 +14,10 @@ from vital_ai_vitalsigns_core.model.VITAL_TaxonomyEdge import VITAL_TaxonomyEdge
 
 
 class Edge_hasOrganization(VITAL_TaxonomyEdge):
-    allowed_properties = [
+    _allowed_properties = [
     ]
+
+    @classmethod
+    def get_allowed_properties(cls):
+        return super().get_allowed_properties() + Edge_hasOrganization._allowed_properties
+

@@ -14,5 +14,10 @@ from vital_ai_vitalsigns_core.model.VitalAuthKey import VitalAuthKey
 
 
 class VitalServiceAdminKey(VitalAuthKey):
-    allowed_properties = [
+    _allowed_properties = [
     ]
+
+    @classmethod
+    def get_allowed_properties(cls):
+        return super().get_allowed_properties() + VitalServiceAdminKey._allowed_properties
+

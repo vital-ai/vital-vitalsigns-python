@@ -8,7 +8,7 @@ from vital_ai_vitalsigns.model.properties.URIProperty import URIProperty
 
 
 class VITAL_HyperEdge(GraphObject):
-    allowed_properties = [
+    _allowed_properties = [
         # {'uri': 'http://vital.ai/ontology/vital-core#URIProp', 'prop_class': URIProperty},
         {'uri': 'http://vital.ai/ontology/vital-core#isActive', 'prop_class': BooleanProperty},
         {'uri': 'http://vital.ai/ontology/vital-core#hasVersionIRI', 'prop_class': URIProperty},
@@ -22,5 +22,8 @@ class VITAL_HyperEdge(GraphObject):
 
         {'uri': 'http://vital.ai/ontology/vital-core#hasHyperEdgeDestination', 'prop_class': URIProperty},
         {'uri': 'http://vital.ai/ontology/vital-core#hasHyperEdgeSource', 'prop_class': URIProperty},
-
     ]
+
+    @classmethod
+    def get_allowed_properties(cls):
+        return super().get_allowed_properties() + VITAL_HyperEdge._allowed_properties

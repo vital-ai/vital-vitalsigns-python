@@ -14,7 +14,7 @@ from vital_ai_vitalsigns_core.model.VitalServiceConfig import VitalServiceConfig
 
 
 class VitalServiceAllegrographConfig(VitalServiceConfig):
-    allowed_properties = [
+    _allowed_properties = [
         {'uri': 'http://vital.ai/ontology/vital-core#hasCatalogName', 'prop_class': StringProperty}, 
         {'uri': 'http://vital.ai/ontology/vital-core#hasPassword', 'prop_class': StringProperty}, 
         {'uri': 'http://vital.ai/ontology/vital-core#hasPoolMaxTotal', 'prop_class': IntegerProperty}, 
@@ -22,3 +22,8 @@ class VitalServiceAllegrographConfig(VitalServiceConfig):
         {'uri': 'http://vital.ai/ontology/vital-core#hasServerURL', 'prop_class': StringProperty}, 
         {'uri': 'http://vital.ai/ontology/vital-core#hasUsername', 'prop_class': StringProperty}, 
     ]
+
+    @classmethod
+    def get_allowed_properties(cls):
+        return super().get_allowed_properties() + VitalServiceAllegrographConfig._allowed_properties
+

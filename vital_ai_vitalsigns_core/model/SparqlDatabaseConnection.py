@@ -14,7 +14,12 @@ from vital_ai_vitalsigns_core.model.DatabaseConnection import DatabaseConnection
 
 
 class SparqlDatabaseConnection(DatabaseConnection):
-    allowed_properties = [
+    _allowed_properties = [
         {'uri': 'http://vital.ai/ontology/vital-core#hasCatalogName', 'prop_class': StringProperty}, 
         {'uri': 'http://vital.ai/ontology/vital-core#hasRepositoryName', 'prop_class': StringProperty}, 
     ]
+
+    @classmethod
+    def get_allowed_properties(cls):
+        return super().get_allowed_properties() + SparqlDatabaseConnection._allowed_properties
+

@@ -14,9 +14,14 @@ from vital_ai_vitalsigns.model.VITAL_Node import VITAL_Node
 
 
 class RDFStatement(VITAL_Node):
-    allowed_properties = [
+    _allowed_properties = [
         {'uri': 'http://vital.ai/ontology/vital-core#hasRdfContext', 'prop_class': StringProperty}, 
         {'uri': 'http://vital.ai/ontology/vital-core#hasRdfObject', 'prop_class': StringProperty}, 
         {'uri': 'http://vital.ai/ontology/vital-core#hasRdfPredicate', 'prop_class': StringProperty}, 
         {'uri': 'http://vital.ai/ontology/vital-core#hasRdfSubject', 'prop_class': StringProperty}, 
     ]
+
+    @classmethod
+    def get_allowed_properties(cls):
+        return super().get_allowed_properties() + RDFStatement._allowed_properties
+

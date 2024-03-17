@@ -14,5 +14,10 @@ from vital_ai_vitalsigns.model.VITAL_Edge import VITAL_Edge
 
 
 class VITAL_TaxonomyEdge(VITAL_Edge):
-    allowed_properties = [
+    _allowed_properties = [
     ]
+
+    @classmethod
+    def get_allowed_properties(cls):
+        return super().get_allowed_properties() + VITAL_TaxonomyEdge._allowed_properties
+

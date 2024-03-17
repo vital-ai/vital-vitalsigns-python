@@ -14,7 +14,12 @@ from vital_ai_vitalsigns.model.VITAL_Node import VITAL_Node
 
 
 class VitalSegment(VITAL_Node):
-    allowed_properties = [
+    _allowed_properties = [
         {'uri': 'http://vital.ai/ontology/vital-core#hasSegmentID', 'prop_class': StringProperty}, 
         {'uri': 'http://vital.ai/ontology/vital-core#isReadOnly', 'prop_class': BooleanProperty}, 
     ]
+
+    @classmethod
+    def get_allowed_properties(cls):
+        return super().get_allowed_properties() + VitalSegment._allowed_properties
+

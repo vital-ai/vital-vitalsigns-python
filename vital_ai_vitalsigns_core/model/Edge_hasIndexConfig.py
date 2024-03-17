@@ -14,5 +14,10 @@ from vital_ai_vitalsigns_core.model.VITAL_PeerEdge import VITAL_PeerEdge
 
 
 class Edge_hasIndexConfig(VITAL_PeerEdge):
-    allowed_properties = [
+    _allowed_properties = [
     ]
+
+    @classmethod
+    def get_allowed_properties(cls):
+        return super().get_allowed_properties() + Edge_hasIndexConfig._allowed_properties
+

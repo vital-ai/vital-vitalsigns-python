@@ -14,5 +14,10 @@ from vital_ai_vitalsigns_core.model.VITAL_Query import VITAL_Query
 
 
 class VITAL_GraphQuery(VITAL_Query):
-    allowed_properties = [
+    _allowed_properties = [
     ]
+
+    @classmethod
+    def get_allowed_properties(cls):
+        return super().get_allowed_properties() + VITAL_GraphQuery._allowed_properties
+

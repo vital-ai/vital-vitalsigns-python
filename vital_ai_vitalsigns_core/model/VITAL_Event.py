@@ -14,5 +14,10 @@ from vital_ai_vitalsigns.model.VITAL_Node import VITAL_Node
 
 
 class VITAL_Event(VITAL_Node):
-    allowed_properties = [
+    _allowed_properties = [
     ]
+
+    @classmethod
+    def get_allowed_properties(cls):
+        return super().get_allowed_properties() + VITAL_Event._allowed_properties
+
