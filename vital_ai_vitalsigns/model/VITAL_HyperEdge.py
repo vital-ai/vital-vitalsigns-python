@@ -9,7 +9,7 @@ from vital_ai_vitalsigns.model.properties.URIProperty import URIProperty
 
 class VITAL_HyperEdge(GraphObject):
     allowed_properties = [
-        {'uri': 'http://vital.ai/ontology/vital-core#URIProp', 'prop_class': URIProperty},
+        # {'uri': 'http://vital.ai/ontology/vital-core#URIProp', 'prop_class': URIProperty},
         {'uri': 'http://vital.ai/ontology/vital-core#isActive', 'prop_class': BooleanProperty},
         {'uri': 'http://vital.ai/ontology/vital-core#hasVersionIRI', 'prop_class': URIProperty},
         {'uri': 'http://vital.ai/ontology/vital-core#hasUpdateTime', 'prop_class': LongProperty},
@@ -18,6 +18,9 @@ class VITAL_HyperEdge(GraphObject):
         {'uri': 'http://vital.ai/ontology/vital-core#hasOntologyIRI', 'prop_class': URIProperty},
         {'uri': 'http://vital.ai/ontology/vital-core#hasName', 'prop_class': StringProperty},
         {'uri': 'http://vital.ai/ontology/vital-core#vitaltype', 'prop_class': URIProperty},
-        {'uri': 'http://vital.ai/ontology/vital-core#types', 'prop_class': URIProperty}
+        {'uri': 'http://vital.ai/ontology/vital-core#types', 'prop_class': URIProperty},
+
+        {'uri': 'http://vital.ai/ontology/vital-core#hasHyperEdgeDestination', 'prop_class': URIProperty},
+        {'uri': 'http://vital.ai/ontology/vital-core#hasHyperEdgeSource', 'prop_class': URIProperty},
 
     ]

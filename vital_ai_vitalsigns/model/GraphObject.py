@@ -14,6 +14,12 @@ class GraphObject:
 
     def __setattr__(self, name, value):
         print(name)
+        if name == 'URI':
+            if value is None:
+                self._properties.pop('http://vital.ai/ontology/vital-core#URIProp', None)
+            else:
+                self._properties['http://vital.ai/ontology/vital-core#URIProp'] = VitalSignsImpl.create_property_with_trait(URIProperty, 'http://vital.ai/ontology/vital-core#URIProp', value)
+            return
         for prop_info in self.allowed_properties:
             uri = prop_info['uri']
             prop_class = prop_info['prop_class']
@@ -29,6 +35,8 @@ class GraphObject:
         raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
 
     def __getattr__(self, name):
+        if name == 'URI':
+            return self._properties['http://vital.ai/ontology/vital-core#URIProp']
         for prop_info in self.allowed_properties:
             uri = prop_info['uri']
             # print(uri)

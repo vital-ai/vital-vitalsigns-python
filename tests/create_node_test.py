@@ -6,6 +6,8 @@ from vital_ai_vitalsigns_core.model.VitalApp import VitalApp
 
 def main():
     app = VITAL_Node()
+    app.URI = 'urn:123'
+    print(app.URI)
     print(app.name)
     app.name = "VitalApp"
     # person.birthday = datetime(1980, 1, 15)

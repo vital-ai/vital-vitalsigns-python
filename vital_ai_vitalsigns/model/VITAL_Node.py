@@ -9,7 +9,7 @@ from vital_ai_vitalsigns.model.trait.PropertyTrait import PropertyTrait
 
 class VITAL_Node(GraphObject):
     allowed_properties = [
-        {'uri': 'http://vital.ai/ontology/vital-core#URIProp', 'prop_class': URIProperty},
+        # {'uri': 'http://vital.ai/ontology/vital-core#URIProp', 'prop_class': URIProperty},
         {'uri': 'http://vital.ai/ontology/vital-core#isActive', 'prop_class': BooleanProperty},
         {'uri': 'http://vital.ai/ontology/vital-core#hasVersionIRI', 'prop_class': URIProperty},
         {'uri': 'http://vital.ai/ontology/vital-core#hasUpdateTime', 'prop_class': LongProperty},
