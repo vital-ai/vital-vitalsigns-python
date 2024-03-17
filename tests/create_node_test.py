@@ -1,16 +1,17 @@
 from datetime import datetime
 
-from vital_ai_vitalsigns_core.model.Person import Person
+from vital_ai_vitalsigns.model.VITAL_Node import VITAL_Node
+from vital_ai_vitalsigns_core.model.VitalApp import VitalApp
 
 
 def main():
-    person = Person()
-    print(person.name)
-    person.name = "John"
-    person.birthday = datetime(1980, 1, 15)
+    app = VITAL_Node()
+    print(app.name)
+    app.name = "VitalApp"
+    # person.birthday = datetime(1980, 1, 15)
     # person.nothing = "something"
-    print(person.name)
-    print(person.birthday.get_uri())
+    print(app.name)
+    # print(person.birthday.get_uri())
     # print(person.nothing)
 
 
