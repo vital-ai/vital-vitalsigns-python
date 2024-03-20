@@ -17,7 +17,7 @@ class GraphObject:
         super().__setattr__('_properties', {})
 
     def __setattr__(self, name, value) -> bool:
-        print(name)
+        # print(name)
         if name == 'URI':
             if value is None:
                 self._properties.pop('http://vital.ai/ontology/vital-core#URIProp', None)
