@@ -67,11 +67,34 @@ class InMemoryExactNNIndexer(TypedExecutor):
         if class_uri is None:
             ret = self._indexer.find_batched(docs, search_field=search_field, **params)
         else:
-            filtered = self._indexer.filter(
-                filter_query={'ClassURI': {'$eq': class_uri}},
-                limit=self._indexer.num_docs())
-            ret = self._indexer.find_batched(filtered, search_field=search_field, **params)
+            # filtered = self._indexer.filter(
+            #    filter_query={'ClassURI': {'$eq': class_uri}},
+            #    limit=self._indexer.num_docs())
 
+            # this is not a batch case
+            query = (self._indexer.build_query()
+                     .filter(filter_query={'ClassURI': {'$eq': class_uri}})
+                     .find(query=docs[0], search_field=search_field, limit=1000)
+                     .build())
+
+            # ret = self._indexer.find_batched(docs, search_field=search_field, **params)
+
+            ret = self._indexer.execute_query(query)
+            # self.logger.info(f'Results {ret}')
+
+            # for d in ret:
+            #    self.logger.info(f'{d}')
+
+            matched_documents = ret.documents
+            matched_scores = ret.scores
+
+            output_doc = self._output_schema(**docs[0].dict())
+            output_doc.matches = matched_documents
+            output_doc.scores = matched_scores
+            res.append(output_doc)
+            return res
+
+        # batch case
         matched_documents = ret.documents
         matched_scores = ret.scores
 
@@ -80,6 +103,10 @@ class InMemoryExactNNIndexer(TypedExecutor):
 
         for query, matches, scores in zip(docs, matched_documents, matched_scores):
             output_doc = self._output_schema(**query.dict())
+            # self.logger.info(f'{query}')
+            # self.logger.info(f'{matches}')
+            # self.logger.info(f'{scores}')
+
             output_doc.matches = matches
             output_doc.scores = scores.tolist()
             res.append(output_doc)
