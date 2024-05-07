@@ -5,6 +5,9 @@ class BooleanProperty(IProperty):
     def __init__(self, value: bool):
         super().__init__(value)
 
+    def __bool__(self):
+        return bool(self.value)
+
     def __eq__(self, other):
         if isinstance(other, bool):
             return self.value == other

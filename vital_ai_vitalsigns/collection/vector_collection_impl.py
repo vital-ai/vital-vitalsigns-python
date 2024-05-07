@@ -1,4 +1,4 @@
-from vectordb import InMemoryExactNNVectorDB, HNSWVectorDB
+from vital_ai_vitalsigns.vectordb import InMemoryExactNNVectorDB, HNSWVectorDB
 from docarray import BaseDoc, DocList
 from docarray.typing import NdArray
 from typing import List, Union, TypeVar, Generic
@@ -37,7 +37,9 @@ class VectorCollectionImpl:
         :return: A list of objects matching the query.
         """
         query_doc = self.schema(embedding=query_embedding)
+
         results = self.db.search(query_doc, limit=limit)
+
         return results if results else []
 
     def remove_doc(self, doc_id: str):

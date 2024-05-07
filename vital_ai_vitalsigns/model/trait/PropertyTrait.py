@@ -12,7 +12,7 @@ class PropertyTrait(ABC):
 
     @classmethod
     def get_short_name(cls) -> str:
-        """Transforms the local name into a short name by removing 'has' or 'is' prefixes and lowercasing the initial letter."""
+        """Transforms the local name into a short name by removing prefixes and lowercasing the initial letter."""
         name = cls.local_name
         if name.startswith("has"):
             name = name[3:]

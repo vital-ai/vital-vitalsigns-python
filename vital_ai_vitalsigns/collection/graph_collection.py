@@ -248,7 +248,7 @@ class GraphCollection(MutableSequence):
         """
         Return the node objects that are the destination of an outgoing edge from the given URI.
         """
-        outgoing_node_uris = {str(item.edgeDestination) for item in self._data if
+        outgoing_node_uris = {item.edgeDestination for item in self._data if
                               isinstance(item, VITAL_Edge) and item.edgeSource == uri}
         outgoing_nodes = [self.get(node_uri) for node_uri in outgoing_node_uris]
         return [node for node in outgoing_nodes if node is not None]  # Filter out any None results

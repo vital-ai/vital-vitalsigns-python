@@ -1,3 +1,4 @@
+import logging
 from vital_ai_vitalsigns.collection.graph_collection import GraphCollection
 from vital_ai_vitalsigns.embedding.embedding_model import EmbeddingModel
 from vital_ai_vitalsigns.model.VITAL_Node import VITAL_Node
@@ -6,7 +7,9 @@ from vital_ai_vitalsigns_core.model.properties.Property_hasName import Property_
 
 
 def main():
-    print('Hello World')
+    logging.basicConfig(level=logging.INFO)
+
+    logging.info('Hello World')
 
     embedder = EmbeddingModel()
 
@@ -53,7 +56,7 @@ def main():
     # query = 'tea'
     query = 'frittata'
 
-    print('Search for: ' + query)
+    logging.info('Search for: ' + query)
 
     results = graph.search(query)
 
@@ -61,22 +64,22 @@ def main():
         re = results[0]
         obj = re.graph_object
         score = re.score
-        print('Top Result for: ' + query + ': ' + str(obj.name) + " (" + str(score) + ")")
-        print(obj.to_json())
-        print(obj.to_rdf())
+        logging.info('Top Result for: ' + query + ': ' + str(obj.name) + " (" + str(score) + ")")
+        logging.info(obj.to_json())
+        logging.info(obj.to_rdf())
     else:
-        print('No results')
+        logging.info('No results')
 
     # for r in results:
-    #    print(r)
+    #    logging.info(r)
 
     sparql_results = graph.sparql_query("SELECT ?s ?p ?o WHERE { ?s ?p ?o } ORDER BY ?s ?p")
 
     sparql_result_count = len(sparql_results)
-    print('Sparql Result Count: ' + str(sparql_result_count))
+    logging.info('Sparql Result Count: ' + str(sparql_result_count))
 
     for row in sparql_results:
-        print(f"Subject: {row['s']}, Property: {row['p']}, Object: {row['o']}")
+        logging.info(f"Subject: {row['s']}, Property: {row['p']}, Object: {row['o']}")
 
 
 if __name__ == "__main__":

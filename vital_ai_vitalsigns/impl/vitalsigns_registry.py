@@ -1,6 +1,7 @@
 from importlib.metadata import entry_points
 import importlib
 import pkgutil
+import logging
 
 # these are not imported here to remove a circular dependency on start-up
 # from vital_ai_vitalsigns.model.VITAL_Edge import VITAL_Edge
@@ -25,6 +26,8 @@ class VitalSignsRegistry:
 
         self.vitalsigns_classes = {}
 
+        logging.info('building vitalsigns class and property registry...')
+
         from vital_ai_vitalsigns.model.VITAL_Edge import VITAL_Edge
         from vital_ai_vitalsigns.model.VITAL_GraphContainerObject import VITAL_GraphContainerObject
         from vital_ai_vitalsigns.model.VITAL_HyperEdge import VITAL_HyperEdge
@@ -43,34 +46,33 @@ class VitalSignsRegistry:
             try:
                 module = importlib.import_module(ep.value)
                 self.vitalsigns_packages.append(module)
-                print('Discovered Module: ' + str(module))
+                logging.info('Discovered Module: ' + str(module))
             except ImportError as e:
-                print(f"Could not import {ep.value}: {e}")
+                logging.info(f"Could not import {ep.value}: {e}")
         for p in self.vitalsigns_packages:
             self.scan_vitalsigns_classes(p)
+
+        logging.info('completed build of vitalsigns class and property registry.')
 
     def _scan_module(self, module_name):
         try:
             module = importlib.import_module(module_name)
         except ImportError as e:
-            print(f"Error importing {module_name}: {e}")
+            logging.info(f"Error importing {module_name}: {e}")
             return
 
         for cls_name, cls in vars(module).items():
             if isinstance(cls, type):
                 if self.is_vitalsigns_ontology_class(cls):
-                    # print(f"Found VitalSigns Domain Ontology Class {cls_name} in {module.__name__}")
-                    print(f"Found VitalSigns Domain Ontology Class {cls_name} URI: {cls.OntologyURI}")
+                    logging.info(f"Found VitalSigns Domain Ontology Class {cls_name} URI: {cls.OntologyURI}")
                     self.vitalsigns_ontologies.append(cls)
                 if self.is_vitalsigns_class(cls):
-                    # print(f"Found VitalSigns Graph Class {cls_name} in {module.__name__}")
                     class_uri = cls.get_class_uri()
-                    print(f"Found VitalSigns Graph Class {cls_name} URI: {class_uri}")
+                    logging.info(f"Found VitalSigns Graph Class {cls_name} URI: {class_uri}")
                     self.vitalsigns_classes[class_uri] = cls
                 if self.is_vitalsigns_property_class(cls):
-                    # print(f"Found VitalSigns Property Class {cls_name} in {module.__name__}")
                     property_trait_uri = cls.get_uri()
-                    print(f"Found VitalSigns Property Class {cls_name} URI: {property_trait_uri}")
+                    logging.info(f"Found VitalSigns Property Class {cls_name} URI: {property_trait_uri}")
                     self.vitalsigns_property_classes[property_trait_uri] = cls
 
     def scan_vitalsigns_classes(self, package):
@@ -127,4 +129,3 @@ class VitalSignsRegistry:
         if issubclass(cls, PropertyTrait):
             return True
         return False
-

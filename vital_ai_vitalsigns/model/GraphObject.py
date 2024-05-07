@@ -1,14 +1,21 @@
 from abc import ABC, abstractmethod
 import json
+from datetime import datetime
 import rdflib
 from rdflib import Graph, Literal, URIRef
-
 from vital_ai_vitalsigns.impl.vitalsigns_impl import VitalSignsImpl
 from vital_ai_vitalsigns.model.trait.PropertyTrait import PropertyTrait
 from vital_ai_vitalsigns.model.properties.BooleanProperty import BooleanProperty
 from vital_ai_vitalsigns.model.properties.LongProperty import LongProperty
 from vital_ai_vitalsigns.model.properties.StringProperty import StringProperty
 from vital_ai_vitalsigns.model.properties.URIProperty import URIProperty
+
+
+class VitalSignsEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, datetime):
+            return o.isoformat()
+        return super().default(o)
 
 
 class AttributeComparisonProxy:
@@ -119,7 +126,7 @@ class GraphObject(metaclass=GraphObjectMeta):
 
         serializable_dict['types'] = [class_uri]
 
-        return json.dumps(serializable_dict, indent=2)
+        return json.dumps(serializable_dict, indent=2, cls=VitalSignsEncoder)
 
     def to_rdf(self, format='nt', graph_uri: str = None) -> str:
 

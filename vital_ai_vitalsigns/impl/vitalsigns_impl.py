@@ -52,6 +52,9 @@ class VitalSignsImpl:
             def get_uri(self):
                 return super().get_uri()
 
+            def __hash__(self):
+                return hash((self.get_uri(), self.value))
+
         return CombinedProperty(value)
 
     @classmethod

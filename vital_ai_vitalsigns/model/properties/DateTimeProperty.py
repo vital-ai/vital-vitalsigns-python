@@ -6,6 +6,12 @@ class DateTimeProperty(IProperty):
     def __init__(self, value: datetime):
         super().__init__(value)
 
+    def __bool__(self):
+        return self.value is not None
+
+    def __getattr__(self, attr):
+        return getattr(self.value, attr)
+
     def __str__(self):
         return self.value.strftime('%Y-%m-%d')
 

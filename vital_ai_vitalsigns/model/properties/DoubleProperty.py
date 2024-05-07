@@ -5,6 +5,15 @@ class DoubleProperty(IProperty):
     def __init__(self, value: float):
         super().__init__(value)
 
+    def __bool__(self):
+        return bool(self.value)
+
+    def __getattr__(self, attr):
+        return getattr(self.value, attr)
+
+    def __float__(self):
+        return float(self.value)
+
     def __eq__(self, other):
         if isinstance(other, float):
             return self.value == other
