@@ -259,5 +259,11 @@ class VectorDB(Generic[TSchema]):
     def search(self, docs: 'DocList[TSchema]', parameters: Optional[Dict] = None, **kwargs):
         return self._executor.search(docs, parameters)
 
+    @sort_matches_by_scores
+    @pass_kwargs_as_params
+    @unify_input_output
+    def filter(self, docs: 'DocList[TSchema]', parameters: Optional[Dict] = None, **kwargs):
+        return self._executor.filter(docs, parameters)
+
     def persist(self):
         return self._executor.close()

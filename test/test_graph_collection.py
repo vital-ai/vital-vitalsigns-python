@@ -58,7 +58,7 @@ def main():
 
     logging.info('Search for: ' + query)
 
-    results = graph.search(query)
+    results = graph.search(query, class_uri)
 
     if results is not None:
         re = results[0]
@@ -76,6 +76,7 @@ def main():
     sparql_results = graph.sparql_query("SELECT ?s ?p ?o WHERE { ?s ?p ?o } ORDER BY ?s ?p")
 
     sparql_result_count = len(sparql_results)
+
     logging.info('Sparql Result Count: ' + str(sparql_result_count))
 
     for row in sparql_results:

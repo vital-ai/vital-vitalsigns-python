@@ -128,6 +128,7 @@ class GraphCollection(MutableSequence):
 
             uri = str(obj.URI)
             name = str(obj.name)
+            class_uri = str(obj.get_class_uri())
 
             if len(self._vector_properties) == 0:
                 text = name
@@ -136,7 +137,7 @@ class GraphCollection(MutableSequence):
 
             encoding = embedding_model.vectorize(text)
 
-            index_docs = [GraphObjectDoc(id=uri, URI=uri, name=name, text=text, embedding=encoding)]
+            index_docs = [GraphObjectDoc(id=uri, URI=uri, ClassURI=class_uri, name=name, text=text, embedding=encoding)]
 
             self._vectordb.index_documents(DocList[GraphObjectDoc](index_docs))
 
@@ -162,6 +163,7 @@ class GraphCollection(MutableSequence):
 
                 uri = str(obj.URI)
                 name = str(obj.name)
+                class_uri = str(obj.get_class_uri())
 
                 if len(self._vector_properties) == 0:
                     text = name
@@ -170,7 +172,7 @@ class GraphCollection(MutableSequence):
 
                 encoding = embedding_model.vectorize(text)
 
-                index_docs = [GraphObjectDoc(id=uri, URI=uri, name=name, text=text, embedding=encoding)]
+                index_docs = [GraphObjectDoc(id=uri, URI=uri, ClassURI=class_uri, name=name, text=text, embedding=encoding)]
 
                 self._vectordb.index_documents(DocList[GraphObjectDoc](index_docs))
             if self._use_rdfstore is True:
@@ -253,7 +255,7 @@ class GraphCollection(MutableSequence):
         outgoing_nodes = [self.get(node_uri) for node_uri in outgoing_node_uris]
         return [node for node in outgoing_nodes if node is not None]  # Filter out any None results
 
-    def search(self, query: str, limit: int = 10):
+    def search(self, query: str, class_uri: str = None, limit: int = 10):
 
         vs = VitalSigns()
 
@@ -261,7 +263,7 @@ class GraphCollection(MutableSequence):
 
         query_embedding = embedding_model.vectorize(query)
 
-        results = self._vectordb.search(query_embedding, limit)
+        results = self._vectordb.search(query_embedding, class_uri, limit)
 
         if results is None:
             return None

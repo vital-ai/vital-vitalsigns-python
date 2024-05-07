@@ -48,10 +48,52 @@ class InMemoryExactNNIndexer(TypedExecutor):
             res.append(output_doc)
         return res
 
+    def _filter(self, docs, parameters, *args, **kwargs):
+        from docarray import DocList
+        res = DocList[self._output_schema]()
+        search_field = 'embedding'
+        class_uri = None
+
+        if parameters is not None and 'search_field' in parameters:
+            search_field = parameters.pop('search_field')
+
+        if parameters is not None and 'ClassURI' in parameters:
+            class_uri = parameters.pop('ClassURI')
+
+        params = parameters or {}
+        if '__results__' in params:
+            params.pop('__results__')
+
+        if class_uri is None:
+            ret = self._indexer.find_batched(docs, search_field=search_field, **params)
+        else:
+            filtered = self._indexer.filter(
+                filter_query={'ClassURI': {'$eq': class_uri}},
+                limit=self._indexer.num_docs())
+            ret = self._indexer.find_batched(filtered, search_field=search_field, **params)
+
+        matched_documents = ret.documents
+        matched_scores = ret.scores
+
+        # not true for filtered?
+        # assert len(docs) == len(matched_documents) == len(matched_scores)
+
+        for query, matches, scores in zip(docs, matched_documents, matched_scores):
+            output_doc = self._output_schema(**query.dict())
+            output_doc.matches = matches
+            output_doc.scores = scores.tolist()
+            res.append(output_doc)
+        return res
+
     @requests(on='/search')
     def search(self, docs, *args, **kwargs):
         self.logger.debug(f'Search {len(docs)}')
         return self._search(docs, *args, **kwargs)
+
+    def filter(self, docs, *args, **kwargs):
+        self.logger.debug(f'Filter {len(docs)}')
+        # self.logger.info(f'Filter {len(docs)}')
+        return self._filter(docs, *args, **kwargs)
 
     def _delete(self, docs, *args, **kwargs):
         del self._indexer[[doc.id for doc in docs]]

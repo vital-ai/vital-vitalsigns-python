@@ -29,18 +29,28 @@ class VectorCollectionImpl:
         """
         self.db.index(documents)
 
-    def search(self, query_embedding: NdArray, limit: int = 10) -> List[T]:
+    def search(self, query_embedding: NdArray, class_uri: str = None, limit: int = 10) -> List[T]:
         """
         Searches the vector database for the closest matches to the provided embedding.
+        :param class_uri:
         :param query_embedding: A vector used to search for similar documents.
         :param limit: The maximum number of results to return.
         :return: A list of objects matching the query.
         """
-        query_doc = self.schema(embedding=query_embedding)
 
-        results = self.db.search(query_doc, limit=limit)
+        if class_uri is None:
+            query_doc = self.schema(embedding=query_embedding)
 
-        return results if results else []
+            results = self.db.search(query_doc, limit=limit)
+
+            return results if results else []
+        else:
+            query_doc = self.schema(embedding=query_embedding)
+
+            results = self.db.filter(query_doc, limit=limit, ClassURI=class_uri)
+
+            return results if results else []
+
 
     def remove_doc(self, doc_id: str):
         self.db.delete([doc_id])

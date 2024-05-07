@@ -76,6 +76,30 @@ class HNSWLibIndexer(TypedExecutor):
             res.append(output_doc)
         return res
 
+    def filter(self, docs, parameters, *args, **kwargs):
+        from docarray import DocList
+        self.logger.debug(f'Filter')
+        res = DocList[self._output_schema]()
+        search_field = 'embedding'
+        if parameters is not None and 'search_field' in parameters:
+            search_field = parameters.pop('search_field')
+
+        params = parameters or {}
+        if '__results__' in params:
+            params.pop('__results__')
+
+        ret = self._indexer.find_batched(docs, search_field=search_field, **params)
+        matched_documents = ret.documents
+        matched_scores = ret.scores
+        assert len(docs) == len(matched_documents) == len(matched_scores)
+
+        for query, matches, scores in zip(docs, matched_documents, matched_scores):
+            output_doc = self._output_schema(**query.dict())
+            output_doc.matches = matches
+            output_doc.scores = scores.tolist()
+            res.append(output_doc)
+        return res
+
     @requests(on='/search')
     async def async_search(self, docs, *args, **kwargs):
         return self.search(docs, *args, **kwargs)
