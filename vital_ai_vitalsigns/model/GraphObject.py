@@ -1,4 +1,9 @@
-from vital_ai_vitalsigns.impl import VitalSignsImpl
+from abc import ABC, abstractmethod
+import json
+import rdflib
+from rdflib import Graph, Literal, URIRef
+
+from vital_ai_vitalsigns.impl.vitalsigns_impl import VitalSignsImpl
 from vital_ai_vitalsigns.model.trait.PropertyTrait import PropertyTrait
 from vital_ai_vitalsigns.model.properties.BooleanProperty import BooleanProperty
 from vital_ai_vitalsigns.model.properties.LongProperty import LongProperty
@@ -6,7 +11,27 @@ from vital_ai_vitalsigns.model.properties.StringProperty import StringProperty
 from vital_ai_vitalsigns.model.properties.URIProperty import URIProperty
 
 
-class GraphObject:
+class AttributeComparisonProxy:
+    def __init__(self, cls, name):
+        self.cls = cls
+        self.name = name
+
+    def __eq__(self, value):
+        print(f"Comparing {self.cls.__name__}.{self.name} with {value}")
+        # Add your custom logic here
+        return False  # Placeholder for the example
+
+
+class GraphObjectMeta(type):
+    def __setattr__(self, name, value):
+        print(f"Setting class attribute {name} to {value}")
+        super().__setattr__(name, value)
+
+    def __getattr__(self, name):
+        return AttributeComparisonProxy(self, name)
+
+
+class GraphObject(metaclass=GraphObjectMeta):
     _allowed_properties = []
 
     @classmethod
@@ -53,6 +78,15 @@ class GraphObject:
                     return None
         return NotImplemented
 
+    def get_property_value(self, property_uri):
+        if property_uri == 'http://vital.ai/ontology/vital-core#URIProp':
+            return self._properties['http://vital.ai/ontology/vital-core#URIProp']
+        trait_class = VitalSignsImpl.get_trait_class_from_uri(property_uri)
+        if not trait_class:
+            raise AttributeError(f"'{type(self).__name__}' object has no attribute with uri'{property_uri}'")
+        name = trait_class.get_short_name()
+        return self.__getattr__(name)
+
     def __getattr__(self, name):
         value = self.my_getattr(name)
         if value is NotImplemented:
@@ -62,3 +96,39 @@ class GraphObject:
     @classmethod
     def is_top_level_class(cls):
         return cls.__bases__ == (object,)
+
+    @classmethod
+    @abstractmethod
+    def get_class_uri(cls) -> str:
+        pass
+
+    def to_json(self) -> str:
+
+        serializable_dict = {}
+
+        for uri, prop in self._properties.items():
+            prop_value = prop.to_json()["value"]
+            if uri == 'http://vital.ai/ontology/vital-core#URIProp':
+                serializable_dict['URI'] = prop_value
+            else:
+                serializable_dict[uri] = prop_value
+
+        class_uri = self.get_class_uri()
+
+        serializable_dict['type'] = class_uri
+
+        serializable_dict['types'] = [class_uri]
+
+        return json.dumps(serializable_dict, indent=2)
+
+    def to_rdf(self, format='nt', graph_uri: str = None) -> str:
+
+        g = Graph(identifier=URIRef(graph_uri) if graph_uri else None)
+        subject = URIRef(str(self._properties['http://vital.ai/ontology/vital-core#URIProp']))
+
+        for prop_uri, prop_instance in self._properties.items():
+            rdf_data = prop_instance.to_rdf()
+            g.add((subject, URIRef(prop_uri), Literal(rdf_data["value"], datatype=rdf_data["datatype"])))
+
+        return g.serialize(format=format)
+

@@ -21,3 +21,7 @@ class Edge_hasDbConfig(VITAL_PeerEdge):
     def get_allowed_properties(cls):
         return super().get_allowed_properties() + Edge_hasDbConfig._allowed_properties
 
+    @classmethod
+    def get_class_uri(self) -> str:
+        return 'http://vital.ai/ontology/vital-core#Edge_hasDbConfig'
+

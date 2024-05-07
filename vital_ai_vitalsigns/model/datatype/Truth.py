@@ -1,0 +1,3 @@
+
+class Truth:
+    pass

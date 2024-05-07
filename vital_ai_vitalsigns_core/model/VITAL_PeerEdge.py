@@ -21,3 +21,7 @@ class VITAL_PeerEdge(VITAL_Edge):
     def get_allowed_properties(cls):
         return super().get_allowed_properties() + VITAL_PeerEdge._allowed_properties
 
+    @classmethod
+    def get_class_uri(self) -> str:
+        return 'http://vital.ai/ontology/vital-core#VITAL_PeerEdge'
+

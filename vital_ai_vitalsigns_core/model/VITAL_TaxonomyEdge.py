@@ -21,3 +21,7 @@ class VITAL_TaxonomyEdge(VITAL_Edge):
     def get_allowed_properties(cls):
         return super().get_allowed_properties() + VITAL_TaxonomyEdge._allowed_properties
 
+    @classmethod
+    def get_class_uri(self) -> str:
+        return 'http://vital.ai/ontology/vital-core#VITAL_TaxonomyEdge'
+

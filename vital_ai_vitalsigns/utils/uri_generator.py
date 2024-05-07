@@ -1,0 +1,3 @@
+
+class URIGenerator:
+    pass

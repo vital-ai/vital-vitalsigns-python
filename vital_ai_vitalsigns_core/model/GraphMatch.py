@@ -10,7 +10,7 @@ from vital_ai_vitalsigns.model.properties.OtherProperty import OtherProperty
 from vital_ai_vitalsigns.model.properties.StringProperty import StringProperty
 from vital_ai_vitalsigns.model.properties.TruthProperty import TruthProperty
 from vital_ai_vitalsigns.model.properties.URIProperty import URIProperty
-from vital_ai_vitalsigns_core.model.VITAL_GraphContainerObject import VITAL_GraphContainerObject
+from vital_ai_vitalsigns.model.VITAL_GraphContainerObject import VITAL_GraphContainerObject
 
 
 class GraphMatch(VITAL_GraphContainerObject):
@@ -20,4 +20,8 @@ class GraphMatch(VITAL_GraphContainerObject):
     @classmethod
     def get_allowed_properties(cls):
         return super().get_allowed_properties() + GraphMatch._allowed_properties
+
+    @classmethod
+    def get_class_uri(self) -> str:
+        return 'http://vital.ai/ontology/vital-core#GraphMatch'
 

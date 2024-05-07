@@ -20,6 +20,9 @@ def main():
     # print(person.birthday.get_uri())
     # print(person.nothing)
 
+    json_string = app.to_json()
+    print(json_string)
+
 
 if __name__ == "__main__":
     main()

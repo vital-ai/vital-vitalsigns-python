@@ -1,13 +1,12 @@
-from vital_ai_vitalsigns.impl import VitalSignsImpl
 from vital_ai_vitalsigns.model.GraphObject import GraphObject
 from vital_ai_vitalsigns.model.properties.BooleanProperty import BooleanProperty
 from vital_ai_vitalsigns.model.properties.LongProperty import LongProperty
 from vital_ai_vitalsigns.model.properties.StringProperty import StringProperty
 from vital_ai_vitalsigns.model.properties.URIProperty import URIProperty
-from vital_ai_vitalsigns.model.trait.PropertyTrait import PropertyTrait
 
 
 class VITAL_Node(GraphObject):
+
     _allowed_properties = [
         # {'uri': 'http://vital.ai/ontology/vital-core#URIProp', 'prop_class': URIProperty},
         {'uri': 'http://vital.ai/ontology/vital-core#isActive', 'prop_class': BooleanProperty},
@@ -25,3 +24,6 @@ class VITAL_Node(GraphObject):
     def get_allowed_properties(cls):
         return super().get_allowed_properties() + VITAL_Node._allowed_properties
 
+    @classmethod
+    def get_class_uri(cls) -> str:
+        return 'http://vital.ai/ontology/vital-core#VITAL_Node'

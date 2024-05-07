@@ -1,4 +1,4 @@
-from vital_ai_vitalsigns.impl import VitalSignsImpl
+from vital_ai_vitalsigns.impl.vitalsigns_impl import VitalSignsImpl
 from vital_ai_vitalsigns.model.properties.StringProperty import StringProperty
 
 

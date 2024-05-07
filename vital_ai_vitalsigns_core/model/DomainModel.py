@@ -30,3 +30,7 @@ class DomainModel(VITAL_Node):
     def get_allowed_properties(cls):
         return super().get_allowed_properties() + DomainModel._allowed_properties
 
+    @classmethod
+    def get_class_uri(self) -> str:
+        return 'http://vital.ai/ontology/vital-core#DomainModel'
+
