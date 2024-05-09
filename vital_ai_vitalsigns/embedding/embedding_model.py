@@ -3,6 +3,7 @@ from typing import List, Union, Dict
 import hashlib
 from collections import OrderedDict
 import logging
+import numpy as np
 
 
 class LRUEmbeddingCache:
@@ -72,6 +73,15 @@ class EmbeddingModel:
                 results.append(vector)
 
         if single_string:
+            """
+            obj = results[0]
+            if isinstance(obj, np.ndarray):
+                # Print type and shape for NumPy arrays
+                print(f"Type: {type(obj)}, Shape: {obj.shape}")
+            else:
+                # Print only the type for other data types
+                print(f"Type: {type(obj)}")
+            """
             return results[0]
 
         return results

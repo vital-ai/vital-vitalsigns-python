@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='vital-ai-vitalsigns',
-    version='0.1.9',
+    version='0.1.11',
     author='Marc Hadfield',
     author_email='marc@vital.ai',
     description='VitalSigns knowledge graph bindings',
@@ -22,12 +22,10 @@ setup(
     license='Apache License 2.0',
     install_requires=[
         'sentence_transformers==2.7.0',
-        # 'vectordb== 0.0.21',
-        'docarray==0.40.0',
         'rdflib==7.0.0',
-        'jina>=3.20.0',
         'PyYAML',
         'numpy>=1.26.4',
+        'hnswlib'
     ],
     classifiers=[
         "Programming Language :: Python :: 3.10",

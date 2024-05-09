@@ -1,23 +1,12 @@
 from collections.abc import MutableSequence
-from docarray import BaseDoc, DocList
-from docarray.typing import NdArray
 from vital_ai_vitalsigns.collection.rdf_collection_impl import RdfCollectionImpl
-from vital_ai_vitalsigns.collection.vector_collection_impl import VectorCollectionImpl
 from vital_ai_vitalsigns.model.GraphObject import GraphObject
 from vital_ai_vitalsigns.model.VITAL_Edge import VITAL_Edge
 from vital_ai_vitalsigns.query.result_element import ResultElement
 from vital_ai_vitalsigns.query.result_list import ResultList
 from vital_ai_vitalsigns.vitalsigns import VitalSigns
 from typing import Optional
-
-
-class GraphObjectDoc(BaseDoc):
-    id: Optional[str]  # optional because of query docs
-    URI: str = ''
-    ClassURI: str = ''
-    name: str = ''
-    text: str = ''  # use to hold text in embedding vector
-    embedding: NdArray[384]  # must match embedding size
+import numpy as np
 
 
 class GraphCollection(MutableSequence):
@@ -33,7 +22,8 @@ class GraphCollection(MutableSequence):
         self._uri_map = {}
         self._vector_properties = {}
         if use_vectordb is True:
-            self._vectordb = VectorCollectionImpl(GraphObjectDoc)
+            from vital_ai_vitalsigns.collection.vector_collection_impl import VectorCollectionImpl
+            self._vectordb = VectorCollectionImpl(self)
         if use_rdfstore is True:
             self._rdfstore = RdfCollectionImpl()
         for item in self._data:
@@ -58,9 +48,7 @@ class GraphCollection(MutableSequence):
 
                     encoding = embedding_model.vectorize(text)
 
-                    index_docs = [GraphObjectDoc(id=uri, URI=uri, name=name, text=text, embedding=encoding)]
-
-                    self._vectordb.index_documents(DocList[GraphObjectDoc](index_docs))
+                    # todo index data
 
     def __len__(self):
         return len(self._data)
@@ -137,9 +125,19 @@ class GraphCollection(MutableSequence):
 
             encoding = embedding_model.vectorize(text)
 
-            index_docs = [GraphObjectDoc(id=uri, URI=uri, ClassURI=class_uri, name=name, text=text, embedding=encoding)]
+            # index_docs = [GraphObjectDoc(id=uri, URI=uri, ClassURI=class_uri, name=name, text=text, embedding=encoding)]
 
-            self._vectordb.index_documents(DocList[GraphObjectDoc](index_docs))
+            # self._vectordb.index_documents(DocList[GraphObjectDoc](index_docs))
+
+            vector = encoding  # np.array(encoding, dtype=np.float32)
+            # vector = vector / np.linalg.norm(vector)
+            # vector = vector.reshape(1, -1)
+
+            self._vectordb.index.add_items([vector])
+
+            self._vectordbdoc_id_to_index[uri] = self._vectordb.current_index
+            self._vectordb.index_to_doc_id[self._vectordb.current_index] = uri
+            self._vectordb.current_index += 1
 
         if self._use_rdfstore is True:
             obj_nt = obj.to_rdf()
@@ -172,9 +170,20 @@ class GraphCollection(MutableSequence):
 
                 encoding = embedding_model.vectorize(text)
 
-                index_docs = [GraphObjectDoc(id=uri, URI=uri, ClassURI=class_uri, name=name, text=text, embedding=encoding)]
+                # index_docs = [GraphObjectDoc(id=uri, URI=uri, ClassURI=class_uri, name=name, text=text, embedding=encoding)]
 
-                self._vectordb.index_documents(DocList[GraphObjectDoc](index_docs))
+                # self._vectordb.index_documents(DocList[GraphObjectDoc](index_docs))
+
+                vector = encoding  # np.array(encoding, dtype=np.float32)
+                # vector = vector / np.linalg.norm(vector)
+                # vector = vector.reshape(1, -1)
+
+                self._vectordb.index.add_items([vector])
+
+                self._vectordb.doc_id_to_index[uri] = self._vectordb.current_index
+                self._vectordb.index_to_doc_id[self._vectordb.current_index] = uri
+                self._vectordb.current_index += 1
+
             if self._use_rdfstore is True:
                 obj_nt = obj.to_rdf()
                 self._rdfstore.add_triples(obj_nt)
@@ -261,22 +270,24 @@ class GraphCollection(MutableSequence):
 
         embedding_model = vs.get_embedding_model(self._embedding_model_id)
 
-        query_embedding = embedding_model.vectorize(query)
+        query_embedding = embedding_model.vectorize([query])
 
         results = self._vectordb.search(query_embedding, class_uri, limit)
+
+        # print(results)
 
         if results is None:
             return None
 
-        if len(results.matches) == 0:
+        if len(results.get('matches')) == 0:
             return []
 
         result_list = ResultList()
 
         count = 0
-        for r in results.matches:
-            score = results.scores[count]
-            uri = r.URI
+        for r in results.get('matches'):
+            score = results.get('scores')[count]
+            uri = r.get('URI')
             obj = self.get(uri)
             re = ResultElement(obj, score)
             result_list.append(re)
