@@ -1,0 +1,1496 @@
+<?xml version="1.0"?>
+<rdf:RDF xmlns="http://vital.ai/ontology/vital-nlp#"
+     xml:base="http://vital.ai/ontology/vital-nlp"
+     xmlns:owl="http://www.w3.org/2002/07/owl#"
+     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns:xml="http://www.w3.org/XML/1998/namespace"
+     xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+     xmlns:vital-core="http://vital.ai/ontology/vital-core#">
+    <owl:Ontology rdf:about="http://vital.ai/ontology/vital-nlp">
+        <owl:imports rdf:resource="http://vital.ai/ontology/vital"/>
+        <vital-core:hasDefaultArtifactId rdf:datatype="http://www.w3.org/2001/XMLSchema#string">vital-nlp</vital-core:hasDefaultArtifactId>
+        <vital-core:hasDefaultGroupId rdf:datatype="http://www.w3.org/2001/XMLSchema#string">vitalai-com</vital-core:hasDefaultGroupId>
+        <vital-core:hasDefaultPackage rdf:datatype="http://www.w3.org/2001/XMLSchema#string">com.vitalai.domain.nlp</vital-core:hasDefaultPackage>
+        <owl:versionInfo>0.2.304</owl:versionInfo>
+    </owl:Ontology>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Object Properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasEntityType -->
+
+    <owl:ObjectProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasEntityType">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#NlpNormalizedEntity"/>
+        <rdfs:range rdf:resource="http://vital.ai/ontology/vital#Thing"/>
+        <rdfs:comment xml:lang="en">this property determines the type of this normalized entity
+it should point to class URI, not a particular instance</rdfs:comment>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasImageURL -->
+
+    <owl:ObjectProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasImageURL">
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#ImageReference"/>
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#NlpNormalizedEntity"/>
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#NlpNormalizedTopic"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasModelURI -->
+
+    <owl:ObjectProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasModelURI">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#TargetNode"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasWikipediaURL -->
+
+    <owl:ObjectProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasWikipediaURL">
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#NlpEntity"/>
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#NlpNormalizedEntity"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:comment xml:lang="en">A property added to test graph object&apos;s resource property concept</rdfs:comment>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasWordnetURI -->
+
+    <owl:ObjectProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasWordnetURI">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#NlpNormalizedEntity"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Data properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasAnalyzedBody -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasAnalyzedBody">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#Document"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <vital-core:isAnalyzedNoEquals rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</vital-core:isAnalyzedNoEquals>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasAnalyzedTitle -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasAnalyzedTitle">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#Document"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <vital-core:isAnalyzedNoEquals rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</vital-core:isAnalyzedNoEquals>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasAnnotationName -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasAnnotationName">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#Annotation"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasAnnotationValue -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasAnnotationValue">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#Annotation"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasBody -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasBody">
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#Content"/>
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#Document"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <vital-core:isAnalyzedNoEquals rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</vital-core:isAnalyzedNoEquals>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasClassifierName -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasClassifierName">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#Topic"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasConfidence -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasConfidence">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#PosTag"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#double"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasContentID -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasContentID">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#Document"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasContentTag -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasContentTag">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#Document"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <vital-core:hasMultipleValues rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</vital-core:hasMultipleValues>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasContentType -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasContentType">
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#Content"/>
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#Image"/>
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#ImageReference"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasContext -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasContext">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#NlpNormalizedEntity"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasDmozPath -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasDmozPath">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#Document"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:comment xml:lang="en">DMOZ path property that is used to map the document back to taxonomy category</rdfs:comment>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasDocumentPublicationDate -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasDocumentPublicationDate">
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#Document"/>
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#Image"/>
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#ImageReference"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#dateTime"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasDocumentSourceName -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasDocumentSourceName">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#Document"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasDocumentTitle -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasDocumentTitle">
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#Document"/>
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#Image"/>
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#ImageReference"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <vital-core:isAnalyzedNoEquals rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</vital-core:isAnalyzedNoEquals>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasDocumentUrl -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasDocumentUrl">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#Document"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasDocumentUrlRoot -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasDocumentUrlRoot">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#Document"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:comment xml:lang="en">URL root property that is used to map the document back to taxonomy category</rdfs:comment>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasEndPosition -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasEndPosition">
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#Sentence"/>
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#TagElement"/>
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#Token"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#int"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasEndTokenIndex -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasEndTokenIndex">
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#NounPhrase"/>
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#VerbPhrase"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#int"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasEntityAuthor -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasEntityAuthor">
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#EquivalenceRelationInstance"/>
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#EventInstance"/>
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#NlpEntityInstance"/>
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#NlpRelationInstance"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasEntityOffset -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasEntityOffset">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#NlpEntityInstance"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#int"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasEntityOffsetInSentence -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasEntityOffsetInSentence">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#NlpEntityInstance"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#int"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasEquivalenceType -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasEquivalenceType">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#EquivalenceRelationInstance"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasEventInstanceType -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasEventInstanceType">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#EventInstance"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasEventRole -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasEventRole">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#Edge_hasEventElement"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasExactString -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasExactString">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#NlpEntityInstance"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasExtractSource -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasExtractSource">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#NlpEntity"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasExtractedText -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasExtractedText">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#Document"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <vital-core:isAnalyzedNoEquals rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</vital-core:isAnalyzedNoEquals>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasExtractedTitle -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasExtractedTitle">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#Document"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <vital-core:isAnalyzedNoEquals rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</vital-core:isAnalyzedNoEquals>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasHeightPx -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasHeightPx">
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#Image"/>
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#ImageReference"/>
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#NlpNormalizedEntity"/>
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#NlpNormalizedTopic"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#int"/>
+        <rdfs:comment xml:lang="en">height in pixels</rdfs:comment>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasImageData -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasImageData">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#Image"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:comment xml:lang="en">base64 encoded image data, it should be either full data URL:
+data:&lt;contenttype,base64,&lt;base64content&gt;
+or just just content
+&lt;base64content&gt;</rdfs:comment>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasImageDate -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasImageDate">
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#NlpNormalizedEntity"/>
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#NlpNormalizedTopic"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#dateTime"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasLang -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasLang">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#Document"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:comment xml:lang="en">ISO 639-1 language code</rdfs:comment>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasLength -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasLength">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#NlpEntityInstance"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#int"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasLengthInSentence -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasLengthInSentence">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#NlpEntityInstance"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#int"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasLongForm -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasLongForm">
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#Abbreviation"/>
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#AbbreviationInstance"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasLongFormEnd -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasLongFormEnd">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#AbbreviationInstance"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#int"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasLongFormStart -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasLongFormStart">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#AbbreviationInstance"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#int"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasModelPath -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasModelPath">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#FlowPredictModel"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasModelType -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasModelType">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#FlowPredictModel"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasNameVariants -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasNameVariants">
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#NlpNormalizedEntity"/>
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#NlpNormalizedTopic"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:comment xml:lang="en">a comma-seprated list of variants</rdfs:comment>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasNlpEntityCategory -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasNlpEntityCategory">
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#NlpEntity"/>
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#NlpNormalizedEntity"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasNormConfidence -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasNormConfidence">
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#Edge_hasNormalizedEntity"/>
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#Edge_hasNormalizedTopic"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasPosTagsConfidenceString -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasPosTagsConfidenceString">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#Sentence"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasPosTagsValuesString -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasPosTagsValuesString">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#Sentence"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasRelationRole -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasRelationRole">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#Edge_hasRelationElement"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasRelationType -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasRelationType">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#NlpRelationInstance"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasRelevance -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasRelevance">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#NlpEntity"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasSentenceNumber -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasSentenceNumber">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#Sentence"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#int"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasSentimentScore -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasSentimentScore">
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#Document"/>
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#NlpEntityInstance"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#double"/>
+        <rdfs:comment xml:lang="en">positive values - positive, 0 - neutral, negative values - negative</rdfs:comment>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasShortForm -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasShortForm">
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#Abbreviation"/>
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#AbbreviationInstance"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasShortFormEnd -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasShortFormEnd">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#AbbreviationInstance"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#int"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasShortFormStart -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasShortFormStart">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#AbbreviationInstance"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#int"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasShortname -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasShortname">
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#NlpNormalizedEntity"/>
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#NlpNormalizedTopic"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasSlug -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasSlug">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#Document"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasSourceDomain -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasSourceDomain">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#Document"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasSpanType -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasSpanType">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#NlpEntityInstance"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasStartPosition -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasStartPosition">
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#Sentence"/>
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#TagElement"/>
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#Token"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#int"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasStartTokenIndex -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasStartTokenIndex">
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#NounPhrase"/>
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#VerbPhrase"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#int"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasSymbol -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasSymbol">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#NlpNormalizedEntity"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasTagValue -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasTagValue">
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#PosTag"/>
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#TagElement"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasTargetDoubleValue -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasTargetDoubleValue">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#TargetNode"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#double"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasTargetScore -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasTargetScore">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#TargetNode"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#double"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasTargetStringValue -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasTargetStringValue">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#TargetNode"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasTextBlockLength -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasTextBlockLength">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#TextBlock"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#int"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasTextBlockOffset -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasTextBlockOffset">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#TextBlock"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#int"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasTextBlockText -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasTextBlockText">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#TextBlock"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <vital-core:isAnalyzedNoEquals rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</vital-core:isAnalyzedNoEquals>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasTicker -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasTicker">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#NlpNormalizedEntity"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasTokenText -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasTokenText">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#Token"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasTokensPositionsString -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasTokensPositionsString">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#Sentence"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasTokensTextString -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasTokensTextString">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#Sentence"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasTopicScore -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasTopicScore">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#Topic"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasTransformationVector -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasTransformationVector">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#TextBlock"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#hasWidthPx -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#hasWidthPx">
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#Image"/>
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#ImageReference"/>
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#NlpNormalizedEntity"/>
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#NlpNormalizedTopic"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#int"/>
+        <rdfs:comment xml:lang="en">width in pixels</rdfs:comment>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#isClosingTag -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#isClosingTag">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#TagElement"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#isOpeningTag -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#isOpeningTag">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#TagElement"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#isSentimentMixed -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#isSentimentMixed">
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#Document"/>
+                    <rdf:Description rdf:about="http://vital.ai/ontology/vital-nlp#NlpEntityInstance"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
+        <rdfs:comment xml:lang="en">tells that sentiment is mixed (both positive and negative)</rdfs:comment>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#isStandaloneTag -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-nlp#isStandaloneTag">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-nlp#TagElement"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Classes
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Abbreviation -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Abbreviation">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_Node"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#AbbreviationInstance -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#AbbreviationInstance">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_Node"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Annotation -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Annotation">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_Node"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Content -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Content">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_Node"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Document -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Document">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_Node"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Edge_hasAbbreviation -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Edge_hasAbbreviation">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_TaxonomyEdge"/>
+        <vital-core:hasEdgeDestDomain rdf:resource="http://vital.ai/ontology/vital-nlp#Abbreviation"/>
+        <vital-core:hasEdgeSrcDomain rdf:resource="http://vital.ai/ontology/vital-nlp#Document"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Edge_hasAbbreviationInstance -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Edge_hasAbbreviationInstance">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_TaxonomyEdge"/>
+        <vital-core:hasEdgeDestDomain rdf:resource="http://vital.ai/ontology/vital-nlp#AbbreviationInstance"/>
+        <vital-core:hasEdgeSrcDomain rdf:resource="http://vital.ai/ontology/vital-nlp#Abbreviation"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Edge_hasAnnotation -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Edge_hasAnnotation">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_TaxonomyEdge"/>
+        <vital-core:hasEdgeDestDomain rdf:resource="http://vital.ai/ontology/vital-nlp#Annotation"/>
+        <vital-core:hasEdgeSrcDomain rdf:resource="http://vital.ai/ontology/vital-nlp#Document"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Edge_hasCategory -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Edge_hasCategory">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_TaxonomyEdge"/>
+        <vital-core:hasEdgeDestDomain rdf:resource="http://vital.ai/ontology/vital-core#VITAL_Category"/>
+        <vital-core:hasEdgeSrcDomain rdf:resource="http://vital.ai/ontology/vital-nlp#Document"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Edge_hasContent -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Edge_hasContent">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_TaxonomyEdge"/>
+        <vital-core:hasEdgeDestDomain rdf:resource="http://vital.ai/ontology/vital-nlp#Content"/>
+        <vital-core:hasEdgeSrcDomain rdf:resource="http://vital.ai/ontology/vital-nlp#Document"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Edge_hasEntity -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Edge_hasEntity">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_TaxonomyEdge"/>
+        <vital-core:hasEdgeDestDomain rdf:resource="http://vital.ai/ontology/vital-nlp#NlpEntity"/>
+        <vital-core:hasEdgeSrcDomain rdf:resource="http://vital.ai/ontology/vital-nlp#Document"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Edge_hasEntityInstance -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Edge_hasEntityInstance">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_TaxonomyEdge"/>
+        <vital-core:hasEdgeDestDomain rdf:resource="http://vital.ai/ontology/vital-nlp#NlpEntityInstance"/>
+        <vital-core:hasEdgeSrcDomain rdf:resource="http://vital.ai/ontology/vital-nlp#Document"/>
+        <vital-core:hasEdgeSrcDomain rdf:resource="http://vital.ai/ontology/vital-nlp#NlpEntity"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Edge_hasEquivalenceElement -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Edge_hasEquivalenceElement">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_TaxonomyEdge"/>
+        <vital-core:hasEdgeDestDomain rdf:resource="http://vital.ai/ontology/vital-nlp#NlpEntityInstance"/>
+        <vital-core:hasEdgeSrcDomain rdf:resource="http://vital.ai/ontology/vital-nlp#EquivalenceRelationInstance"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Edge_hasEquivalenceRelationInstance -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Edge_hasEquivalenceRelationInstance">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_TaxonomyEdge"/>
+        <vital-core:hasEdgeDestDomain rdf:resource="http://vital.ai/ontology/vital-nlp#EquivalenceRelationInstance"/>
+        <vital-core:hasEdgeSrcDomain rdf:resource="http://vital.ai/ontology/vital-nlp#Document"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Edge_hasEventElement -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Edge_hasEventElement">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_TaxonomyEdge"/>
+        <vital-core:hasEdgeDestDomain rdf:resource="http://vital.ai/ontology/vital-nlp#NlpEntityInstance"/>
+        <vital-core:hasEdgeSrcDomain rdf:resource="http://vital.ai/ontology/vital-nlp#EventInstance"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Edge_hasEventInstance -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Edge_hasEventInstance">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_TaxonomyEdge"/>
+        <vital-core:hasEdgeDestDomain rdf:resource="http://vital.ai/ontology/vital-nlp#NlpEntityInstance"/>
+        <vital-core:hasEdgeSrcDomain rdf:resource="http://vital.ai/ontology/vital-nlp#Document"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Edge_hasEventTrigger -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Edge_hasEventTrigger">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_TaxonomyEdge"/>
+        <vital-core:hasEdgeDestDomain rdf:resource="http://vital.ai/ontology/vital-nlp#NlpEntityInstance"/>
+        <vital-core:hasEdgeSrcDomain rdf:resource="http://vital.ai/ontology/vital-nlp#EventInstance"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Edge_hasImageReference -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Edge_hasImageReference">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_TaxonomyEdge"/>
+        <vital-core:hasEdgeDestDomain rdf:resource="http://vital.ai/ontology/vital-nlp#ImageReference"/>
+        <vital-core:hasEdgeSrcDomain rdf:resource="http://vital.ai/ontology/vital-nlp#Document"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Edge_hasNormalizedEntity -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Edge_hasNormalizedEntity">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_TaxonomyEdge"/>
+        <vital-core:hasEdgeDestDomain rdf:resource="http://vital.ai/ontology/vital-nlp#NlpNormalizedEntity"/>
+        <vital-core:hasEdgeSrcDomain rdf:resource="http://vital.ai/ontology/vital-nlp#NlpEntity"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Edge_hasNormalizedTopic -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Edge_hasNormalizedTopic">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_TaxonomyEdge"/>
+        <vital-core:hasEdgeDestDomain rdf:resource="http://vital.ai/ontology/vital-nlp#NlpNormalizedTopic"/>
+        <vital-core:hasEdgeSrcDomain rdf:resource="http://vital.ai/ontology/vital-nlp#Topic"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Edge_hasNounPhrase -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Edge_hasNounPhrase">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_TaxonomyEdge"/>
+        <vital-core:hasEdgeDestDomain rdf:resource="http://vital.ai/ontology/vital-nlp#NounPhrase"/>
+        <vital-core:hasEdgeSrcDomain rdf:resource="http://vital.ai/ontology/vital-nlp#Sentence"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Edge_hasPhraseNormalizedEntity -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Edge_hasPhraseNormalizedEntity">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_TaxonomyEdge"/>
+        <vital-core:hasEdgeDestDomain rdf:resource="http://vital.ai/ontology/vital-nlp#NlpNormalizedEntity"/>
+        <vital-core:hasEdgeSrcDomain rdf:resource="http://vital.ai/ontology/vital-nlp#Phrase"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Edge_hasPosTag -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Edge_hasPosTag">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_TaxonomyEdge"/>
+        <vital-core:hasEdgeDestDomain rdf:resource="http://vital.ai/ontology/vital-nlp#PosTag"/>
+        <vital-core:hasEdgeSrcDomain rdf:resource="http://vital.ai/ontology/vital-nlp#Sentence"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Edge_hasRelationElement -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Edge_hasRelationElement">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_TaxonomyEdge"/>
+        <vital-core:hasEdgeDestDomain rdf:resource="http://vital.ai/ontology/vital-nlp#NlpEntityInstance"/>
+        <vital-core:hasEdgeSrcDomain rdf:resource="http://vital.ai/ontology/vital-nlp#NlpRelationInstance"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Edge_hasRelationInstance -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Edge_hasRelationInstance">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_TaxonomyEdge"/>
+        <vital-core:hasEdgeDestDomain rdf:resource="http://vital.ai/ontology/vital-nlp#NlpRelationInstance"/>
+        <vital-core:hasEdgeSrcDomain rdf:resource="http://vital.ai/ontology/vital-nlp#Document"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Edge_hasSentence -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Edge_hasSentence">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_TaxonomyEdge"/>
+        <vital-core:hasEdgeDestDomain rdf:resource="http://vital.ai/ontology/vital-nlp#Sentence"/>
+        <vital-core:hasEdgeSrcDomain rdf:resource="http://vital.ai/ontology/vital-nlp#TextBlock"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Edge_hasSentenceAbbreviationInstance -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Edge_hasSentenceAbbreviationInstance">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_TaxonomyEdge"/>
+        <vital-core:hasEdgeDestDomain rdf:resource="http://vital.ai/ontology/vital-nlp#AbbreviationInstance"/>
+        <vital-core:hasEdgeSrcDomain rdf:resource="http://vital.ai/ontology/vital-nlp#Sentence"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Edge_hasSentenceEntityInstance -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Edge_hasSentenceEntityInstance">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_TaxonomyEdge"/>
+        <vital-core:hasEdgeDestDomain rdf:resource="http://vital.ai/ontology/vital-nlp#NlpEntityInstance"/>
+        <vital-core:hasEdgeSrcDomain rdf:resource="http://vital.ai/ontology/vital-nlp#Sentence"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Edge_hasTagElement -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Edge_hasTagElement">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_TaxonomyEdge"/>
+        <vital-core:hasEdgeDestDomain rdf:resource="http://vital.ai/ontology/vital-nlp#TagElement"/>
+        <vital-core:hasEdgeSrcDomain rdf:resource="http://vital.ai/ontology/vital-nlp#TextBlock"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Edge_hasTargetNode -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Edge_hasTargetNode">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_PeerEdge"/>
+        <vital-core:hasEdgeDestDomain rdf:resource="http://vital.ai/ontology/vital-nlp#TargetNode"/>
+        <vital-core:hasEdgeSrcDomain rdf:resource="http://vital.ai/ontology/vital-core#VITAL_Node"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Edge_hasTextBlock -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Edge_hasTextBlock">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_TaxonomyEdge"/>
+        <vital-core:hasEdgeDestDomain rdf:resource="http://vital.ai/ontology/vital-nlp#TextBlock"/>
+        <vital-core:hasEdgeSrcDomain rdf:resource="http://vital.ai/ontology/vital-nlp#Document"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Edge_hasToken -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Edge_hasToken">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_TaxonomyEdge"/>
+        <vital-core:hasEdgeDestDomain rdf:resource="http://vital.ai/ontology/vital-nlp#Token"/>
+        <vital-core:hasEdgeSrcDomain rdf:resource="http://vital.ai/ontology/vital-nlp#Sentence"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Edge_hasTopic -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Edge_hasTopic">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_TaxonomyEdge"/>
+        <vital-core:hasEdgeDestDomain rdf:resource="http://vital.ai/ontology/vital-nlp#Topic"/>
+        <vital-core:hasEdgeSrcDomain rdf:resource="http://vital.ai/ontology/vital-nlp#Document"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Edge_hasTranslation -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Edge_hasTranslation">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_PeerEdge"/>
+        <vital-core:hasEdgeDestDomain rdf:resource="http://vital.ai/ontology/vital-nlp#Document"/>
+        <vital-core:hasEdgeSrcDomain rdf:resource="http://vital.ai/ontology/vital-nlp#Document"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Edge_hasVerbPhrase -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Edge_hasVerbPhrase">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_TaxonomyEdge"/>
+        <vital-core:hasEdgeDestDomain rdf:resource="http://vital.ai/ontology/vital-nlp#VerbPhrase"/>
+        <vital-core:hasEdgeSrcDomain rdf:resource="http://vital.ai/ontology/vital-nlp#Sentence"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#EquivalenceRelationInstance -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#EquivalenceRelationInstance">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_Node"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#EventInstance -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#EventInstance">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_Node"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#FlowPredictModel -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#FlowPredictModel">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_Node"/>
+        <rdfs:comment xml:lang="en">represets a model with all configuration properties</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Image -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Image">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_Node"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#ImageReference -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#ImageReference">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_Node"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#NlpEntity -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#NlpEntity">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_Node"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#NlpEntityInstance -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#NlpEntityInstance">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_Node"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#NlpNormalizedEntity -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#NlpNormalizedEntity">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_Node"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#NlpNormalizedTopic -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#NlpNormalizedTopic">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_Node"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#NlpRelationInstance -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#NlpRelationInstance">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_Node"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#NounPhrase -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#NounPhrase">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_Node"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Phrase -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Phrase">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_Node"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#PosTag -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#PosTag">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_Node"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Sentence -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Sentence">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_Node"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#TagElement -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#TagElement">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_Node"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#TargetNode -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#TargetNode">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_Node"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#TextBlock -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#TextBlock">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_Node"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Token -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Token">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_Node"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#Topic -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#Topic">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_Node"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-nlp#VerbPhrase -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-nlp#VerbPhrase">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_Node"/>
+    </owl:Class>
+</rdf:RDF>
+
+
+
+<!-- Generated by the OWL API (version 4.5.9.2019-02-01T07:24:44Z) https://github.com/owlcs/owlapi -->
+

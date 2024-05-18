@@ -1,0 +1,7 @@
+domains:
+    - domain: "vital-aimp-python"
+      ontology: "vital-aimp-0.1.0.owl"
+    - domain: "vital-nlp-python"
+      ontology: "vital-nlp-0.2.304.owl"
+    - domain: "vital-social-python"
+      ontology: "vital-social-0.2.304.owl"

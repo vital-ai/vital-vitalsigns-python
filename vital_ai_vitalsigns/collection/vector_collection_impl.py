@@ -16,7 +16,7 @@ class VectorCollectionImpl:
                 """
 
         embedding_vector_size = 384
-        max_size = 10000
+        max_size = 100000
 
         self.graph = graph
         self.index = hnswlib.Index(space='cosine', dim=embedding_vector_size)

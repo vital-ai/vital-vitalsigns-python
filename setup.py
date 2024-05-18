@@ -9,7 +9,7 @@ setup(
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
     url='https://github.com/vital-ai/vital-vitalsigns-python',
-    packages=find_packages(exclude=["test"]),
+    packages=find_packages(exclude=["test", "generate", "vital_ai_vitalsigns_generate", "vital_home_test"]),
     entry_points={
         'vitalsigns_packages': [
             'vital_ai_vitalsigns = vital_ai_vitalsigns',
@@ -25,7 +25,9 @@ setup(
         'rdflib==7.0.0',
         'PyYAML',
         'numpy>=1.26.4',
-        'hnswlib'
+        'hnswlib',
+        'owlready2==0.46',
+        'owlrl==6.0.2'
     ],
     classifiers=[
         "Programming Language :: Python :: 3.10",
