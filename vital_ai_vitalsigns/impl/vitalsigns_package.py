@@ -3,6 +3,8 @@ class VitalSignsPackage:
     vital_domain_package = 'vital_ai_domain'
 
     # TODO add lookup methods for registered domains
+    # using OntologyManager
+    
     @classmethod
     def get_package(cls, owl_url: str):
         return 'ai_vital_aimp'

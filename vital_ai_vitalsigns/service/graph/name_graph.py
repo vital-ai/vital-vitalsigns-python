@@ -1,0 +1,4 @@
+
+class VitalNameGraph:
+    pass
+

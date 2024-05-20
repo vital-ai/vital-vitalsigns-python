@@ -1,9 +1,12 @@
-from .IProperty import IProperty
+import rdflib
+from rdflib import URIRef
+from vital_ai_vitalsigns.model.properties.IProperty import IProperty
 
 
 class URIProperty(IProperty):
     def __init__(self, value: str):
-        super().__init__(value)
+        str_value = str(value)
+        super().__init__(str_value)
 
     def __bool__(self):
         return bool(self.value)
@@ -25,5 +28,12 @@ class URIProperty(IProperty):
         return self == other
 
     def to_json(self):
-        return {"value": self.value}
+        value = str(self.value)
+        return {"value": value}
+
+    def to_rdf(self):
+        datatype = URIRef
+        value = str(self.value)
+        return {"value": value, "datatype": datatype}
+
 

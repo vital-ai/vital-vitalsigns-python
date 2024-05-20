@@ -1,8 +1,11 @@
+from __future__ import annotations
 from abc import ABC, abstractmethod
 import json
 from datetime import datetime
+from typing import TypeVar, List
+
 import rdflib
-from rdflib import Graph, Literal, URIRef
+from rdflib import Graph, Literal, URIRef, RDF
 from vital_ai_vitalsigns.impl.vitalsigns_impl import VitalSignsImpl
 from vital_ai_vitalsigns.model.trait.PropertyTrait import PropertyTrait
 from vital_ai_vitalsigns.model.properties.BooleanProperty import BooleanProperty
@@ -25,7 +28,7 @@ class AttributeComparisonProxy:
 
     def __eq__(self, value):
         print(f"Comparing {self.cls.__name__}.{self.name} with {value}")
-        # Add your custom logic here
+        # TODO Add logic here
         return False  # Placeholder for the example
 
 
@@ -36,6 +39,9 @@ class GraphObjectMeta(type):
 
     def __getattr__(self, name):
         return AttributeComparisonProxy(self, name)
+
+
+G = TypeVar('G', bound='GraphObject')
 
 
 class GraphObject(metaclass=GraphObjectMeta):
@@ -61,6 +67,15 @@ class GraphObject(metaclass=GraphObjectMeta):
             prop_class = prop_info['prop_class']
             trait_class = VitalSignsImpl.get_trait_class_from_uri(uri)
 
+            # full uri case
+            if trait_class and uri == name:
+                if value is None:
+                    self._properties.pop(uri, None)
+                else:
+                    self._properties[uri] = VitalSignsImpl.create_property_with_trait(prop_class, uri, value)
+                return
+
+            # short name case
             if trait_class and trait_class.get_short_name() == name:
                 if value is None:
                     self._properties.pop(uri, None)
@@ -131,11 +146,133 @@ class GraphObject(metaclass=GraphObjectMeta):
     def to_rdf(self, format='nt', graph_uri: str = None) -> str:
 
         g = Graph(identifier=URIRef(graph_uri) if graph_uri else None)
+
         subject = URIRef(str(self._properties['http://vital.ai/ontology/vital-core#URIProp']))
 
+        class_uri = self.get_class_uri()
+
+        g.add((subject, URIRef(RDF.type), URIRef(class_uri)))
+
         for prop_uri, prop_instance in self._properties.items():
+
             rdf_data = prop_instance.to_rdf()
-            g.add((subject, URIRef(prop_uri), Literal(rdf_data["value"], datatype=rdf_data["datatype"])))
+
+            if rdf_data["datatype"] == URIRef:
+                g.add((subject, URIRef(prop_uri), URIRef(rdf_data["value"])))
+            else:
+                g.add((subject, URIRef(prop_uri), Literal(rdf_data["value"], datatype=rdf_data["datatype"])))
 
         return g.serialize(format=format)
+
+    @classmethod
+    def from_json(cls, json_map: str) -> G:
+
+        from vital_ai_vitalsigns.vitalsigns import VitalSigns
+
+        data = json.loads(json_map)
+
+        type_uri = data['type']
+
+        vs = VitalSigns()
+
+        registry = vs.get_registry()
+
+        graph_object_cls = registry.vitalsigns_classes[type_uri]
+
+        graph_object = graph_object_cls()
+
+        for key, value in data.items():
+            if key == 'type':
+                continue
+            if key == 'types':
+                continue
+
+            setattr(graph_object, key, value)
+
+        return graph_object
+
+    @classmethod
+    def from_json_list(cls, json_map_list: str) -> List[G]:
+
+        graph_object_list = []
+
+        data_list = json.loads(json_map_list)
+
+        for data in data_list:
+            graph_object = cls.from_json(data)
+            graph_object_list.append(graph_object)
+
+        return graph_object_list
+
+    @classmethod
+    def from_rdf(cls, rdf_string: str) -> G:
+
+        g = Graph()
+
+        g.parse(data=rdf_string, format='nt')
+
+        type_uri = None
+        subject_uri = None
+        for subject, predicate, obj in g.triples((None, RDF.type, None)):
+            type_uri = str(obj)
+            subject_uri = subject
+            break
+
+        if not type_uri:
+            raise ValueError("Type URI not found in RDF data.")
+
+        if not subject_uri:
+            raise ValueError("Subject URI not found in RDF data.")
+
+        from vital_ai_vitalsigns.vitalsigns import VitalSigns
+
+        vs = VitalSigns()
+
+        registry = vs.get_registry()
+
+        graph_object_cls = registry.vitalsigns_classes[type_uri]
+
+        graph_object = graph_object_cls()
+
+        graph_object.URI = subject_uri
+
+        for subject, predicate, obj_value in g:
+
+            if predicate == RDF.type:
+                continue
+
+            if isinstance(obj_value, Literal):
+                value = obj_value.toPython()
+            elif isinstance(obj_value, URIRef):
+                value = str(obj_value)
+            setattr(obj, predicate, value)
+
+        return graph_object
+
+    @classmethod
+    def from_rdf_list(cls, rdf_string: str) -> List[G]:
+
+        g = Graph()
+        g.parse(data=rdf_string, format='nt')
+
+        subjects = set(g.subjects())
+
+        split_rdf_strings = []
+
+        for subj in subjects:
+
+            subj_graph = Graph()
+
+            for s, p, o in g.triples((subj, None, None)):
+                subj_graph.add((s, p, o))
+
+            split_rdf_strings.append(subj_graph.serialize(format='nt').decode('utf-8'))
+
+        graph_object_list = []
+
+        for rdf_split in split_rdf_strings:
+            graph_object = cls.from_rdf(rdf_split)
+            graph_object_list.append(graph_object)
+
+        return graph_object_list
 

@@ -10,6 +10,8 @@ def main():
 
     generator = VitalSignsGenerator()
 
+    generator.generate_vital_core()
+
 
 if __name__ == "__main__":
     main()

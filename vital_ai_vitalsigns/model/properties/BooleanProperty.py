@@ -1,9 +1,10 @@
-from .IProperty import IProperty
+from vital_ai_vitalsigns.model.properties.IProperty import IProperty
 
 
 class BooleanProperty(IProperty):
     def __init__(self, value: bool):
-        super().__init__(value)
+        bool_value = bool(value)
+        super().__init__(bool_value)
 
     def __bool__(self):
         return bool(self.value)

@@ -1,9 +1,12 @@
 from vital_ai_vitalsigns.model.properties.IProperty import IProperty
 
+# TODO add in implementation
+
 
 class MultiValueProperty(IProperty):
     def __init__(self, value: str):
-        super().__init__(value)
+        str_value = str(value)
+        super().__init__(str_value)
 
     def __str__(self):
         return str(self.value)

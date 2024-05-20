@@ -1,9 +1,10 @@
-from .IProperty import IProperty
+from vital_ai_vitalsigns.model.properties.IProperty import IProperty
 
 
 class FloatProperty(IProperty):
     def __init__(self, value: float):
-        super().__init__(value)
+        float_value = float(value)
+        super().__init__(float_value)
 
     def __bool__(self):
         return bool(self.value)

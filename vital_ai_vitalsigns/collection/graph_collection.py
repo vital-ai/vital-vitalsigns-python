@@ -12,20 +12,26 @@ import numpy as np
 class GraphCollection(MutableSequence):
 
     def __init__(self, data=None, use_rdfstore=True, use_vectordb=True, embedding_model_id='paraphrase-MiniLM-L3-v2'):
+
         self._use_rdfstore = use_rdfstore
         self._use_vectordb = use_vectordb
         self._embedding_model_id = embedding_model_id
+
         if data is None:
             self._data = []
         else:
             self._data = [item for item in data if isinstance(item, GraphObject)]
+
         self._uri_map = {}
         self._vector_properties = {}
+
         if use_vectordb is True:
             from vital_ai_vitalsigns.collection.vector_collection_impl import VectorCollectionImpl
             self._vectordb = VectorCollectionImpl(self)
+
         if use_rdfstore is True:
             self._rdfstore = RdfCollectionImpl()
+
         for item in self._data:
             if hasattr(item, 'URI'):
 
@@ -57,46 +63,62 @@ class GraphCollection(MutableSequence):
         return self._data[index]
 
     def __setitem__(self, index, value):
+
         if not isinstance(value, GraphObject):
             raise ValueError("All items must be instances of GraphObject or its subclasses")
+
         if hasattr(self._data[index], 'URI'):
             self._uri_map.pop(self._data[index].URI, None)
+
         if hasattr(value, 'URI'):
             self._uri_map[value.URI] = value
+
         self._data[index] = value
 
     def __delitem__(self, index):
+
         if hasattr(self._data[index], 'URI'):
             self._uri_map.pop(self._data[index].URI, None)
+
         del self._data[index]
 
     def insert(self, index, value):
+
         if not isinstance(value, GraphObject):
             raise ValueError("All items must be instances of GraphObject or its subclasses")
+
         self.pop(value.URI)
+
         if hasattr(value, 'URI'):
             self._uri_map[value.URI] = value
+
         self._data.insert(index, value)
 
     def get(self, uri, default=None):
-        """Return the first GraphObject in the collection with a matching URI."""
+
         for item in self._data:
             if item.URI == uri:
                 return item
-        return default  # Or raise an exception if preferred
+
+        return default
 
     def pop(self, uri, default=None):
-        """Remove and return the first GraphObject in the collection with a matching URI.
-        If no item is found, return 'default' if provided, or None."""
+
         for i, item in enumerate(self._data):
+
             if item.URI == uri:
+
                 if self._use_rdfstore is True:
                     self._rdfstore.delete_triples(uri)
+
                 if self._use_vectordb is True:
                     self._vectordb.remove_doc(uri)
+
                 return self._data.pop(i)  # Removes and returns the item
+
         if default is not None:
             return default
+
         # raise ValueError("No item found with the specified URI.")
         return None
 
@@ -104,10 +126,14 @@ class GraphCollection(MutableSequence):
         return self.pop(uri, default)
 
     def add(self, obj):
+
         if not isinstance(obj, GraphObject):
             raise ValueError("Item must be instances of GraphObject or its subclasses")
+
         self.pop(obj.URI)
+
         self._data.append(obj)
+
         if self._use_vectordb is True:
 
             vs = VitalSigns()
@@ -144,15 +170,15 @@ class GraphCollection(MutableSequence):
             self._rdfstore.add_triples(obj_nt)
 
     def add_objects(self, objects):
-        """Add multiple GraphObjects to the collection after ensuring all objects are valid."""
-        # First, verify all objects are instances of GraphObject or its subclasses
+
         if not all(isinstance(obj, GraphObject) for obj in objects):
             raise ValueError("All items must be instances of GraphObject or its subclasses")
 
-        # If the check passes, add all objects to the collection
         for obj in objects:
+
             self.pop(obj.URI)
             self._data.append(obj)
+
             if self._use_vectordb is True:
 
                 vs = VitalSigns()
@@ -298,7 +324,32 @@ class GraphCollection(MutableSequence):
     def sparql_query(self, sparql_query: str):
         return self._rdfstore.query_graph(sparql_query)
 
-    # TODO add to_json() to return json list
+    def to_json(self) -> str:
+
+        obj_list = []
+
+        for obj in self:
+            obj_list.append(obj)
+
+        vs = VitalSigns()
+
+        json_string = vs.to_json(obj_list)
+
+        return json_string
+
+    def to_rdf(self) -> str:
+
+        obj_list = []
+
+        for obj in self:
+            obj_list.append(obj)
+
+        vs = VitalSigns()
+
+        rdf_string = vs.to_rdf(obj_list)
+
+        return rdf_string
+
 
 # allow metadata for class for a list of properties to use
 # in text when generating vector, with default being "name" property

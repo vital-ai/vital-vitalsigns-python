@@ -1,9 +1,10 @@
-from .IProperty import IProperty
+from vital_ai_vitalsigns.model.properties.IProperty import IProperty
 
 
 class IntegerProperty(IProperty):
     def __init__(self, value: int):
-        super().__init__(value)
+        int_value = int(value)
+        super().__init__(int_value)
 
     def __bool__(self):
         return bool(self.value)

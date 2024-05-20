@@ -1,10 +1,15 @@
 from datetime import datetime
-from .IProperty import IProperty
+from vital_ai_vitalsigns.model.properties.IProperty import IProperty
 
 
 class DateTimeProperty(IProperty):
     def __init__(self, value: datetime):
-        super().__init__(value)
+
+        if isinstance(value, datetime):
+            datetime_value = value
+            super().__init__(datetime_value)
+        else:
+            raise TypeError(f"Unsupported type for datetime property: {type(value).__name__}")
 
     def __bool__(self):
         return self.value is not None

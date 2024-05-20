@@ -1,0 +1,6 @@
+
+
+class WeaviateVectorService:
+    pass
+
+
