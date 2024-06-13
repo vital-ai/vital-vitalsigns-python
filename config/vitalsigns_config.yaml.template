@@ -1,0 +1,9 @@
+graph_database:
+    virtuoso_username: ""
+    virtuoso_password: ""
+    virtuoso_endpoint: ""
+vector_database:
+    weaviate_user: ""
+    weaviate_api_key: ""
+    weaviate_endpoint: ""
+

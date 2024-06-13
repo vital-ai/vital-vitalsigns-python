@@ -1,5 +1,5 @@
 import json
-from typing import List, TypeVar
+from typing import List, TypeVar, Generator, Tuple
 from vital_ai_vitalsigns.impl.vitalsigns_registry import VitalSignsRegistry
 from vital_ai_vitalsigns.model.GraphObject import GraphObject
 
@@ -44,6 +44,9 @@ class VitalSigns(metaclass=VitalSignsMeta):
 
     def from_rdf_list(self, rdf_string_list: str) -> List[G]:
         return GraphObject.from_rdf_list(rdf_string_list)
+
+    def from_triples(self, triples: Generator[Tuple, None, None]) -> G:
+        return GraphObject.from_triples(triples)
 
     def to_json(self, graph_object_list: List[G]) -> str:
         json_list = []

@@ -27,3 +27,7 @@ class VITAL_GraphContainerObject(GraphObject):
     @classmethod
     def get_class_uri(cls) -> str:
         return 'http://vital.ai/ontology/vital-core#VITAL_GraphContainerObject'
+
+    # todo override get/set properties to use "allowed" properties
+    # for properties matching allowed set, but allow arbitrary properties
+    # for property names not matching the allowed ones

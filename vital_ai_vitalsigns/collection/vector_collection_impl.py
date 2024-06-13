@@ -1,5 +1,3 @@
-from sentence_transformers import SentenceTransformer
-
 from vital_ai_vitalsigns.collection.graph_collection import GraphCollection
 from typing import List, Union, TypeVar, Generic
 from tempfile import TemporaryDirectory
@@ -11,9 +9,8 @@ class VectorCollectionImpl:
 
     def __init__(self, graph: GraphCollection):
         """
-                Initializes the VectorCollectionImpl with a specific schema and workspace.
-                :param schema: A subclass of BaseDoc defining the schema for the database.
-                """
+        Initializes the VectorCollectionImpl with a specific schema and workspace.
+        """
 
         embedding_vector_size = 384
         max_size = 100000

@@ -1,4 +1,4 @@
 #!/bin/bash
 
-python -m vital_ai_vitalsigns_cmd.vitalsigns_command $@
+python -m vital_ai_vitalsigns_cmd.vitalsigns_command "$@"
 

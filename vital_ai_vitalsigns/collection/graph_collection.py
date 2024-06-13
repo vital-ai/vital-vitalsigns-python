@@ -5,13 +5,14 @@ from vital_ai_vitalsigns.model.VITAL_Edge import VITAL_Edge
 from vital_ai_vitalsigns.query.result_element import ResultElement
 from vital_ai_vitalsigns.query.result_list import ResultList
 from vital_ai_vitalsigns.vitalsigns import VitalSigns
-from typing import Optional
-import numpy as np
+from typing import Optional, TypeVar, List, Iterator
+
+G = TypeVar('G', bound=Optional[GraphObject])
 
 
-class GraphCollection(MutableSequence):
+class GraphCollection(MutableSequence[G]):
 
-    def __init__(self, data=None, use_rdfstore=True, use_vectordb=True, embedding_model_id='paraphrase-MiniLM-L3-v2'):
+    def __init__(self, data: List[G] | None = None, use_rdfstore: bool = True, use_vectordb: bool = True, embedding_model_id: str = 'paraphrase-MiniLM-L3-v2'):
 
         self._use_rdfstore = use_rdfstore
         self._use_vectordb = use_vectordb
@@ -59,10 +60,13 @@ class GraphCollection(MutableSequence):
     def __len__(self):
         return len(self._data)
 
-    def __getitem__(self, index):
+    def __iter__(self) -> Iterator[G]:
+        return iter(self._data)
+
+    def __getitem__(self, index) -> G:
         return self._data[index]
 
-    def __setitem__(self, index, value):
+    def __setitem__(self, index, value: G):
 
         if not isinstance(value, GraphObject):
             raise ValueError("All items must be instances of GraphObject or its subclasses")
@@ -82,7 +86,7 @@ class GraphCollection(MutableSequence):
 
         del self._data[index]
 
-    def insert(self, index, value):
+    def insert(self, index, value: G):
 
         if not isinstance(value, GraphObject):
             raise ValueError("All items must be instances of GraphObject or its subclasses")
@@ -94,7 +98,7 @@ class GraphCollection(MutableSequence):
 
         self._data.insert(index, value)
 
-    def get(self, uri, default=None):
+    def get(self, uri, default=None) -> G:
 
         for item in self._data:
             if item.URI == uri:
@@ -122,10 +126,10 @@ class GraphCollection(MutableSequence):
         # raise ValueError("No item found with the specified URI.")
         return None
 
-    def remove(self, uri, default=None):
+    def remove(self, uri, default=None) -> G:
         return self.pop(uri, default)
 
-    def add(self, obj):
+    def add(self, obj: G):
 
         if not isinstance(obj, GraphObject):
             raise ValueError("Item must be instances of GraphObject or its subclasses")
@@ -169,7 +173,7 @@ class GraphCollection(MutableSequence):
             obj_nt = obj.to_rdf()
             self._rdfstore.add_triples(obj_nt)
 
-    def add_objects(self, objects):
+    def add_objects(self, objects: List[G]):
 
         if not all(isinstance(obj, GraphObject) for obj in objects):
             raise ValueError("All items must be instances of GraphObject or its subclasses")
@@ -214,7 +218,7 @@ class GraphCollection(MutableSequence):
                 obj_nt = obj.to_rdf()
                 self._rdfstore.add_triples(obj_nt)
 
-    def get_object_text(self, obj):
+    def get_object_text(self, obj: G):
         text = ""
         class_uri = obj.get_class_uri()
         for obj_class_uri in self._vector_properties:
@@ -227,7 +231,7 @@ class GraphCollection(MutableSequence):
 
         return text.strip()
 
-    def remove_objects(self, uris):
+    def remove_objects(self, uris: List[str]):
         """Remove objects from the collection by a list of URI values."""
         to_remove_indexes = []
         for uri in uris:
@@ -244,17 +248,17 @@ class GraphCollection(MutableSequence):
         for i in sorted(to_remove_indexes, reverse=True):
             del self._data[i]
 
-    def set_vector_properties(self, class_uri, property_uris):
+    def set_vector_properties(self, class_uri, property_uris: List):
         """Set the vector properties for a given class URI."""
         if not isinstance(property_uris, list):
             raise ValueError("property_uris must be a list")
         self._vector_properties[class_uri] = property_uris
 
-    def get_vector_properties(self, class_uri):
+    def get_vector_properties(self, class_uri: str):
         """Get the vector properties for a given class URI."""
         return self._vector_properties.get(class_uri, [])
 
-    def remove_vector_properties(self, class_uri):
+    def remove_vector_properties(self, class_uri: str):
         """Remove the vector properties for a given class URI."""
         if class_uri in self._vector_properties:
             del self._vector_properties[class_uri]
@@ -262,15 +266,15 @@ class GraphCollection(MutableSequence):
     def get_vector_class_uris(self):
         return list(self._vector_properties.keys())
 
-    def get_edges_incoming(self, uri):
+    def get_edges_incoming(self, uri: str) -> List[G]:
         incoming_edges = [item for item in self._data if isinstance(item, VITAL_Edge) and item.edgeDestination == uri]
         return incoming_edges
 
-    def get_edges_outgoing(self, uri):
+    def get_edges_outgoing(self, uri: str) -> List[G]:
         outgoing_edges = [item for item in self._data if isinstance(item, VITAL_Edge) and item.edgeSource == uri]
         return outgoing_edges
 
-    def get_nodes_incoming(self, uri):
+    def get_nodes_incoming(self, uri: str) -> List[G]:
         """
         Return the node objects that have an outgoing edge to the given URI.
         """
@@ -281,7 +285,7 @@ class GraphCollection(MutableSequence):
         incoming_nodes = [self.get(node_uri) for node_uri in incoming_node_uris]
         return [node for node in incoming_nodes if node is not None]  # Filter out any None results
 
-    def get_nodes_outgoing(self, uri):
+    def get_nodes_outgoing(self, uri: str) -> List[G]:
         """
         Return the node objects that are the destination of an outgoing edge from the given URI.
         """

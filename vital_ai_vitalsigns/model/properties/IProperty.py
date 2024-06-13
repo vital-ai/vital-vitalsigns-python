@@ -9,6 +9,9 @@ class IProperty:
     def __str__(self):
         return str(self.value)
 
+    def get_value(self):
+        return self.value
+
     def to_json(self):
         return {"value": self.value}
 

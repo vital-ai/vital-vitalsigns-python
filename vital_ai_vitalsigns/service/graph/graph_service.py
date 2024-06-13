@@ -1,44 +1,150 @@
+from abc import abstractmethod
+from typing import TypeVar, List, Tuple
+from vital_ai_vitalsigns.model.GraphObject import GraphObject
+from vital_ai_vitalsigns.ontology.ontology import Ontology
+from vital_ai_vitalsigns.query.result_list import ResultList
+from vital_ai_vitalsigns.query.solution_list import SolutionList
+from vital_ai_vitalsigns.service.graph.binding import Binding
+from vital_ai_vitalsigns.service.graph.name_graph import VitalNameGraph
+from vital_ai_vitalsigns.service.graph.vital_graph_status import VitalGraphStatus
+
+G = TypeVar('G', bound='GraphObject')
+
 
 class VitalGraphService:
-    pass
+    def __init__(self):
+        # check_create vital service graph
+        pass
 
-# initialize, create vital service graph if necessary
+    # initialize, create vital service graph if necessary
 
-# list graphs
+    @abstractmethod
+    def get_graph(self, graph_uri: str, vital_managed=True) -> VitalNameGraph:
+        pass
 
-# create graph
-# store name graph in vital service graph and in the graph itself
-# a graph needs to have some triples in it to exist
+    @abstractmethod
+    def list_graphs(self, vital_managed=True) -> List[VitalNameGraph]:
+        pass
 
-# delete graph
-# delete graph itself plus record in vital service graph
+    # create graph
+    # store name graph in vital service graph and in the graph itself
+    # a graph needs to have some triples in it to exist
 
-# purge graph (delete all but name graph)
+    @abstractmethod
+    def check_create_graph(self, graph_uri: str, vital_managed=True) -> bool:
+        pass
 
-# insert object into graph (scoped to vital service graph uri, which must exist)
+    @abstractmethod
+    def create_graph(self, graph_uri: str, vital_managed=True) -> bool:
+        pass
 
-# insert object list into graph (scoped to vital service graph uri, which must exist)
+    # delete graph
+    # delete graph itself plus record in vital service graph
 
-# update object into graph (scoped to vital service graph uri, which must exist)
-# delete old, replace with new
+    @abstractmethod
+    def delete_graph(self, graph_uri: str, vital_managed=True) -> bool:
+        pass
 
-# update object list into graph (scoped to vital service graph uri, which must exist)
-# delete old, replace with new
+    # purge graph (delete all but name graph)
 
-# delete uri (scoped to all vital service graphs)
+    @abstractmethod
+    def purge_graph(self, graph_uri: str, vital_managed=True) -> bool:
+        pass
 
-# delete uri list (scoped to all vital service graphs)
+    @abstractmethod
+    def get_graph_all_objects(self, graph_uri: str, limit=100, offset=0, vital_managed=True) -> ResultList:
+        pass
 
-# delete uri (scoped to graph or graph list)
+    # insert object into graph (scoped to vital service graph uri, which must exist)
 
-# delete uri list (scoped to graph or graph list)
+    # insert object list into graph (scoped to vital service graph uri, which must exist)
 
-# get object (scoped to all vital service graphs)
+    @abstractmethod
+    def insert_object(self, graph_uri: str, graph_object: G, vital_managed=True) -> VitalGraphStatus:
+        pass
 
-# get object (scoped to specific graph, or graph list)
+    @abstractmethod
+    def insert_object_list(self, graph_uri: str, graph_object_list: List[G], vital_managed=True) -> VitalGraphStatus:
+        pass
 
-# get objects by uri list (scoped to all vital service graphs)
+    # update object into graph (scoped to vital service graph uri, which must exist)
+    # delete old, replace with new
 
-# get objects by uri list (scoped to specific graph, or graph list)
+    # update object list into graph (scoped to vital service graph uri, which must exist)
+    # delete old, replace with new
 
-# query graph
+    @abstractmethod
+    def update_object(self, graph_object: G, graph_uri=None, vital_managed=True) -> VitalGraphStatus:
+        pass
+
+    @abstractmethod
+    def update_object_list(self, graph_object_list: List[G], graph_uri=None, vital_managed=True) -> VitalGraphStatus:
+        pass
+
+    # get object (scoped to all vital service graphs)
+
+    # get object (scoped to specific graph, or graph list)
+
+    # get objects by uri list (scoped to all vital service graphs)
+
+    # get objects by uri list (scoped to specific graph, or graph list)
+
+    @abstractmethod
+    def get_object(self, object_uri: str, graph_uri=None, vital_managed=True) -> G:
+        pass
+
+    @abstractmethod
+    def get_object_list(self, object_uri_list: List[str], graph_uri=None, vital_managed=True) -> ResultList:
+        pass
+
+    # delete uri (scoped to all vital service graphs)
+
+    # delete uri list (scoped to all vital service graphs)
+
+    # delete uri (scoped to graph or graph list)
+
+    # delete uri list (scoped to graph or graph list)
+
+    @abstractmethod
+    def delete_object(self, object_uri: str, graph_uri=None, vital_managed=True) -> VitalGraphStatus:
+        pass
+
+    @abstractmethod
+    def delete_object_list(self, object_uri_list: List[str], graph_uri=None, vital_managed=True) -> VitalGraphStatus:
+        pass
+
+    # filter graph
+
+    @abstractmethod
+    def filter_query(self, graph_uri: str, sparql_query: str, uri_binding='uri', limit=100, offset=0, resolve_objects=True, vital_managed=True) -> ResultList:
+        pass
+
+    # query graph
+
+    @abstractmethod
+    def query(self, sparql_query: str, graph_uri: str, limit=100, offset=0, uri_binding='uri', resolve_objects=True, vital_managed=True) -> ResultList:
+        pass
+
+    @abstractmethod
+    def query_construct(self, graph_uri: str, sparql_query: str,
+                        namespace_list: List[Ontology],
+                        binding_list: List[Binding],
+                        limit=100, offset=0) -> ResultList:
+        pass
+
+    @abstractmethod
+    def query_construct_solution(self,
+                                 graph_uri: str,
+                                 sparql_query: str,
+                                 namespace_list: List[Ontology],
+                                 binding_list: List[Binding],
+                                 root_binding: str | None = None,
+                                 limit=100, offset=0) -> SolutionList:
+        pass
+
+
+
+
+
+
+

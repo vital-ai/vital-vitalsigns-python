@@ -1,11 +1,13 @@
-from typing import Any, List, TypeVar
-from vital_ai_vitalsigns.query.result_element import ResultElement
+from typing import Any, List, TypeVar, Optional
+from vital_ai_vitalsigns.model.GraphObject import GraphObject
+from vital_ai_vitalsigns.part.graph_part import GraphPart
 
 
-G = TypeVar('G', bound='GraphObject')
+G = TypeVar('G', bound=Optional[GraphObject])
+GP = TypeVar('G', bound=Optional[GraphPart])
 
 
-class ResultList(List[ResultElement]):
+class PartList(List[GraphPart]):
     def __init__(self, *args):
         super().__init__(*args)
         self.offset = None
@@ -13,13 +15,12 @@ class ResultList(List[ResultElement]):
         self.message = None
         self.status = None
 
-    def add_result(self, graph_object: G, score: float = 1.0):
+    def add_part(self, graph_part: GP):
         """
-        Adds a ResultElement to the list.
-        :param graph_object: The associated object (e.g., a document or data structure).
-        :param score: The similarity score.
+        Adds a GraphPart to the list.
+        :param graph_part: The GraphPart.
         """
-        self.append(ResultElement(graph_object, score))
+        self.append(graph_part)
 
     def set_status(self, status: int):
         self.status = status
@@ -44,11 +45,4 @@ class ResultList(List[ResultElement]):
 
     def get_offset(self):
         return self.offset
-
-
-
-
-
-
-
 

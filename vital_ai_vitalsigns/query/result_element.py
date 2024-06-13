@@ -1,8 +1,10 @@
-from typing import Any, List
+from typing import Any, List, TypeVar
+
+G = TypeVar('G', bound='GraphObject')
 
 
 class ResultElement:
-    def __init__(self, graph_object: Any, score: float = 1.0):
+    def __init__(self, graph_object: G, score: float = 1.0):
         self.graph_object = graph_object
         self.score = score
 
