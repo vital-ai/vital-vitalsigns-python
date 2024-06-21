@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='vital-ai-vitalsigns',
-    version='0.1.19',
+    version='0.1.20',
     author='Marc Hadfield',
     author_email='marc@vital.ai',
     description='VitalSigns knowledge graph bindings',
@@ -20,20 +20,20 @@ setup(
     package_data={
         '': ['*.pyi'],
         'vital_ai_vitalsigns': ['models/**'],
+        'vital_ai_vitalsigns_core': ['vital-ontology/*.owl']
     },
     license='Apache License 2.0',
     install_requires=[
         'rdflib==7.0.0',
-        'PyYAML',
+        'PyYAML>=6.0.1',
         'numpy>=1.26.4',
-        'hnswlib',
+        'hnswlib>=0.8.0',
         'owlready2==0.46',
         'owlrl==6.0.2',
         'weaviate-client==4.6.3',
         'SPARQLWrapper==2.0.0',
         'pyshacl==0.25.0',
-        'requests',
-        # for odbc connection
+        'requests>=2.31.0',
         'PyODBC>=5.1.0',
         'onnxruntime>=1.18.0',
         'onnx>=1.16.1',
@@ -41,7 +41,8 @@ setup(
         'pytz>=2024.1',
         'python-dotenv>=1.0.1',
         'python-dateutil>=2.9.0',
-        'transformers>=4.37.2'
+        'transformers>=4.37.2',
+        'vital-model-paraphrase-MiniLM-onnx>=0.2.1'
     ],
     extras_require={
         'dev': [

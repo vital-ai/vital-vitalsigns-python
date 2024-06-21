@@ -13,17 +13,17 @@ model_id = 'sentence-transformers/paraphrase-MiniLM-L3-v2'
 
 def get_models_directory():
     try:
-        # Get the path to the models directory
+        # Get the path to the models directory within vitalsigns
         models_path = pkg_resources.resource_filename('vital_ai_vitalsigns', 'models')
         return models_path
     except KeyError:
         raise FileNotFoundError("The models directory could not be found in the package.")
 
 
-def get_model_file(file_name):
+def get_model_file(package_name, file_name):
     try:
         # Construct the resource path
-        resource_path = pkg_resources.resource_filename('vital_ai_vitalsigns', f'models/{file_name}')
+        resource_path = pkg_resources.resource_filename(package_name, f'model/{file_name}')
         return resource_path
     except KeyError:
         raise FileNotFoundError(f"The file {file_name} could not be found in the models directory.")
@@ -33,7 +33,10 @@ def encode(texts):
 
     tokenizer = AutoTokenizer.from_pretrained(get_models_directory() + '/tokenizer')
 
-    ort_session = ort.InferenceSession(get_model_file('paraphrase-MiniLM-L3-v2.onnx'))
+    package_name = 'vital-model-paraphrase-MiniLM-onnx'
+    model_name = 'paraphrase-MiniLM-L3-v2.onnx'
+
+    ort_session = ort.InferenceSession(get_model_file(package_name, model_name))
 
     inputs = tokenizer(texts, return_tensors="np", padding=True, truncation=True)
     # Ensure only the expected inputs are passed
