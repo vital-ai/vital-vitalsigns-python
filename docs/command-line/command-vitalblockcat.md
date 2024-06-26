@@ -1,0 +1,3 @@
+# Command: vitalblockcat
+
+Command: vitalblockcat
