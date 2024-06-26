@@ -1,6 +1,7 @@
 # Table of contents
 
-* [VitalSigns](README.md)
+* [Vital AI: VitalSigns](README.md)
+* [VitalSigns](<README (1).md>)
 * [URI Identifiers](uri-identifiers.md)
 * [GraphObject](graphobject/README.md)
   * [VITAL\_Node](graphobject/vital\_node.md)
