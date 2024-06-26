@@ -1,3 +1,3 @@
-# Weaviate
+# Weaviate (Open Source)
 
-Weaviate
+Weaviate (Open Source)
