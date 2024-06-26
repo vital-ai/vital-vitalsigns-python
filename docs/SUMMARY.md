@@ -2,6 +2,12 @@
 
 * [VitalSigns](README.md)
 * [URI Identifiers](uri-identifiers.md)
+* [GraphObject](graphobject/README.md)
+  * [VITAL\_Node](graphobject/vital\_node.md)
+  * [VITAL\_Edge](graphobject/vital\_edge.md)
+  * [VITAL\_HyperNode](graphobject/vital\_hypernode.md)
+  * [VITAL\_HyperEdge](graphobject/vital\_hyperedge.md)
+  * [VITAL\_GraphContainerObject](graphobject/vital\_graphcontainerobject.md)
 * [Ontologies](ontologies/README.md)
   * [Ontology Manager](ontologies/ontology-manager.md)
 * [VitalSigns Config](vitalsigns-config/README.md)
