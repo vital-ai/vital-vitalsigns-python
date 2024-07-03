@@ -1,3 +1,5 @@
-# VitalSigns
+# Vital AI: VitalSigns
 
-VitalSigns
+This documentation covers the VitalSigns Python implementation.
+
+Vital AI General Documentation is available at: [https://docs.vital.ai/](https://docs.vital.ai/)
