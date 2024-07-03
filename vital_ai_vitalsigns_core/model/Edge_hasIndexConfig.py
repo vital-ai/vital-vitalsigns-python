@@ -22,6 +22,6 @@ class Edge_hasIndexConfig(VITAL_PeerEdge):
         return super().get_allowed_properties() + Edge_hasIndexConfig._allowed_properties
 
     @classmethod
-    def get_class_uri(self) -> str:
+    def get_class_uri(cls) -> str:
         return 'http://vital.ai/ontology/vital-core#Edge_hasIndexConfig'
 

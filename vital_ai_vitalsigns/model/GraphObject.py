@@ -1,8 +1,9 @@
 from __future__ import annotations
+import sys
 from abc import ABC, abstractmethod
 import json
 from datetime import datetime
-from typing import TypeVar, List, Generator, Tuple
+from typing import TypeVar, List, Generator, Tuple, Optional, Set
 import rdflib
 from rdflib import Graph, Literal, URIRef, RDF
 from vital_ai_vitalsigns.impl.vitalsigns_impl import VitalSignsImpl
@@ -40,7 +41,8 @@ class GraphObjectMeta(type):
         return AttributeComparisonProxy(self, name)
 
 
-G = TypeVar('G', bound='GraphObject')
+G = TypeVar('G', bound=Optional['GraphObject'])
+GC = TypeVar('GC', bound='GraphCollection')
 
 
 class GraphObject(metaclass=GraphObjectMeta):
@@ -50,12 +52,35 @@ class GraphObject(metaclass=GraphObjectMeta):
     def get_allowed_properties(cls):
         return GraphObject._allowed_properties
 
-    def __init__(self):
+    def __init__(self, *, modified=True):
         super().__setattr__('_properties', {})
         super().__setattr__('_extern_properties', {})
+        super().__setattr__('_graph_collection_set', set())
+        super().__setattr__('_modified', modified)
+        super().__setattr__('_object_hash', "")
+
+        from vital_ai_vitalsigns.vitalsigns import VitalSigns
+        vs = VitalSigns()
+        vs.include_graph_object(self)
+
+    def __del__(self):
+        # print(f"deleting: {self}")
+
+        if sys.meta_path is None or not hasattr(sys, 'modules'):
+            # Python is shutting down, skip cleanup
+            # print("shutting down")
+            return
+
+        try:
+            from vital_ai_vitalsigns.vitalsigns import VitalSigns
+            # print(f"deleting: {self.URI}")
+            vs = VitalSigns()
+            vs.remove_graph_object(self)
+        except Exception as ex:
+            # print(ex)
+            pass
 
     def __setattr__(self, name, value) -> bool:
-        # print(f"Name: {name}")
 
         from vital_ai_vitalsigns.model.VITAL_GraphContainerObject import VITAL_GraphContainerObject
 
@@ -64,7 +89,10 @@ class GraphObject(metaclass=GraphObjectMeta):
                 self._properties.pop('http://vital.ai/ontology/vital-core#URIProp', None)
             else:
                 self._properties['http://vital.ai/ontology/vital-core#URIProp'] = VitalSignsImpl.create_property_with_trait(URIProperty, 'http://vital.ai/ontology/vital-core#URIProp', value)
+            super().__setattr__('_modified', True)
+
             return
+
         for prop_info in self.get_allowed_properties():
             uri = prop_info['uri']
             prop_class = prop_info['prop_class']
@@ -78,6 +106,7 @@ class GraphObject(metaclass=GraphObjectMeta):
                     self._properties.pop(uri, None)
                 else:
                     self._properties[uri] = VitalSignsImpl.create_property_with_trait(prop_class, uri, value)
+                super().__setattr__('_modified', True)
                 return
 
             # short name case
@@ -86,6 +115,7 @@ class GraphObject(metaclass=GraphObjectMeta):
                     self._properties.pop(uri, None)
                 else:
                     self._properties[uri] = VitalSignsImpl.create_property_with_trait(prop_class, uri, value)
+                super().__setattr__('_modified', True)
                 return
 
         if isinstance(self, VITAL_GraphContainerObject):
@@ -95,6 +125,7 @@ class GraphObject(metaclass=GraphObjectMeta):
             else:
                 prop_name = name.removeprefix('urn:extern:')
                 self._extern_properties[prop_name] = VitalSignsImpl.create_extern_property(value)
+            super().__setattr__('_modified', True)
             return
 
         raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
@@ -207,6 +238,48 @@ class GraphObject(metaclass=GraphObjectMeta):
 
         return go_map.items()
 
+    def include_on_graph(self, graph_collection: GC):
+        self._graph_collection_set.add(graph_collection)
+
+    def remove_from_graph(self, graph_collection: GC):
+        self._graph_collection_set.remove(graph_collection)
+
+    def graph_locations(self) -> Set[G]:
+        return self._graph_collection_set.copy()
+
+    def is_modified(self) -> bool:
+        return self._modified
+
+    def mark_serialized(self):
+        super().__setattr__('_modified', False)
+
+    def get_hash(self) -> str:
+        return self._object_hash
+
+    def calc_hash(self) -> str:
+        # TODO define real function
+        # we don't override the __hash__ function
+        # because objects may be instantiated using different
+        # queries over time and be included in different graphs
+        # as separate instances (or just directly instantiated)
+        # when serializing a graph, we want to detect
+        # which objects are already serialized via a different graph
+        # this may occur by the same object instance being serialized
+        # or by an object with an identical hash already serialized
+        # so, for the moment, we want to keep separate the concept
+        # of the hash of an object instance and the hash of
+        # all the properties and value of the object which make it unique
+        # so if we have:
+        # Graph 1: { A1, B1 }
+        # Graph 2: { A2, C1 }
+        # with A1 and A2 being different instances but identical object hashes
+        # and we store Graph 1
+        # if we store Graph 2 it can not serialize A2 since it already
+        # has been serialized and is unchanged
+
+        super().__setattr__('_object_hash', "")
+        return self._object_hash
+
     @classmethod
     def is_top_level_class(cls):
         return cls.__bases__ == (object,)
@@ -259,7 +332,29 @@ class GraphObject(metaclass=GraphObjectMeta):
 
             rdf_data = prop_instance.to_rdf()
 
-            if rdf_data["datatype"] == URIRef:
+            if rdf_data["datatype"] == list:
+
+                value_list = rdf_data["value"]
+                data_class = rdf_data["data_class"]
+
+                for v in value_list:
+                    if data_class == URIRef:
+                        g.add((subject, URIRef(prop_uri), URIRef(v)))
+                    else:
+                        if data_class == datetime:
+                            datatype = rdflib.XSD.dateTime
+                        elif data_class == int:
+                            datatype = rdflib.XSD.integer
+                        elif data_class == float:
+                            datatype = rdflib.XSD.float
+                        elif data_class == bool:
+                            datatype = rdflib.XSD.boolean
+                        else:
+                            datatype = rdflib.XSD.string
+
+                        g.add((subject, URIRef(prop_uri), Literal(v, datatype=datatype)))
+
+            elif rdf_data["datatype"] == URIRef:
                 g.add((subject, URIRef(prop_uri), URIRef(rdf_data["value"])))
             else:
                 g.add((subject, URIRef(prop_uri), Literal(rdf_data["value"], datatype=rdf_data["datatype"])))
@@ -271,7 +366,29 @@ class GraphObject(metaclass=GraphObjectMeta):
 
                 rdf_data = prop_instance.to_rdf()
 
-                if rdf_data["datatype"] == URIRef:
+                if rdf_data["datatype"] == list:
+
+                    value_list = rdf_data["value"]
+                    data_class = rdf_data["data_class"]
+
+                    for v in value_list:
+                        if data_class == URIRef:
+                            g.add((subject, URIRef(prop_uri), URIRef(v)))
+                        else:
+                            if data_class == datetime:
+                                datatype = rdflib.XSD.dateTime
+                            elif data_class == int:
+                                datatype = rdflib.XSD.integer
+                            elif data_class == float:
+                                datatype = rdflib.XSD.float
+                            elif data_class == bool:
+                                datatype = rdflib.XSD.boolean
+                            else:
+                                datatype = rdflib.XSD.string
+
+                            g.add((subject, URIRef(prop_uri), Literal(v, datatype=datatype)))
+
+                elif rdf_data["datatype"] == URIRef:
                     g.add((subject, URIRef(prop_uri), URIRef(rdf_data["value"])))
                 else:
                     g.add((subject, URIRef(prop_uri), Literal(rdf_data["value"], datatype=rdf_data["datatype"])))
@@ -279,7 +396,7 @@ class GraphObject(metaclass=GraphObjectMeta):
         return g.serialize(format=format)
 
     @classmethod
-    def from_json(cls, json_map: str) -> G:
+    def from_json(cls, json_map: str, *, modified=False) -> G:
 
         from vital_ai_vitalsigns.vitalsigns import VitalSigns
 
@@ -293,7 +410,7 @@ class GraphObject(metaclass=GraphObjectMeta):
 
         graph_object_cls = registry.vitalsigns_classes[type_uri]
 
-        graph_object = graph_object_cls()
+        graph_object = graph_object_cls(modified=modified)
 
         for key, value in data.items():
             if key == 'type':
@@ -309,20 +426,20 @@ class GraphObject(metaclass=GraphObjectMeta):
         return graph_object
 
     @classmethod
-    def from_json_list(cls, json_map_list: str) -> List[G]:
+    def from_json_list(cls, json_map_list: str, *, modified=False) -> List[G]:
 
         graph_object_list = []
 
         data_list = json.loads(json_map_list)
 
         for data in data_list:
-            graph_object = cls.from_json(data)
+            graph_object = cls.from_json(data, modified=modified)
             graph_object_list.append(graph_object)
 
         return graph_object_list
 
     @classmethod
-    def from_rdf(cls, rdf_string: str) -> G:
+    def from_rdf(cls, rdf_string: str, *, modified=False) -> G:
 
         from vital_ai_vitalsigns.vitalsigns import VitalSigns
         from vital_ai_vitalsigns.model.VITAL_GraphContainerObject import VITAL_GraphContainerObject
@@ -352,9 +469,11 @@ class GraphObject(metaclass=GraphObjectMeta):
 
         graph_object_cls = registry.vitalsigns_classes[type_uri]
 
-        graph_object = graph_object_cls()
+        graph_object = graph_object_cls(modified=modified)
 
         graph_object.URI = subject_uri
+
+        multi_valued_props = []
 
         for subject, predicate, obj_value in g:
 
@@ -366,6 +485,26 @@ class GraphObject(metaclass=GraphObjectMeta):
             if predicate == 'http://vital.ai/ontology/vital-core#URIProp':
                 continue
 
+            trait_cls = registry.vitalsigns_property_classes[predicate]
+
+            multiple_values = trait_cls.multiple_values
+
+            if multiple_values is True:
+
+                if predicate in multi_valued_props:
+                    continue
+
+                value_list = []
+
+                for multi_value_subject, multi_value_predicate, multi_obj_value in g.triples((subject, URIRef(predicate), None)):
+                    value_list.append(multi_obj_value)
+
+                setattr(graph_object, predicate, value_list)
+
+                multi_valued_props.append(predicate)
+
+                continue
+
             if isinstance(obj_value, Literal):
                 value = obj_value.toPython()
             elif isinstance(obj_value, URIRef):
@@ -373,10 +512,13 @@ class GraphObject(metaclass=GraphObjectMeta):
 
             setattr(graph_object, predicate, value)
 
+        if modified is False:
+            graph_object.mark_serialized()
+
         return graph_object
 
     @classmethod
-    def from_triples(cls, triples: Generator[Tuple, None, None]) -> 'G':
+    def from_triples(cls, triples: Generator[Tuple, None, None], *, modified=False) -> 'G':
 
         from vital_ai_vitalsigns.vitalsigns import VitalSigns
 
@@ -407,7 +549,7 @@ class GraphObject(metaclass=GraphObjectMeta):
 
         graph_object_cls = registry.vitalsigns_classes[type_uri]
 
-        graph_object = graph_object_cls()
+        graph_object = graph_object_cls(modified=modified)
 
         graph_object.URI = subject_uri
 
@@ -429,10 +571,13 @@ class GraphObject(metaclass=GraphObjectMeta):
 
             setattr(graph_object, predicate, value)
 
+        if modified is False:
+            graph_object.mark_serialized()
+
         return graph_object
 
     @classmethod
-    def from_rdf_list(cls, rdf_string: str) -> List[G]:
+    def from_rdf_list(cls, rdf_string: str, *, modified=False) -> List[G]:
 
         g = Graph()
 
@@ -454,7 +599,7 @@ class GraphObject(metaclass=GraphObjectMeta):
         graph_object_list = []
 
         for rdf_split in split_rdf_strings:
-            graph_object = cls.from_rdf(rdf_split)
+            graph_object = cls.from_rdf(rdf_split, modified=modified)
             graph_object_list.append(graph_object)
 
         return graph_object_list

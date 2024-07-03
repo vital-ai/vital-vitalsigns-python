@@ -1,3 +1,4 @@
+from vital_ai_vitalsigns.model.datatype.GeoLocation import GeoLocation
 from vital_ai_vitalsigns.model.properties.IProperty import IProperty
 
 
@@ -8,14 +9,46 @@ class GeoLocationProperty(IProperty):
         str_value = str(value)
         super().__init__(str_value)
 
+    @classmethod
+    def get_data_class(cls):
+        return GeoLocation
+
     def __str__(self):
         return str(self.value)
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if isinstance(other, str):
             return self.value == other
         elif isinstance(other, GeoLocationProperty):
             return self.value == other.value
+        return NotImplemented
+
+    def __lt__(self, other) -> bool:
+        if isinstance(other, str):
+            return self.value < other
+        elif isinstance(other, GeoLocationProperty):
+            return self.value < other.value
+        return NotImplemented
+
+    def __le__(self, other) -> bool:
+        if isinstance(other, str):
+            return self.value <= other
+        elif isinstance(other, GeoLocationProperty):
+            return self.value <= other.value
+        return NotImplemented
+
+    def __gt__(self, other) -> bool:
+        if isinstance(other, str):
+            return self.value > other
+        elif isinstance(other, GeoLocationProperty):
+            return self.value > other.value
+        return NotImplemented
+
+    def __ge__(self, other) -> bool:
+        if isinstance(other, str):
+            return self.value >= other
+        elif isinstance(other, GeoLocationProperty):
+            return self.value >= other.value
         return NotImplemented
 
     def __rshift__(self, other):

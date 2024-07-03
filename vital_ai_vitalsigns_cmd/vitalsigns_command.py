@@ -1,13 +1,20 @@
 import argparse
 import os
 import sys
+from vital_ai_vitalsigns.utils.find_vitalhome import find_vitalhome
 
 
 class VitalSignsCommand:
     def __init__(self, args):
         self.parser = self.create_parser()
         self.args = self.parser.parse_args()
-        self.vital_home = os.getenv('VITAL_HOME', '')
+
+        vital_home = find_vitalhome()
+
+        if vital_home:
+            self.vital_home = vital_home
+        else:
+            self.vital_home = ''
 
     def create_parser(self):
 

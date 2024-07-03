@@ -6,7 +6,7 @@ class OtherProperty(IProperty):
         str_value = str(value)
         super().__init__(str_value)
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         return bool(self.value)
 
     def __getattr__(self, attr):

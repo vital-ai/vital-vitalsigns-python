@@ -4,6 +4,7 @@ from abc import ABC
 class PropertyTrait(ABC):
     namespace = "undef#"
     local_name = "undef"
+    multiple_values = False
 
     @classmethod
     def get_uri(cls) -> str:
@@ -21,3 +22,8 @@ class PropertyTrait(ABC):
 
         # Lowercase the first letter and return
         return name[0].lower() + name[1:] if name else name
+
+    @classmethod
+    def get_multiple_values(cls) -> bool:
+        """Returns whether this trait may contain multiple values."""
+        return cls.multiple_values

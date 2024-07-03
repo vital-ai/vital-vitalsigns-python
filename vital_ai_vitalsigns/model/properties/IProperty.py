@@ -9,8 +9,15 @@ class IProperty:
     def __str__(self):
         return str(self.value)
 
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
     def get_value(self):
         return self.value
+
+    @classmethod
+    def get_data_class(cls):
+        return str
 
     def to_json(self):
         return {"value": self.value}

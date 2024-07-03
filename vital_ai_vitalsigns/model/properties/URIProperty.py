@@ -8,7 +8,11 @@ class URIProperty(IProperty):
         str_value = str(value)
         super().__init__(str_value)
 
-    def __bool__(self):
+    @classmethod
+    def get_data_class(cls):
+        return URIRef
+
+    def __bool__(self) -> bool:
         return bool(self.value)
 
     def __getattr__(self, attr):
@@ -17,11 +21,39 @@ class URIProperty(IProperty):
     def __str__(self):
         return str(self.value)
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if isinstance(other, str):
             return self.value == other
         elif isinstance(other, URIProperty):
             return self.value == other.value
+        return NotImplemented
+
+    def __lt__(self, other) -> bool:
+        if isinstance(other, str):
+            return self.value < other
+        elif isinstance(other, URIProperty):
+            return self.value < other.value
+        return NotImplemented
+
+    def __le__(self, other) -> bool:
+        if isinstance(other, str):
+            return self.value <= other
+        elif isinstance(other, URIProperty):
+            return self.value <= other.value
+        return NotImplemented
+
+    def __gt__(self, other) -> bool:
+        if isinstance(other, str):
+            return self.value > other
+        elif isinstance(other, URIProperty):
+            return self.value > other.value
+        return NotImplemented
+
+    def __ge__(self, other) -> bool:
+        if isinstance(other, str):
+            return self.value >= other
+        elif isinstance(other, URIProperty):
+            return self.value >= other.value
         return NotImplemented
 
     def __rshift__(self, other):

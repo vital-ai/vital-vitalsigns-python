@@ -16,7 +16,16 @@ setup(
             'vital_ai_vitalsigns_core = vital_ai_vitalsigns_core'
         ]
     },
-    scripts=['bin/vitalsigns', 'bin/vitalsigns_python'],
+    scripts=[
+        'bin/vitalblockcat'
+        'bin/vitalsigns',
+        'bin/vitalsigns_python',
+        'bin/vitalservice',
+        'bin/vitalservice_delete'
+        'bin/vitalservice_export'
+        'bin/vitalservice_import'
+        'bin/vitalprovenance'
+    ],
     package_data={
         '': ['*.pyi'],
         'vital_ai_vitalsigns': ['models/**'],
@@ -24,6 +33,7 @@ setup(
     },
     license='Apache License 2.0',
     install_requires=[
+        'python-dotenv>=1.0.1',
         'rdflib==7.0.0',
         'PyYAML>=6.0.1',
         'numpy>=1.26.4',

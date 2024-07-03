@@ -11,7 +11,11 @@ class DateTimeProperty(IProperty):
         else:
             raise TypeError(f"Unsupported type for datetime property: {type(value).__name__}")
 
-    def __bool__(self):
+    @classmethod
+    def get_data_class(cls):
+        return datetime
+
+    def __bool__(self) -> bool:
         return self.value is not None
 
     def __getattr__(self, attr):
@@ -20,11 +24,39 @@ class DateTimeProperty(IProperty):
     def __str__(self):
         return self.value.strftime('%Y-%m-%d')
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if isinstance(other, datetime):
             return self.value == other
         elif isinstance(other, DateTimeProperty):
             return self.value == other.value
+        return NotImplemented
+
+    def __lt__(self, other) -> bool:
+        if isinstance(other, datetime):
+            return self.value < other
+        elif isinstance(other, DateTimeProperty):
+            return self.value < other.value
+        return NotImplemented
+
+    def __le__(self, other) -> bool:
+        if isinstance(other, datetime):
+            return self.value <= other
+        elif isinstance(other, DateTimeProperty):
+            return self.value <= other.value
+        return NotImplemented
+
+    def __gt__(self, other) -> bool:
+        if isinstance(other, datetime):
+            return self.value > other
+        elif isinstance(other, DateTimeProperty):
+            return self.value > other.value
+        return NotImplemented
+
+    def __ge__(self, other) -> bool:
+        if isinstance(other, datetime):
+            return self.value >= other
+        elif isinstance(other, DateTimeProperty):
+            return self.value >= other.value
         return NotImplemented
 
     def __rshift__(self, other):

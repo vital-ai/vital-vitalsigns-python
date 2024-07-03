@@ -1,0 +1,3 @@
+#!/bin/bash
+
+python -m vital_ai_vitalprovenance_cmd.vitalprovenance_command "$@"

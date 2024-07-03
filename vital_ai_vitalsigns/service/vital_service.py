@@ -1,4 +1,4 @@
-from typing import List, TypeVar, Dict
+from typing import List, TypeVar, Dict, Optional
 from vital_ai_vitalsigns.query.result_list import ResultList
 from vital_ai_vitalsigns.service.base_service import BaseService
 from vital_ai_vitalsigns.service.graph.graph_service import VitalGraphService
@@ -8,7 +8,7 @@ from vital_ai_vitalsigns.service.vital_service_status import VitalServiceStatus
 import threading
 import time
 
-G = TypeVar('G', bound='GraphObject')
+G = TypeVar('G', bound=Optional['GraphObject'])
 
 # todo have top-level namespace so multiple vital services can co-exist
 

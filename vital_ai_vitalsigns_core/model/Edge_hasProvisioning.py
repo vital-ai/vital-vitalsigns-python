@@ -22,6 +22,6 @@ class Edge_hasProvisioning(VITAL_TaxonomyEdge):
         return super().get_allowed_properties() + Edge_hasProvisioning._allowed_properties
 
     @classmethod
-    def get_class_uri(self) -> str:
+    def get_class_uri(cls) -> str:
         return 'http://vital.ai/ontology/vital-core#Edge_hasProvisioning'
 

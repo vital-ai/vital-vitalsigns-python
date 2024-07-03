@@ -6,7 +6,11 @@ class DoubleProperty(IProperty):
         double_value = float(value)
         super().__init__(double_value)
 
-    def __bool__(self):
+    @classmethod
+    def get_data_class(cls):
+        return float
+
+    def __bool__(self) -> bool:
         return bool(self.value)
 
     def __getattr__(self, attr):
@@ -15,11 +19,39 @@ class DoubleProperty(IProperty):
     def __float__(self):
         return float(self.value)
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if isinstance(other, float):
             return self.value == other
         elif isinstance(other, DoubleProperty):
             return self.value == other.value
+        return NotImplemented
+
+    def __lt__(self, other) -> bool:
+        if isinstance(other, float):
+            return self.value < other
+        elif isinstance(other, DoubleProperty):
+            return self.value < other.value
+        return NotImplemented
+
+    def __le__(self, other) -> bool:
+        if isinstance(other, float):
+            return self.value <= other
+        elif isinstance(other, DoubleProperty):
+            return self.value <= other.value
+        return NotImplemented
+
+    def __gt__(self, other) -> bool:
+        if isinstance(other, float):
+            return self.value > other
+        elif isinstance(other, DoubleProperty):
+            return self.value > other.value
+        return NotImplemented
+
+    def __ge__(self, other) -> bool:
+        if isinstance(other, float):
+            return self.value >= other
+        elif isinstance(other, DoubleProperty):
+            return self.value >= other.value
         return NotImplemented
 
     def __rshift__(self, other):

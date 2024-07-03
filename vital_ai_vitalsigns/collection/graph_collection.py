@@ -1,11 +1,9 @@
 from collections.abc import MutableSequence
 from vital_ai_vitalsigns.collection.rdf_collection_impl import RdfCollectionImpl
-from vital_ai_vitalsigns.model.GraphObject import GraphObject
-from vital_ai_vitalsigns.model.VITAL_Edge import VITAL_Edge
 from vital_ai_vitalsigns.query.result_element import ResultElement
 from vital_ai_vitalsigns.query.result_list import ResultList
-from vital_ai_vitalsigns.vitalsigns import VitalSigns
 from typing import Optional, TypeVar, List, Iterator
+from vital_ai_vitalsigns.model.GraphObject import GraphObject
 
 G = TypeVar('G', bound=Optional[GraphObject])
 
@@ -13,6 +11,8 @@ G = TypeVar('G', bound=Optional[GraphObject])
 class GraphCollection(MutableSequence[G]):
 
     def __init__(self, data: List[G] | None = None, use_rdfstore: bool = True, use_vectordb: bool = True, embedding_model_id: str = 'paraphrase-MiniLM-L3-v2'):
+
+        from vital_ai_vitalsigns.vitalsigns import VitalSigns
 
         self._use_rdfstore = use_rdfstore
         self._use_vectordb = use_vectordb
@@ -25,6 +25,10 @@ class GraphCollection(MutableSequence[G]):
 
         self._uri_map = {}
         self._vector_properties = {}
+
+        vs = VitalSigns()
+
+        vs.include_graph_collection(self)
 
         if use_vectordb is True:
             from vital_ai_vitalsigns.collection.vector_collection_impl import VectorCollectionImpl
@@ -57,6 +61,14 @@ class GraphCollection(MutableSequence[G]):
 
                     # todo index data
 
+    def __del__(self):
+
+        from vital_ai_vitalsigns.vitalsigns import VitalSigns
+
+        vs = VitalSigns()
+        vs.remove_graph_collection(self)
+        # MutableSequence does not have a del
+
     def __len__(self):
         return len(self._data)
 
@@ -77,12 +89,19 @@ class GraphCollection(MutableSequence[G]):
         if hasattr(value, 'URI'):
             self._uri_map[value.URI] = value
 
+        value.include_on_graph(self)
+
         self._data[index] = value
 
     def __delitem__(self, index):
 
         if hasattr(self._data[index], 'URI'):
             self._uri_map.pop(self._data[index].URI, None)
+
+        value = self._data[index]
+
+        if value:
+            value.remove_from_graph(self)
 
         del self._data[index]
 
@@ -95,6 +114,8 @@ class GraphCollection(MutableSequence[G]):
 
         if hasattr(value, 'URI'):
             self._uri_map[value.URI] = value
+
+        value.include_on_graph(self)
 
         self._data.insert(index, value)
 
@@ -118,6 +139,11 @@ class GraphCollection(MutableSequence[G]):
                 if self._use_vectordb is True:
                     self._vectordb.remove_doc(uri)
 
+                value = self._data[i]
+
+                if value:
+                    value.remove_from_graph(self)
+
                 return self._data.pop(i)  # Removes and returns the item
 
         if default is not None:
@@ -131,10 +157,14 @@ class GraphCollection(MutableSequence[G]):
 
     def add(self, obj: G):
 
+        from vital_ai_vitalsigns.vitalsigns import VitalSigns
+
         if not isinstance(obj, GraphObject):
             raise ValueError("Item must be instances of GraphObject or its subclasses")
 
         self.pop(obj.URI)
+
+        obj.include_on_graph(self)
 
         self._data.append(obj)
 
@@ -175,12 +205,17 @@ class GraphCollection(MutableSequence[G]):
 
     def add_objects(self, objects: List[G]):
 
+        from vital_ai_vitalsigns.vitalsigns import VitalSigns
+
         if not all(isinstance(obj, GraphObject) for obj in objects):
             raise ValueError("All items must be instances of GraphObject or its subclasses")
 
         for obj in objects:
 
             self.pop(obj.URI)
+
+            obj.include_on_graph(self)
+
             self._data.append(obj)
 
             if self._use_vectordb is True:
@@ -246,6 +281,9 @@ class GraphCollection(MutableSequence[G]):
 
         # Iterate in reverse order to avoid altering the indexes of items to be removed
         for i in sorted(to_remove_indexes, reverse=True):
+            value = self._data[i]
+            if value:
+                value.remove_from_graph(self)
             del self._data[i]
 
     def set_vector_properties(self, class_uri, property_uris: List):
@@ -267,10 +305,14 @@ class GraphCollection(MutableSequence[G]):
         return list(self._vector_properties.keys())
 
     def get_edges_incoming(self, uri: str) -> List[G]:
+        from vital_ai_vitalsigns.model.VITAL_Edge import VITAL_Edge
+
         incoming_edges = [item for item in self._data if isinstance(item, VITAL_Edge) and item.edgeDestination == uri]
         return incoming_edges
 
     def get_edges_outgoing(self, uri: str) -> List[G]:
+        from vital_ai_vitalsigns.model.VITAL_Edge import VITAL_Edge
+
         outgoing_edges = [item for item in self._data if isinstance(item, VITAL_Edge) and item.edgeSource == uri]
         return outgoing_edges
 
@@ -278,6 +320,8 @@ class GraphCollection(MutableSequence[G]):
         """
         Return the node objects that have an outgoing edge to the given URI.
         """
+        from vital_ai_vitalsigns.model.VITAL_Edge import VITAL_Edge
+
         # Use a set to avoid duplicates and collect URIs of source nodes
         incoming_node_uris = {item.edgeSource for item in self._data if
                               isinstance(item, VITAL_Edge) and item.edgeDestination == uri}
@@ -289,12 +333,16 @@ class GraphCollection(MutableSequence[G]):
         """
         Return the node objects that are the destination of an outgoing edge from the given URI.
         """
+        from vital_ai_vitalsigns.model.VITAL_Edge import VITAL_Edge
+
         outgoing_node_uris = {item.edgeDestination for item in self._data if
                               isinstance(item, VITAL_Edge) and item.edgeSource == uri}
         outgoing_nodes = [self.get(node_uri) for node_uri in outgoing_node_uris]
         return [node for node in outgoing_nodes if node is not None]  # Filter out any None results
 
     def search(self, query: str, class_uri: str = None, limit: int = 10):
+
+        from vital_ai_vitalsigns.vitalsigns import VitalSigns
 
         vs = VitalSigns()
 
@@ -330,6 +378,8 @@ class GraphCollection(MutableSequence[G]):
 
     def to_json(self) -> str:
 
+        from vital_ai_vitalsigns.vitalsigns import VitalSigns
+
         obj_list = []
 
         for obj in self:
@@ -342,6 +392,8 @@ class GraphCollection(MutableSequence[G]):
         return json_string
 
     def to_rdf(self) -> str:
+
+        from vital_ai_vitalsigns.vitalsigns import VitalSigns
 
         obj_list = []
 

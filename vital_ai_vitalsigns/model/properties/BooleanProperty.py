@@ -6,14 +6,46 @@ class BooleanProperty(IProperty):
         bool_value = bool(value)
         super().__init__(bool_value)
 
-    def __bool__(self):
+    @classmethod
+    def get_data_class(cls):
+        return bool
+
+    def __bool__(self) -> bool:
         return bool(self.value)
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if isinstance(other, bool):
             return self.value == other
         elif isinstance(other, BooleanProperty):
             return self.value == other.value
+        return NotImplemented
+
+    def __lt__(self, other) -> bool:
+        if isinstance(other, bool):
+            return self.value < other
+        elif isinstance(other, BooleanProperty):
+            return self.value < other.value
+        return NotImplemented
+
+    def __le__(self, other) -> bool:
+        if isinstance(other, bool):
+            return self.value <= other
+        elif isinstance(other, BooleanProperty):
+            return self.value <= other.value
+        return NotImplemented
+
+    def __gt__(self, other) -> bool:
+        if isinstance(other, bool):
+            return self.value > other
+        elif isinstance(other, BooleanProperty):
+            return self.value > other.value
+        return NotImplemented
+
+    def __ge__(self, other) -> bool:
+        if isinstance(other, bool):
+            return self.value >= other
+        elif isinstance(other, BooleanProperty):
+            return self.value >= other.value
         return NotImplemented
 
     def __rshift__(self, other):

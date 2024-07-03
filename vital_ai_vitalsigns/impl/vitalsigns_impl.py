@@ -1,17 +1,20 @@
 import pkgutil
 import importlib
 from datetime import datetime
+from typing import TypeVar, Type
 from urllib.parse import urlparse
-
 from vital_ai_vitalsigns.model.properties.BooleanProperty import BooleanProperty
 from vital_ai_vitalsigns.model.properties.DateTimeProperty import DateTimeProperty
 from vital_ai_vitalsigns.model.properties.DoubleProperty import DoubleProperty
 from vital_ai_vitalsigns.model.properties.IntegerProperty import IntegerProperty
+from vital_ai_vitalsigns.model.properties.MultiValueProperty import MultiValueProperty
 from vital_ai_vitalsigns.model.properties.StringProperty import StringProperty
 from vital_ai_vitalsigns.model.properties.URIProperty import URIProperty
-
+from vital_ai_vitalsigns.model.trait.PropertyTrait import PropertyTrait
 
 # from vital_ai_vitalsigns.model.trait.PropertyTrait import PropertyTrait
+
+T = TypeVar('T', bound=PropertyTrait)
 
 
 class VitalSignsImpl:
@@ -24,14 +27,27 @@ class VitalSignsImpl:
         if not trait_class:
             raise ValueError(f"No trait found with URI: {trait_uri}")
 
-        class CombinedProperty(property_class, trait_class):
-            def get_uri(self):
-                return super().get_uri()
+        multiple_values = trait_class.multiple_values
 
-            def __hash__(self):
-                return hash((self.get_uri(), self.value))
+        if not multiple_values:
 
-        return CombinedProperty(value)
+            class CombinedProperty(property_class, trait_class):
+                def get_uri(self):
+                    return super().get_uri()
+
+                def __hash__(self):
+                    return hash((self.get_uri(), self.value))
+
+            return CombinedProperty(value)
+        else:
+            class CombinedProperty(MultiValueProperty, trait_class):
+                def get_uri(self):
+                    return super().get_uri()
+
+                def __hash__(self):
+                    return hash((self.get_uri(), self.value))
+
+            return CombinedProperty(value, property_class)
 
     @classmethod
     def create_extern_property(cls, value):
@@ -46,7 +62,7 @@ class VitalSignsImpl:
         return property_instance
 
     @classmethod
-    def get_trait_class_from_uri(cls, uri):
+    def get_trait_class_from_uri(cls, uri) -> Type[T]:
 
         from vital_ai_vitalsigns.vitalsigns import VitalSigns
 

@@ -4,7 +4,6 @@ import requests
 from SPARQLWrapper import SPARQLWrapper, DIGEST, JSON, POST
 from rdflib import Graph, URIRef, BNode, Literal, RDF
 from requests.auth import HTTPDigestAuth
-
 from vital_ai_vitalsigns.collection.graph_collection import GraphCollection
 from vital_ai_vitalsigns.ontology.ontology import Ontology
 from vital_ai_vitalsigns.query.result_list import ResultList
@@ -1092,8 +1091,8 @@ OFFSET {offset}
             # rdf_triple.rdfObject = result['o']["value"]
 
             rdf_triple.rdfSubject = str(s)  # blank node subject uri
-            rdf_triple.rdfPredicate = str(p) # property from binding
-            rdf_triple.rdfObject = str(o) # uri of matching object
+            rdf_triple.rdfPredicate = str(p)  # property from binding
+            rdf_triple.rdfObject = str(o)  # uri of matching object
 
             result_list.add_result(rdf_triple)
 
