@@ -1,0 +1,31 @@
+# schema file for vector vitalservice
+# this is used to override using the ontology directly for the schema
+# which can be used in place of/or until the ontology has vector annotations
+# the vitalservice config file specifies the embedding models for classes (collections)
+# so either the ontology or schema must define collections/classes and the
+# vitalservice config info augments this
+
+name: SampleSchema
+type: Weaviate
+namespace: Vital
+version: 1.0
+
+collections:
+  # combined with namespace using x: VitalxCollectionName
+  - name: CollectionName
+    description: "Description"
+    # URI for the class in the ontology
+    class_uri: urn:collection_class_uri
+    named_vectors:
+      - name: vector_name
+    properties:
+      - name: uri
+        property_uri: urn:property_uri
+        type: string
+        named_vectors:
+          - vector_name
+        description: "Description"
+    references:
+      - name: referenceName
+        target_collection: OtherCollectionName
+        description: "Description"

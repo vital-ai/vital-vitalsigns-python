@@ -9,6 +9,8 @@ import threading
 import time
 from vital_ai_vitalsigns.ontology.vitalsigns_ontology_manager import VitalSignsOntologyManager
 from vital_ai_vitalsigns.service.vitalservice_manager import VitalServiceManager
+from vital_ai_vitalsigns.utils.find_vitalhome import find_vitalhome
+from vital_ai_vitalsigns.config.vitalsigns_config import VitalSignsConfigLoader, VitalSignsConfig
 
 
 class VitalSignsMeta(type):
@@ -36,7 +38,13 @@ class VitalSigns(metaclass=VitalSignsMeta):
         self._background_thread = None
         self._running = False
 
+        vital_home = find_vitalhome()
+
+        self._vital_home = vital_home
+
         self._vitalservice_manager = VitalServiceManager()
+
+        self._vitalsigns_config = VitalSignsConfigLoader.vitalsigns_load_config(vital_home)
 
         if background_task:
             self.start()
@@ -51,6 +59,17 @@ class VitalSigns(metaclass=VitalSignsMeta):
         while self._running:
             self.cleanup_task()
             time.sleep(60)
+
+    def get_config(self) -> VitalSignsConfig:
+        return self._vitalsigns_config
+
+    def parse_config(self, yaml_config: str) -> VitalSignsConfig:
+
+        vitalsigns_config = VitalSignsConfigLoader.parse_yaml_config(yaml_config)
+
+        self._vitalsigns_config = vitalsigns_config
+
+        return vitalsigns_config
 
     def start(self):
         if not self._running:

@@ -11,7 +11,7 @@ class VitalServiceExportCommand:
 
     def create_parser(self):
 
-        parser = argparse.ArgumentParser(description="VitalServiceExport Command", add_help=True)
+        parser = argparse.ArgumentParser(prog="vitalservice_export", description="VitalServiceExport Command", add_help=True)
         subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
         help_parser = subparsers.add_parser('help', help="Display help information")

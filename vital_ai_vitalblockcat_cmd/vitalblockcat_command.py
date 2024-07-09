@@ -11,7 +11,7 @@ class VitalBlockCatCommand:
 
     def create_parser(self):
 
-        parser = argparse.ArgumentParser(description="VitalBlockCat Command", add_help=True)
+        parser = argparse.ArgumentParser(prog="vitalblockcat", description="VitalBlockCat Command", add_help=True)
 
         subparsers = parser.add_subparsers(dest="command", help="Available commands")
 

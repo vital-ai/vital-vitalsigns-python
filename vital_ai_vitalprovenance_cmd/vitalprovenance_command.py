@@ -11,7 +11,7 @@ class VitalProvenanceCommand:
 
     def create_parser(self):
 
-        parser = argparse.ArgumentParser(description="VitalProvenance Command", add_help=True)
+        parser = argparse.ArgumentParser(prog="vitalprovenance", description="VitalProvenance Command", add_help=True)
 
         subparsers = parser.add_subparsers(dest="command", help="Available commands")
 

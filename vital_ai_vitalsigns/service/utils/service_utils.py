@@ -8,21 +8,22 @@ from vital_ai_vitalsigns.vitalsigns import VitalSigns
 class ServiceUtils:
     def __init__(self, config_file=None):
 
-        if config_file:
-            self.config_file = config_file
-        else:
-            config_file = ""  # get from vital_home
-            # if not found then error
-
+        # allow overriding config file
         vs = VitalSigns()
 
         vitalservice_manager = vs.get_vitalservice_manager()
 
-        vitalservice_manager.set_config(config_file)
+        if config_file:
+            self.config_file = config_file
+            vitalservice_manager.set_config(config_file)
+        else:
+            # use config file associated with vitalhome
+            pass
 
     def list_services(self):
 
         vs = VitalSigns()
+
         vitalservice_manager = vs.get_vitalservice_manager()
 
         service_names = []
