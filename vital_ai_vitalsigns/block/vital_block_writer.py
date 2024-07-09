@@ -34,7 +34,7 @@ class VitalBlockWriter(VitalBlockIO):
             raise RuntimeError("Header must be written before writing blocks.")
         self.file_handle.write("|\n")
         for obj in block.objects:
-            json_str = json.dumps(obj.data)
+            json_str = obj.to_json(pretty_print=False)
             self.file_handle.write(f"{json_str}\n")
 
     def close(self):

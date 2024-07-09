@@ -220,10 +220,12 @@ class VitalSignsRegistry:
 
         logging.info(f"Package Length: {len(self.vitalsigns_packages)}")
 
-        # for p in self.vitalsigns_packages:
-        #    self.scan_vitalsigns_classes(p)
+        for p in self.vitalsigns_packages:
+            self.scan_vitalsigns_classes(p)
 
-        # """
+        # disable spawning new processes for now until that is more stable
+
+        """
         results = scan_vitalsigns_classes_parallel(self.vitalsigns_packages)
 
         for k, v in results.items():
@@ -235,7 +237,7 @@ class VitalSignsRegistry:
             self.vitalsigns_classes.update(classes)
             self.vitalsigns_property_classes.update(properties)
 
-        # """
+        """
 
         current_time = datetime.now()
 

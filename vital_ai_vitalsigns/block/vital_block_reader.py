@@ -1,7 +1,7 @@
 import json
 from vital_ai_vitalsigns.block.vital_block import VitalBlock
 from vital_ai_vitalsigns.block.vital_block_io import VitalBlockIO
-from vital_ai_vitalsigns.block.vital_block_parallel_reader import VitalBlockParallelReader
+from vital_ai_vitalsigns.model.GraphObject import GraphObject
 
 
 class VitalBlockReader(VitalBlockIO):
@@ -54,26 +54,44 @@ class VitalBlockReader(VitalBlockIO):
         self.started_reading = True
 
         current_block = []
+
         with self._open_file('rt') as file:
-            # Skip header
+
+            after_header = False
+
             for line in file:
+
                 stripped_line = line.strip()
+
                 if stripped_line.startswith('#'):
                     continue  # Skip comment lines
-                elif stripped_line == '|':
+
+                if not after_header:
+                    if stripped_line == '|':
+                        after_header = True
+                    else:
+                        continue
+
+                if stripped_line == '|':
                     if current_block:
                         yield VitalBlock(current_block)
                         current_block = []
                 else:
                     try:
-                        json_obj = json.loads(stripped_line)
-                        current_block.append(json_obj)
+                        # json_obj = json.loads(stripped_line)
+
+                        # go = GraphObject.from_json(stripped_line)
+
+                        current_block.append(stripped_line)
                     except json.JSONDecodeError as e:
                         raise ValueError(f"Failed to parse JSON: {stripped_line}") from e
             if current_block:
                 yield VitalBlock(current_block)  # Yield the last block if any
 
     def get_parallel_readers(self, n):
+
+        from vital_ai_vitalsigns.block.vital_block_parallel_reader import VitalBlockParallelReader
+
         if self.started_reading:
             raise RuntimeError("Cannot create parallel readers after reading has started.")
         file_size = self._get_file_size()

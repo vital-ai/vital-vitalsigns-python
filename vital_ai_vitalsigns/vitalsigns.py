@@ -102,9 +102,12 @@ class VitalSigns(metaclass=VitalSignsMeta):
         del self._graph_object_map[go_id]
 
     def clean_graph_object_map(self):
-        dead_keys = [key for key, weak_obj in self._graph_object_map.items() if weak_obj() is None]
-        for key in dead_keys:
-            del self._graph_object_map[key]
+        try:
+            dead_keys = [key for key, weak_obj in self._graph_object_map.items() if weak_obj() is None]
+            for key in dead_keys:
+                del self._graph_object_map[key]
+        except RuntimeError as e:
+            pass
 
     def include_graph_collection(self, graph_collection: GraphCollection):
         gc_id = id(graph_collection)
@@ -120,9 +123,12 @@ class VitalSigns(metaclass=VitalSignsMeta):
         return gc_set.copy()
 
     def clean_graph_collection_map(self):
-        dead_keys = [key for key, weak_obj in self._graph_collection_map.items() if weak_obj() is None]
-        for key in dead_keys:
-            del self._graph_object_map[key]
+        try:
+            dead_keys = [key for key, weak_obj in self._graph_collection_map.items() if weak_obj() is None]
+            for key in dead_keys:
+                del self._graph_collection_map[key]
+        except RuntimeError as e:
+            pass
 
     def from_json(self, json_map: str, *, modified=False) -> G:
         return GraphObject.from_json(json_map, modified=modified)

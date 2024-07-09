@@ -155,7 +155,7 @@ class GraphCollection(MutableSequence[G]):
     def remove(self, uri, default=None) -> G:
         return self.pop(uri, default)
 
-    def add(self, obj: G):
+    def add(self, obj: G, graph_uri: str = None):
 
         from vital_ai_vitalsigns.vitalsigns import VitalSigns
 
@@ -165,6 +165,9 @@ class GraphCollection(MutableSequence[G]):
         self.pop(obj.URI)
 
         obj.include_on_graph(self)
+
+        if graph_uri:
+            obj.add_graph_uri(graph_uri)
 
         self._data.append(obj)
 

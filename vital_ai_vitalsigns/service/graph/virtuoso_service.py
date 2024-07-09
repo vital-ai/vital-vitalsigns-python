@@ -760,6 +760,68 @@ class VirtuosoGraphService(VitalGraphService):
 
         return result_list
 
+    def get_object_list_bulk(self, object_uri_list: List[str], graph_uri=None, vital_managed=True) -> ResultList:
+
+        vs = VitalSigns()
+
+        if graph_uri is None:
+            raise ValueError("Error: graph_uri is not set.")
+
+        # exception if graph doesn't exist
+        name_graph = self.get_graph(graph_uri)
+
+        values_clause = " ".join(f"<{uri}>" for uri in object_uri_list)
+
+        results = []
+
+        query = f"""
+                SELECT ?s ?p ?o WHERE {{
+            GRAPH <{graph_uri}> {{
+                VALUES ?s {{ {values_clause} }}
+                ?s ?p ?o .
+            }}
+        }}
+        """
+
+        # print(query)
+
+        sparql = SPARQLWrapper(self.sparql_auth_endpoint)
+        sparql.setCredentials(self.username, self.password)
+        sparql.setHTTPAuth(DIGEST)
+
+        sparql.setQuery(query)
+        sparql.setMethod(POST)
+        sparql.setReturnFormat('json')
+
+        try:
+            result = sparql.query().convert()
+            graph = rdflib.Graph()
+
+            for result in result['results']['bindings']:
+                s = rdflib.URIRef(result['s']['value'])
+                p = rdflib.URIRef(result['p']['value'])
+                o = rdflib.URIRef(result['o']['value']) if result['o']['type'] == 'uri' else rdflib.Literal(
+                    result['o']['value'])
+                graph.add((s, p, o))
+
+            unique_subjects = set(graph.subjects())
+
+            for subject_uri in unique_subjects:
+
+                graph_object = vs.from_triples(graph.triples((URIRef(subject_uri), None, None)))
+
+                results.append(graph_object)
+
+        except Exception as e:
+            raise ValueError(f"Error retrieving object list: {str(e)}")
+
+        result_list = ResultList()
+
+        for r in results:
+            result_list.add_result(r)
+
+        return result_list
+
     # delete uri (scoped to all vital service graphs)
     # delete uri list (scoped to all vital service graphs)
     # delete uri (scoped to graph or graph list)
@@ -1057,7 +1119,7 @@ LIMIT {limit}
 OFFSET {offset}
 """
 
-        # print(query)
+        print(query)
 
         sparql = SPARQLWrapper(self.sparql_auth_endpoint)
         sparql.setCredentials(self.username, self.password)

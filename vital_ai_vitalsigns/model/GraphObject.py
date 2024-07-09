@@ -56,6 +56,7 @@ class GraphObject(metaclass=GraphObjectMeta):
         super().__setattr__('_properties', {})
         super().__setattr__('_extern_properties', {})
         super().__setattr__('_graph_collection_set', set())
+        super().__setattr__('_graph_uri_set', set())
         super().__setattr__('_modified', modified)
         super().__setattr__('_object_hash', "")
 
@@ -238,6 +239,18 @@ class GraphObject(metaclass=GraphObjectMeta):
 
         return go_map.items()
 
+    def graph_uri_set(self) -> Set[str]:
+        return self._graph_uri_set.copy()
+
+    def add_graph_uri(self, uri: str):
+        self._graph_uri_set.add(uri)
+
+    def remove_graph_uri(self, uri: str):
+        self._graph_uri_set.remove(uri)
+
+    def clear_graph_uri(self):
+        self._graph_uri_set.clear()
+
     def include_on_graph(self, graph_collection: GC):
         self._graph_collection_set.add(graph_collection)
 
@@ -289,7 +302,7 @@ class GraphObject(metaclass=GraphObjectMeta):
     def get_class_uri(cls) -> str:
         pass
 
-    def to_json(self) -> str:
+    def to_json(self, pretty_print=True) -> str:
 
         from vital_ai_vitalsigns.model.VITAL_GraphContainerObject import VITAL_GraphContainerObject
 
@@ -314,7 +327,12 @@ class GraphObject(metaclass=GraphObjectMeta):
 
         serializable_dict['types'] = [class_uri]
 
-        return json.dumps(serializable_dict, indent=2, cls=VitalSignsEncoder)
+        if pretty_print:
+            json_string = json.dumps(serializable_dict, indent=2, cls=VitalSignsEncoder)
+        else:
+            json_string = json.dumps(serializable_dict, indent=None, cls=VitalSignsEncoder)
+
+        return json_string
 
     def to_rdf(self, format='nt', graph_uri: str = None) -> str:
 

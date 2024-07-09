@@ -17,13 +17,13 @@ setup(
         ]
     },
     scripts=[
-        'bin/vitalblockcat'
+        'bin/vitalblockcat',
         'bin/vitalsigns',
         'bin/vitalsigns_python',
         'bin/vitalservice',
-        'bin/vitalservice_delete'
-        'bin/vitalservice_export'
-        'bin/vitalservice_import'
+        'bin/vitalservice_delete',
+        'bin/vitalservice_export',
+        'bin/vitalservice_import',
         'bin/vitalprovenance'
     ],
     package_data={
