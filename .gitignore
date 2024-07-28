@@ -13,5 +13,14 @@ config/vitalsigns_config.yaml
 
 vitalhome/**/*.yaml
 
+vital_home_test/domain-python/*/build/*
+vital_home_test/domain-python/*/dist/*
+vital_home_test/domain-python/*/*.egg-info/*
+
+vital_home_test/domain-python/vital-aimp-python/com_vitalai_aimp_domain/*
+
+
+
+
 
 

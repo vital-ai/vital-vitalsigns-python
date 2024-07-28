@@ -22,6 +22,21 @@ class IProperty:
     def to_json(self):
         return {"value": self.value}
 
+    @classmethod
+    def get_rdf_datatype(cls, value):
+        if isinstance(value, datetime):
+            datatype = rdflib.XSD.dateTime
+        elif isinstance(value, int):
+            datatype = rdflib.XSD.integer
+        elif isinstance(value, float):
+            datatype = rdflib.XSD.float
+        elif isinstance(value, bool):
+            datatype = rdflib.XSD.boolean
+        else:
+            datatype = rdflib.XSD.string
+        datatype
+
+
     def to_rdf(self):
         if isinstance(self.value, datetime):
             value = self.value.isoformat()

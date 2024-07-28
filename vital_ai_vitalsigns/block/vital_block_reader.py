@@ -7,13 +7,14 @@ from vital_ai_vitalsigns.model.GraphObject import GraphObject
 class VitalBlockReader(VitalBlockIO):
     acceptable_versions = {'1.0.0'}
 
-    def __init__(self, file):
+    def __init__(self, file, *, triples_only=False):
         super().__init__(file)
         self.started_reading = False
         self.encoding = None
         self.version = None
         self.ontologies = []
         self.metadata = {}
+        self.triples_only = triples_only
         self._read_header()
 
     def _read_header(self):
@@ -79,9 +80,7 @@ class VitalBlockReader(VitalBlockIO):
                 else:
                     try:
                         # json_obj = json.loads(stripped_line)
-
                         # go = GraphObject.from_json(stripped_line)
-
                         current_block.append(stripped_line)
                     except json.JSONDecodeError as e:
                         raise ValueError(f"Failed to parse JSON: {stripped_line}") from e
@@ -97,7 +96,10 @@ class VitalBlockReader(VitalBlockIO):
         file_size = self._get_file_size()
         positions = self._calculate_positions(file_size, n)
         unique_positions = self._find_unique_positions(positions)
-        return [VitalBlockParallelReader(self.file, start, end) for start, end in unique_positions]
+        parallel_list = [VitalBlockParallelReader(self.file, start, end, num, triples_only=self.triples_only) for num, (start, end) in enumerate(unique_positions)]
+        first_reader = parallel_list[0]
+        first_reader.first = True
+        return parallel_list
 
     def _calculate_positions(self, file_size, n):
         block_size = file_size // n
@@ -109,14 +111,21 @@ class VitalBlockReader(VitalBlockIO):
         seen_blocks = set()
 
         with self._open_file('rb') as file:
+
             for start, end in positions:
                 file.seek(start)
                 self._skip_to_next_block(file)
                 start_pos = file.tell()
 
-                if start_pos not in seen_blocks:
-                    seen_blocks.add(start_pos)
-                    unique_positions.append((start_pos, end))
+                seen_blocks.add(start_pos)
+
+                file.seek(end)
+
+                self._skip_to_next_block(file)
+
+                end_pos = file.tell()
+
+                unique_positions.append((start_pos, end_pos))
 
         return unique_positions
 

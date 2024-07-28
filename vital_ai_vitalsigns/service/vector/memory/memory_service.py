@@ -1,0 +1,4 @@
+
+
+class VectorMemoryService:
+    pass

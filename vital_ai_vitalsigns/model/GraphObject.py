@@ -4,14 +4,29 @@ from abc import ABC, abstractmethod
 import json
 from datetime import datetime
 from typing import TypeVar, List, Generator, Tuple, Optional, Set
+from urllib.parse import urlparse
+
 import rdflib
-from rdflib import Graph, Literal, URIRef, RDF
+from rdflib import Graph, Literal, URIRef, RDF, Dataset
 from vital_ai_vitalsigns.impl.vitalsigns_impl import VitalSignsImpl
+from vital_ai_vitalsigns.model.properties.IProperty import IProperty
 from vital_ai_vitalsigns.model.trait.PropertyTrait import PropertyTrait
 from vital_ai_vitalsigns.model.properties.BooleanProperty import BooleanProperty
 from vital_ai_vitalsigns.model.properties.LongProperty import LongProperty
 from vital_ai_vitalsigns.model.properties.StringProperty import StringProperty
 from vital_ai_vitalsigns.model.properties.URIProperty import URIProperty
+from functools import wraps
+from functools import lru_cache
+from rdflib.term import _is_valid_uri
+
+
+def cacheable_method(method):
+    @lru_cache(None)
+    @wraps(method)
+    def cached_method(*args, **kwargs):
+        return method(*args, **kwargs)
+    cached_method._is_cacheable = True
+    return cached_method
 
 
 class VitalSignsEncoder(json.JSONEncoder):
@@ -33,11 +48,21 @@ class AttributeComparisonProxy:
 
 
 class GraphObjectMeta(type):
+    def __init__(cls, name, bases, dct):
+        super().__init__(name, bases, dct)
+        for base in bases:
+            for attr_name, attr_value in base.__dict__.items():
+                if callable(attr_value) and getattr(attr_value, '_is_cacheable', False):
+                    if attr_name in dct and callable(dct[attr_name]):
+                        setattr(cls, attr_name, cacheable_method(dct[attr_name]))
+
     def __setattr__(self, name, value):
         print(f"Setting class attribute {name} to {value}")
         super().__setattr__(name, value)
 
     def __getattr__(self, name):
+        if name.startswith('__') and name.endswith('__'):
+            print(f"Getting internal class attribute: {name}")
         return AttributeComparisonProxy(self, name)
 
 
@@ -49,6 +74,7 @@ class GraphObject(metaclass=GraphObjectMeta):
     _allowed_properties = []
 
     @classmethod
+    @cacheable_method
     def get_allowed_properties(cls):
         return GraphObject._allowed_properties
 
@@ -81,7 +107,7 @@ class GraphObject(metaclass=GraphObjectMeta):
             # print(ex)
             pass
 
-    def __setattr__(self, name, value) -> bool:
+    def __setattr__(self, name, value):
 
         from vital_ai_vitalsigns.model.VITAL_GraphContainerObject import VITAL_GraphContainerObject
 
@@ -298,6 +324,7 @@ class GraphObject(metaclass=GraphObjectMeta):
         return cls.__bases__ == (object,)
 
     @classmethod
+    @cacheable_method
     @abstractmethod
     def get_class_uri(cls) -> str:
         pass
@@ -334,10 +361,187 @@ class GraphObject(metaclass=GraphObjectMeta):
 
         return json_string
 
+    def add_to_dataset(self, dataset: Dataset, graph_uri: str):
+
+        from vital_ai_vitalsigns.model.VITAL_GraphContainerObject import VITAL_GraphContainerObject
+
+        subject = URIRef(str(self._properties['http://vital.ai/ontology/vital-core#URIProp']))
+
+        triples = []
+
+        class_uri = self.get_class_uri()
+
+        triples.append((subject, URIRef(RDF.type), URIRef(class_uri)))
+
+        # graph.add((subject, URIRef(RDF.type), URIRef(class_uri)))
+
+        for prop_uri, prop_instance in self._properties.items():
+
+            rdf_data = prop_instance.to_rdf()
+
+            if rdf_data["datatype"] == list:
+
+                value_list = rdf_data["value"]
+                data_class = rdf_data["data_class"]
+
+                for v in value_list:
+                    if data_class == URIRef:
+                        # graph.add((subject, URIRef(prop_uri), URIRef(v)))
+                        triples.append((subject, URIRef(prop_uri), URIRef(v)))
+                    else:
+                        if data_class == datetime:
+                            datatype = rdflib.XSD.dateTime
+                        elif data_class == int:
+                            datatype = rdflib.XSD.integer
+                        elif data_class == float:
+                            datatype = rdflib.XSD.float
+                        elif data_class == bool:
+                            datatype = rdflib.XSD.boolean
+                        else:
+                            datatype = rdflib.XSD.string
+
+                        # graph.add((subject, URIRef(prop_uri), Literal(v, datatype=datatype)))
+                        triples.append((subject, URIRef(prop_uri), Literal(v, datatype=datatype)))
+
+            elif rdf_data["datatype"] == URIRef:
+                # graph.add((subject, URIRef(prop_uri), URIRef(rdf_data["value"])))
+                triples.append((subject, URIRef(prop_uri), URIRef(rdf_data["value"])))
+            else:
+                # graph.add((subject, URIRef(prop_uri), Literal(rdf_data["value"], datatype=rdf_data["datatype"])))
+                triples.append((subject, URIRef(prop_uri), Literal(rdf_data["value"], datatype=rdf_data["datatype"])))
+
+        if isinstance(self, VITAL_GraphContainerObject):
+            for name, prop_instance in self._extern_properties.items():
+
+                prop_uri = "urn:extern:" + name
+
+                rdf_data = prop_instance.to_rdf()
+
+                if rdf_data["datatype"] == list:
+
+                    value_list = rdf_data["value"]
+                    data_class = rdf_data["data_class"]
+
+                    for v in value_list:
+                        if data_class == URIRef:
+                            # graph.add((subject, URIRef(prop_uri), URIRef(v)))
+                            triples.append((subject, URIRef(prop_uri), URIRef(v)))
+                        else:
+                            if data_class == datetime:
+                                datatype = rdflib.XSD.dateTime
+                            elif data_class == int:
+                                datatype = rdflib.XSD.integer
+                            elif data_class == float:
+                                datatype = rdflib.XSD.float
+                            elif data_class == bool:
+                                datatype = rdflib.XSD.boolean
+                            else:
+                                datatype = rdflib.XSD.string
+
+                            # graph.add((subject, URIRef(prop_uri), Literal(v, datatype=datatype)))
+                            triples.append((subject, URIRef(prop_uri), Literal(v, datatype=datatype)))
+
+                elif rdf_data["datatype"] == URIRef:
+                    # graph.add((subject, URIRef(prop_uri), URIRef(rdf_data["value"])))
+                    triples.append((subject, URIRef(prop_uri), URIRef(rdf_data["value"])))
+                else:
+                    # graph.add((subject, URIRef(prop_uri), Literal(rdf_data["value"], datatype=rdf_data["datatype"])))
+                    triples.append((subject, URIRef(prop_uri), Literal(rdf_data["value"], datatype=rdf_data["datatype"])))
+
+        if len(triples) > 0:
+            triples_with_context = [(s, p, o, URIRef(graph_uri)) for s, p, o in triples]
+            # print(f"Adding: {triples_with_context}")
+            dataset.addN(triples_with_context)
+            # print(f"Added {len(triples_with_context)} triples to graph with triple count: {len(graph)}")
+
+    def add_to_list(self, triple_list: list):
+
+        from vital_ai_vitalsigns.model.VITAL_GraphContainerObject import VITAL_GraphContainerObject
+
+        subject = URIRef(str(self._properties['http://vital.ai/ontology/vital-core#URIProp']))
+
+        class_uri = self.get_class_uri()
+
+        triple_list.append((subject, URIRef(RDF.type), URIRef(class_uri)))
+
+        for prop_uri, prop_instance in self._properties.items():
+
+            rdf_data = prop_instance.to_rdf()
+
+            if rdf_data["datatype"] == list:
+
+                value_list = rdf_data["value"]
+                data_class = rdf_data["data_class"]
+
+                for v in value_list:
+                    if data_class == URIRef:
+                        # graph.add((subject, URIRef(prop_uri), URIRef(v)))
+                        triple_list.append((subject, URIRef(prop_uri), URIRef(v)))
+                    else:
+                        if data_class == datetime:
+                            datatype = rdflib.XSD.dateTime
+                        elif data_class == int:
+                            datatype = rdflib.XSD.integer
+                        elif data_class == float:
+                            datatype = rdflib.XSD.float
+                        elif data_class == bool:
+                            datatype = rdflib.XSD.boolean
+                        else:
+                            datatype = rdflib.XSD.string
+
+                        # graph.add((subject, URIRef(prop_uri), Literal(v, datatype=datatype)))
+                        triple_list.append((subject, URIRef(prop_uri), Literal(v, datatype=datatype)))
+
+            elif rdf_data["datatype"] == URIRef:
+                # graph.add((subject, URIRef(prop_uri), URIRef(rdf_data["value"])))
+                triple_list.append((subject, URIRef(prop_uri), URIRef(rdf_data["value"])))
+            else:
+                # graph.add((subject, URIRef(prop_uri), Literal(rdf_data["value"], datatype=rdf_data["datatype"])))
+                triple_list.append((subject, URIRef(prop_uri), Literal(rdf_data["value"], datatype=rdf_data["datatype"])))
+
+        if isinstance(self, VITAL_GraphContainerObject):
+            for name, prop_instance in self._extern_properties.items():
+
+                prop_uri = "urn:extern:" + name
+
+                rdf_data = prop_instance.to_rdf()
+
+                if rdf_data["datatype"] == list:
+
+                    value_list = rdf_data["value"]
+                    data_class = rdf_data["data_class"]
+
+                    for v in value_list:
+                        if data_class == URIRef:
+                            # graph.add((subject, URIRef(prop_uri), URIRef(v)))
+                            triple_list.append((subject, URIRef(prop_uri), URIRef(v)))
+                        else:
+                            if data_class == datetime:
+                                datatype = rdflib.XSD.dateTime
+                            elif data_class == int:
+                                datatype = rdflib.XSD.integer
+                            elif data_class == float:
+                                datatype = rdflib.XSD.float
+                            elif data_class == bool:
+                                datatype = rdflib.XSD.boolean
+                            else:
+                                datatype = rdflib.XSD.string
+
+                            # graph.add((subject, URIRef(prop_uri), Literal(v, datatype=datatype)))
+                            triple_list.append((subject, URIRef(prop_uri), Literal(v, datatype=datatype)))
+
+                elif rdf_data["datatype"] == URIRef:
+                    # graph.add((subject, URIRef(prop_uri), URIRef(rdf_data["value"])))
+                    triple_list.append((subject, URIRef(prop_uri), URIRef(rdf_data["value"])))
+                else:
+                    # graph.add((subject, URIRef(prop_uri), Literal(rdf_data["value"], datatype=rdf_data["datatype"])))
+                    triple_list.append((subject, URIRef(prop_uri), Literal(rdf_data["value"], datatype=rdf_data["datatype"])))
+
     def to_rdf(self, format='nt', graph_uri: str = None) -> str:
 
         from vital_ai_vitalsigns.model.VITAL_GraphContainerObject import VITAL_GraphContainerObject
 
+        # change to a Dataset for quads?
         g = Graph(identifier=URIRef(graph_uri) if graph_uri else None)
 
         subject = URIRef(str(self._properties['http://vital.ai/ontology/vital-core#URIProp']))
@@ -413,6 +617,88 @@ class GraphObject(metaclass=GraphObjectMeta):
 
         return g.serialize(format=format)
 
+    @staticmethod
+    @lru_cache(maxsize=1000)
+    def valid_uri(uri_string: str) -> bool:
+        return _is_valid_uri(uri_string)
+
+    @classmethod
+    def from_json_triples(cls, json_string: str) -> list:
+
+        from vital_ai_vitalsigns.vitalsigns import VitalSigns
+
+        vs = VitalSigns()
+
+        triple_list = []
+
+        # print(json_string)
+
+        object_map = json.loads(json_string)
+
+        subject = URIRef(object_map['URI'])
+
+        type_uri = object_map['type']
+
+        type_uri_ref = URIRef(type_uri)
+
+        triple_list.append((subject, RDF.type, type_uri_ref))
+
+        triple_list.append((subject, URIRef('http://vital.ai/ontology/vital-core#URIProp'), subject))
+
+        registry = vs.get_registry()
+
+        graph_object_cls = registry.get_vitalsigns_class(type_uri)
+
+        allowed_prop_list = graph_object_cls.get_allowed_properties()
+
+        # TODO
+        # handle types
+        # handle vitaltype
+        # handle lists or prop values?
+
+        for property_uri, value in object_map.items():
+
+            if property_uri == 'type':
+                continue
+            if property_uri == 'types':
+                continue
+            if property_uri == 'URI':
+                continue
+
+            triple_prop_class = None
+
+            for prop_info in allowed_prop_list:
+                p_uri = prop_info['uri']
+                if p_uri == property_uri:
+                    prop_class = prop_info['prop_class']
+                    triple_prop_class = prop_class
+                    break
+
+            prop_uri = URIRef(property_uri)
+
+            try:
+                if isinstance(value, dict):
+                    continue
+
+                if triple_prop_class == URIProperty:
+                    triple = (subject, prop_uri, URIRef(value))
+                elif triple_prop_class is not None:
+                    datatype = IProperty.get_rdf_datatype(value)
+                    literal_value = Literal(value, datatype=datatype)
+                    triple = (subject, prop_uri, literal_value)
+                elif cls.valid_uri(value):
+                    triple = (subject, prop_uri, URIRef(value))
+                else:
+                    datatype = IProperty.get_rdf_datatype(value)
+                    literal_value = Literal(value, datatype=datatype)
+                    triple = (subject, prop_uri, literal_value)
+
+                triple_list.append(triple)
+            except ValueError as e:
+                print(f"Error creating triple for {property_uri}: {e}")
+
+        return triple_list
+
     @classmethod
     def from_json(cls, json_map: str, *, modified=False) -> G:
 
@@ -426,7 +712,9 @@ class GraphObject(metaclass=GraphObjectMeta):
 
         registry = vs.get_registry()
 
-        graph_object_cls = registry.vitalsigns_classes[type_uri]
+        # graph_object_cls = registry.vitalsigns_classes[type_uri]
+
+        graph_object_cls = registry.get_vitalsigns_class(type_uri)
 
         graph_object = graph_object_cls(modified=modified)
 

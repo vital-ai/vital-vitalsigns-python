@@ -2,6 +2,8 @@ from owlready2 import get_ontology, onto_path, set_log_level, IRIS, default_worl
 import os
 from rdflib import Graph
 
+from vital_ai_vitalsigns_generate.vitalsigns_domain_list_generator import VitalSignsDomainListGenerator
+
 
 class VitalSignsGenerator:
 
@@ -80,7 +82,20 @@ class VitalSignsGenerator:
     # path to output
 
     def generate_domain_list(self):
-        pass
+
+        onto_path.append("../vital_home_test/vital-ontology/")
+
+        vital_ontology_path = "../vital_home_test/vital-ontology/"
+
+        domain_ontology_path = "../vital_home_test/domain-ontology/"
+
+        iri_to_file_map = self.get_iri_to_file_map([vital_ontology_path, domain_ontology_path])
+
+        print(iri_to_file_map)
+
+        generator = VitalSignsDomainListGenerator()
+
+        generator.generate(iri_to_file_map)
 
     def get_iri_to_file_map(self, directories):
         """Get a dictionary mapping IRIs to file paths for OWL files in a list of directories."""

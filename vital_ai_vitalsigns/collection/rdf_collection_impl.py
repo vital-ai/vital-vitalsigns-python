@@ -1,9 +1,9 @@
-from rdflib import Graph, URIRef
+from rdflib import Graph, URIRef, Dataset
 
 
 class RdfCollectionImpl:
     def __init__(self):
-        self.graph = Graph()
+        self.graph = Dataset()
 
     def add_triples(self, nt_string: str):
         """

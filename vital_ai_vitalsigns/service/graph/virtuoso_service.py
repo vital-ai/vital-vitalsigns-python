@@ -121,7 +121,7 @@ class VirtuosoGraphService(VitalGraphService):
 
         return False
 
-    def list_graphs(self, vital_managed=True) -> List[VitalNameGraph]:
+    def list_graphs(self, *, vital_managed=True) -> List[VitalNameGraph]:
 
         # todo only vitalsegment ones
 
@@ -153,7 +153,7 @@ class VirtuosoGraphService(VitalGraphService):
 
         return name_graph_list
 
-    def get_graph(self, graph_uri: str, vital_managed=True) -> VitalNameGraph:
+    def get_graph(self, graph_uri: str, *, vital_managed: bool = True) -> VitalNameGraph:
 
         # todo vital segment ones
 
@@ -182,7 +182,7 @@ class VirtuosoGraphService(VitalGraphService):
     # store name graph in vital service graph and in the graph itself
     # a graph needs to have some triples in it to exist
 
-    def check_create_graph(self, graph_uri: str, vital_managed=True) -> bool:
+    def check_create_graph(self, graph_uri: str, *, vital_managed: bool = True) -> bool:
 
         # TODO check if it contains vitalsegment
 
@@ -229,7 +229,7 @@ class VirtuosoGraphService(VitalGraphService):
         else:
             response.raise_for_status()
 
-    def create_graph(self, graph_uri: str, vital_managed=True) -> bool:
+    def create_graph(self, graph_uri: str, *, vital_managed: bool = True) -> bool:
 
         query = f"""
                 ASK WHERE {{
@@ -276,7 +276,7 @@ class VirtuosoGraphService(VitalGraphService):
     # delete graph
     # delete graph itself plus record in vital service graph
 
-    def delete_graph(self, graph_uri: str, vital_managed=True) -> bool:
+    def delete_graph(self, graph_uri: str, *, vital_managed: bool = True) -> bool:
 
         # todo check if contains vitalsegment
 
@@ -313,7 +313,7 @@ class VirtuosoGraphService(VitalGraphService):
 
     # purge graph (delete all but name graph)
 
-    def purge_graph(self, graph_uri: str, vital_managed=True) -> bool:
+    def purge_graph(self, graph_uri: str, *, vital_managed: bool = True) -> bool:
 
         vs = VitalSigns()
 
@@ -383,7 +383,7 @@ class VirtuosoGraphService(VitalGraphService):
             response.raise_for_status()
 
     # only use for small graphs
-    def get_graph_all_objects(self, graph_uri: str, limit=100, offset=0, vital_managed=True) -> ResultList:
+    def get_graph_all_objects(self, graph_uri: str, *, limit: int = 100, offset: int = 0, safety_check: bool = True, vital_managed: bool = True) -> ResultList:
 
         vs = VitalSigns()
 
@@ -405,8 +405,8 @@ class VirtuosoGraphService(VitalGraphService):
                         GRAPH <{graph_uri}> {{ ?s ?p ?o }}
                 }}
                 ORDER BY ?s
-                LIMIT 100
-                OFFSET 0
+                LIMIT {limit}
+                OFFSET {offset}
             }}
             GRAPH <{graph_uri}> {{
                 ?s ?p ?o .
@@ -441,7 +441,7 @@ class VirtuosoGraphService(VitalGraphService):
     # insert object into graph (scoped to vital service graph uri, which must exist)
     # insert object list into graph (scoped to vital service graph uri, which must exist)
 
-    def insert_object(self, graph_uri: str, graph_object: G, vital_managed=True) -> VitalGraphStatus:
+    def insert_object(self, graph_uri: str, graph_object: G, *, safety_check: bool = True, vital_managed: bool = True) -> VitalGraphStatus:
 
         # throws exception if not exists
         name_graph = self.get_graph(graph_uri)
@@ -476,7 +476,7 @@ class VirtuosoGraphService(VitalGraphService):
         except Exception as e:
             return VitalGraphStatus(-1, f"Failed to insert graph object: {str(e)}")
 
-    def insert_object_list(self, graph_uri: str, graph_object_list: List[G], vital_managed=True) -> VitalGraphStatus:
+    def insert_object_list(self, graph_uri: str, graph_object_list: List[G], *, safety_check: bool = True, vital_managed: bool = True) -> VitalGraphStatus:
 
         # throws exception if not exists
         name_graph = self.get_graph(graph_uri)
@@ -523,7 +523,7 @@ class VirtuosoGraphService(VitalGraphService):
     # update object list into graph (scoped to vital service graph uri, which must exist)
     # delete old, replace with new
 
-    def update_object(self, graph_object: G, graph_uri=None, vital_managed=True) -> VitalGraphStatus:
+    def update_object(self, graph_object: G, *, graph_uri: str = None, upsert: bool = False, safety_check: bool = True, vital_managed: bool = True) -> VitalGraphStatus:
 
         if graph_uri is None:
             return VitalGraphStatus(-1, "Error: graph_uri is not set.")
@@ -574,7 +574,7 @@ class VirtuosoGraphService(VitalGraphService):
         except Exception as e:
             return VitalGraphStatus(-1, f"Error inserting updated object: {str(e)}")
 
-    def update_object_list(self, graph_object_list: List[G], graph_uri=None, vital_managed=True) -> VitalGraphStatus:
+    def update_object_list(self, graph_object_list: List[G], *, graph_uri: str = None, upsert: bool = False, safety_check: bool = True, vital_managed: bool = True) -> VitalGraphStatus:
 
         if graph_uri is None:
             return VitalGraphStatus(-1, "Error: graph_uri is not set.")
@@ -646,7 +646,7 @@ class VirtuosoGraphService(VitalGraphService):
     # get objects by uri list (scoped to all vital service graphs)
     # get objects by uri list (scoped to specific graph, or graph list)
 
-    def get_object(self, object_uri: str, graph_uri=None, vital_managed=True) -> G:
+    def get_object(self, object_uri: str, *, graph_uri: str = None, safety_check: bool = True, vital_managed: bool = True) -> G:
 
         vs = VitalSigns()
 
@@ -696,7 +696,7 @@ class VirtuosoGraphService(VitalGraphService):
         except Exception as e:
             raise ValueError(f"Error retrieving object {object_uri}: {str(e)}")
 
-    def get_object_list(self, object_uri_list: List[str], graph_uri=None, vital_managed=True) -> ResultList:
+    def get_object_list(self, object_uri_list: List[str], *, graph_uri: str = None, safety_check: bool = True, vital_managed: bool = True) -> ResultList:
 
         # TODO do in bulk rather than one at a time
 
@@ -760,7 +760,7 @@ class VirtuosoGraphService(VitalGraphService):
 
         return result_list
 
-    def get_object_list_bulk(self, object_uri_list: List[str], graph_uri=None, vital_managed=True) -> ResultList:
+    def get_object_list_bulk(self, object_uri_list: List[str], *, graph_uri: str = None, safety_check: bool = True, vital_managed: bool = True) -> ResultList:
 
         vs = VitalSigns()
 
@@ -827,7 +827,7 @@ class VirtuosoGraphService(VitalGraphService):
     # delete uri (scoped to graph or graph list)
     # delete uri list (scoped to graph or graph list)
 
-    def delete_object(self, object_uri: str, graph_uri=None, vital_managed=True) -> VitalGraphStatus:
+    def delete_object(self, object_uri: str, *, graph_uri: str = None, safety_check: bool = True, vital_managed: bool = True) -> VitalGraphStatus:
 
         if graph_uri is None:
             return VitalGraphStatus(-1, "Error: graph_uri is not set.")
@@ -865,7 +865,7 @@ class VirtuosoGraphService(VitalGraphService):
         except Exception as e:
             return VitalGraphStatus(-1, f"Error deleting object {object_uri}: {str(e)}")
 
-    def delete_object_list(self, object_uri_list: List[str], graph_uri=None, vital_managed=True) -> VitalGraphStatus:
+    def delete_object_list(self, object_uri_list: List[str], *, graph_uri: str = None, safety_check: bool = True, vital_managed: bool = True) -> VitalGraphStatus:
 
         # todo do in bulk
 
@@ -919,8 +919,8 @@ class VirtuosoGraphService(VitalGraphService):
     # by a URI value associated with objects
     # the query must bind to the subject of the matching objects
 
-    def filter_query(self, graph_uri: str, sparql_query: str,  uri_binding='uri', limit=100, offset=0, resolve_objects=True,
-                     vital_managed=True) -> ResultList:
+    def filter_query(self, graph_uri: str, sparql_query: str,  uri_binding='uri', *, limit=100, offset=0, resolve_objects=True,
+                     safety_check: bool = True, vital_managed=True) -> ResultList:
 
         if graph_uri is None:
             return VitalGraphStatus(-1, "Error: graph_uri is not set.")
@@ -999,7 +999,7 @@ class VirtuosoGraphService(VitalGraphService):
     # take parameter for namespaces
     # default can be derived from loaded ontologies
 
-    def query(self, sparql_query: str, graph_uri: str, uri_binding='uri', limit=100, offset=0, resolve_objects=True, vital_managed=True) -> ResultList:
+    def query(self, graph_uri: str, sparql_query: str, uri_binding='uri', *, limit=100, offset=0, resolve_objects=True, safety_check: bool = True, vital_managed=True) -> ResultList:
 
         if graph_uri is None:
             return VitalGraphStatus(-1, "Error: graph_uri is not set.")
@@ -1072,8 +1072,9 @@ class VirtuosoGraphService(VitalGraphService):
                         graph_uri: str,
                         sparql_query: str,
                         namespace_list: List[Ontology],
-                        binding_list: List[Binding],
-                        limit=100, offset=0) -> ResultList:
+                        binding_list: List[Binding], *,
+                        limit=100, offset=0,
+                        safety_check: bool = True, vital_managed: bool = True) -> ResultList:
 
         if graph_uri is None:
             result_list = ResultList()
@@ -1196,8 +1197,9 @@ OFFSET {offset}
                                  sparql_query: str,
                                  namespace_list: List[Ontology],
                                  binding_list: List[Binding],
-                                 root_binding: str | None = None,
-                                 limit=100, offset=0) -> SolutionList:
+                                 root_binding: str | None = None, *,
+                                 limit=100, offset=0,
+                                 safety_check: bool = True, vital_managed: bool = True) -> SolutionList:
 
         # object cache to use during query
         # todo bulk retrieval of objects

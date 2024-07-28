@@ -19,11 +19,11 @@ class VitalGraphService:
     # initialize, create vital service graph if necessary
 
     @abstractmethod
-    def get_graph(self, graph_uri: str, vital_managed=True) -> VitalNameGraph:
+    def get_graph(self, graph_uri: str, *, vital_managed=True) -> VitalNameGraph:
         pass
 
     @abstractmethod
-    def list_graphs(self, vital_managed=True) -> List[VitalNameGraph]:
+    def list_graphs(self, *, vital_managed=True) -> List[VitalNameGraph]:
         pass
 
     # create graph
@@ -31,28 +31,28 @@ class VitalGraphService:
     # a graph needs to have some triples in it to exist
 
     @abstractmethod
-    def check_create_graph(self, graph_uri: str, vital_managed=True) -> bool:
+    def check_create_graph(self, graph_uri: str, *, vital_managed=True) -> bool:
         pass
 
     @abstractmethod
-    def create_graph(self, graph_uri: str, vital_managed=True) -> bool:
+    def create_graph(self, graph_uri: str, *, vital_managed=True) -> bool:
         pass
 
     # delete graph
     # delete graph itself plus record in vital service graph
 
     @abstractmethod
-    def delete_graph(self, graph_uri: str, vital_managed=True) -> bool:
+    def delete_graph(self, graph_uri: str, *, vital_managed=True) -> bool:
         pass
 
     # purge graph (delete all but name graph)
 
     @abstractmethod
-    def purge_graph(self, graph_uri: str, vital_managed=True) -> bool:
+    def purge_graph(self, graph_uri: str, *, vital_managed=True) -> bool:
         pass
 
     @abstractmethod
-    def get_graph_all_objects(self, graph_uri: str, limit=100, offset=0, vital_managed=True) -> ResultList:
+    def get_graph_all_objects(self, graph_uri: str, *, limit=100, offset=0, safety_check: bool = True, vital_managed=True) -> ResultList:
         pass
 
     # insert object into graph (scoped to vital service graph uri, which must exist)
@@ -60,11 +60,11 @@ class VitalGraphService:
     # insert object list into graph (scoped to vital service graph uri, which must exist)
 
     @abstractmethod
-    def insert_object(self, graph_uri: str, graph_object: G, vital_managed=True) -> VitalGraphStatus:
+    def insert_object(self, graph_uri: str, graph_object: G, *, safety_check: bool = True, vital_managed=True) -> VitalGraphStatus:
         pass
 
     @abstractmethod
-    def insert_object_list(self, graph_uri: str, graph_object_list: List[G], vital_managed=True) -> VitalGraphStatus:
+    def insert_object_list(self, graph_uri: str, graph_object_list: List[G], *, safety_check: bool = True, vital_managed=True) -> VitalGraphStatus:
         pass
 
     # update object into graph (scoped to vital service graph uri, which must exist)
@@ -74,11 +74,11 @@ class VitalGraphService:
     # delete old, replace with new
 
     @abstractmethod
-    def update_object(self, graph_object: G, graph_uri=None, vital_managed=True) -> VitalGraphStatus:
+    def update_object(self, graph_object: G, *, graph_uri: str = None, upsert: bool = False, safety_check: bool = True, vital_managed: bool = True) -> VitalGraphStatus:
         pass
 
     @abstractmethod
-    def update_object_list(self, graph_object_list: List[G], graph_uri=None, vital_managed=True) -> VitalGraphStatus:
+    def update_object_list(self, graph_object_list: List[G], *, graph_uri: str = None, upsert: bool = False, safety_check: bool = True, vital_managed: bool = True) -> VitalGraphStatus:
         pass
 
     # get object (scoped to all vital service graphs)
@@ -90,11 +90,11 @@ class VitalGraphService:
     # get objects by uri list (scoped to specific graph, or graph list)
 
     @abstractmethod
-    def get_object(self, object_uri: str, graph_uri=None, vital_managed=True) -> G:
+    def get_object(self, object_uri: str, *, graph_uri: str = None, safety_check: bool = True, vital_managed: bool = True) -> G:
         pass
 
     @abstractmethod
-    def get_object_list(self, object_uri_list: List[str], graph_uri=None, vital_managed=True) -> ResultList:
+    def get_object_list(self, object_uri_list: List[str], *, graph_uri: str = None, safety_check: bool = True, vital_managed: bool = True) -> ResultList:
         pass
 
     # delete uri (scoped to all vital service graphs)
@@ -106,30 +106,31 @@ class VitalGraphService:
     # delete uri list (scoped to graph or graph list)
 
     @abstractmethod
-    def delete_object(self, object_uri: str, graph_uri=None, vital_managed=True) -> VitalGraphStatus:
+    def delete_object(self, object_uri: str, *, graph_uri: str = None, safety_check: bool = True, vital_managed: bool = True) -> VitalGraphStatus:
         pass
 
     @abstractmethod
-    def delete_object_list(self, object_uri_list: List[str], graph_uri=None, vital_managed=True) -> VitalGraphStatus:
+    def delete_object_list(self, object_uri_list: List[str], *, graph_uri: str = None, safety_check: bool = True, vital_managed: bool = True) -> VitalGraphStatus:
         pass
 
     # filter graph
 
     @abstractmethod
-    def filter_query(self, graph_uri: str, sparql_query: str, uri_binding='uri', limit=100, offset=0, resolve_objects=True, vital_managed=True) -> ResultList:
+    def filter_query(self, graph_uri: str, sparql_query: str, uri_binding='uri', *, limit: int = 100, offset: int = 0, resolve_objects: bool = True, safety_check: bool = True, vital_managed: bool = True) -> ResultList:
         pass
 
     # query graph
 
     @abstractmethod
-    def query(self, sparql_query: str, graph_uri: str, limit=100, offset=0, uri_binding='uri', resolve_objects=True, vital_managed=True) -> ResultList:
+    def query(self, graph_uri: str, sparql_query: str, uri_binding='uri', *, limit=100, offset=0, resolve_objects=True, safety_check: bool = True, vital_managed=True) -> ResultList:
         pass
 
     @abstractmethod
     def query_construct(self, graph_uri: str, sparql_query: str,
                         namespace_list: List[Ontology],
-                        binding_list: List[Binding],
-                        limit=100, offset=0) -> ResultList:
+                        binding_list: List[Binding], *,
+                        limit=100, offset=0,
+                        safety_check: bool = True, vital_managed: bool = True) -> ResultList:
         pass
 
     @abstractmethod
@@ -138,8 +139,9 @@ class VitalGraphService:
                                  sparql_query: str,
                                  namespace_list: List[Ontology],
                                  binding_list: List[Binding],
-                                 root_binding: str | None = None,
-                                 limit=100, offset=0) -> SolutionList:
+                                 root_binding: str | None = None, *,
+                                 limit=100, offset=0,
+                                 safety_check: bool = True, vital_managed: bool = True) -> SolutionList:
         pass
 
 

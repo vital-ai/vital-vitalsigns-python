@@ -1,5 +1,6 @@
 import sys
 from datetime import datetime
+from functools import lru_cache
 from importlib.metadata import entry_points, distribution
 import importlib
 import pkgutil
@@ -165,6 +166,10 @@ class VitalSignsRegistry:
         dist = distribution(package_name)
         package_root = Path(dist.locate_file('')) / package_name
         return package_root
+
+    @lru_cache(maxsize=None)
+    def get_vitalsigns_class(self, class_uri: str):
+        return self.vitalsigns_classes[class_uri]
 
     def build_registry(self):
         self.vitalsigns_packages = []

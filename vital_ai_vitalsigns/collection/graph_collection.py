@@ -10,7 +10,10 @@ G = TypeVar('G', bound=Optional[GraphObject])
 
 class GraphCollection(MutableSequence[G]):
 
-    def __init__(self, data: List[G] | None = None, use_rdfstore: bool = True, use_vectordb: bool = True, embedding_model_id: str = 'paraphrase-MiniLM-L3-v2'):
+    def __init__(self, data: List[G] | None = None,
+                 use_rdfstore: bool = True,
+                 use_vectordb: bool = True,
+                 embedding_model_id: str = 'paraphrase-MiniLM-L3-v2'):
 
         from vital_ai_vitalsigns.vitalsigns import VitalSigns
 

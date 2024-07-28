@@ -52,7 +52,8 @@ setup(
         'python-dotenv>=1.0.1',
         'python-dateutil>=2.9.0',
         'transformers>=4.37.2',
-        'vital-model-paraphrase-MiniLM-onnx>=0.2.1'
+        'vital-model-paraphrase-MiniLM-onnx>=0.2.1',
+        'psutil>=6.0.0'
     ],
     extras_require={
         'dev': [

@@ -67,10 +67,13 @@ class VitalSignsConfigLoader:
             vitalsigns_config_filename
         )
 
-        with open(config_path, 'r') as file:
-            config_content = yaml.safe_load(file)
+        try:
+            with open(config_path, 'r') as file:
+                config_content = yaml.safe_load(file)
 
-        return VitalSignsConfigLoader._parse_config(config_content)
+            return VitalSignsConfigLoader._parse_config(config_content)
+        except Exception as e:
+            return VitalSignsConfig()
 
     @staticmethod
     def parse_yaml_config(yaml_config: str) -> VitalSignsConfig:

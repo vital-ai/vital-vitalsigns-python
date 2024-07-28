@@ -10,7 +10,8 @@ import time
 
 G = TypeVar('G', bound=Optional['GraphObject'])
 
-# todo have top-level namespace so multiple vital services can co-exist
+# TODO
+# have top-level namespace so multiple vital services can co-exist
 
 
 class VitalService(BaseService):
@@ -149,7 +150,6 @@ class VitalService(BaseService):
     # a graph needs to have some triples in it to exist
 
     def check_create_graph(self, graph_uri: str) -> bool:
-
         return self.graph_service.check_create_graph(graph_uri)
 
     def create_graph(self, graph_uri: str) -> bool:
@@ -158,12 +158,12 @@ class VitalService(BaseService):
     # delete graph
     # delete graph itself plus record in vital service graph
 
-    def delete_graph(self, graph_uri: str, update_index=True) -> bool:
+    def delete_graph(self, graph_uri: str, *, update_index: bool = True) -> bool:
         return self.graph_service.delete_graph(graph_uri)
 
     # purge graph (delete all but name graph)
 
-    def purge_graph(self, graph_uri: str, update_index=True) -> bool:
+    def purge_graph(self, graph_uri: str, *, update_index: bool = True) -> bool:
         return self.graph_service.purge_graph(graph_uri)
 
     def get_graph_all_objects(self, graph_uri: str, limit=100, offset=0) -> ResultList:
@@ -172,27 +172,23 @@ class VitalService(BaseService):
     #################################################
     # Graph and Vector combined functions
 
-    def insert_object(self, graph_uri: str, graph_object: G, update_index=True) -> VitalServiceStatus:
+    def insert_object(self, graph_uri: str, graph_object: G, *, update_index: bool = True) -> VitalServiceStatus:
 
         graph_status = self.graph_service.insert_object(graph_uri, graph_object)
-
         service_status = VitalServiceStatus(graph_status.get_status(), graph_status.get_message())
-
         service_status.set_changes(graph_status.get_changes())
 
         return service_status
 
-    def insert_object_list(self, graph_uri: str, graph_object_list: List[G], update_index=True) -> VitalServiceStatus:
+    def insert_object_list(self, graph_uri: str, graph_object_list: List[G], *, update_index: bool = True) -> VitalServiceStatus:
 
         graph_status = self.graph_service.insert_object_list(graph_uri, graph_object_list)
-
         service_status = VitalServiceStatus(graph_status.get_status(), graph_status.get_message())
-
         service_status.set_changes(graph_status.get_changes())
 
         return service_status
 
-    def update_object(self, graph_object: G, graph_uri: str, update_index=True) -> VitalServiceStatus:
+    def update_object(self, graph_object: G, graph_uri: str, *, upsert: bool = False, update_index: bool = True) -> VitalServiceStatus:
 
         graph_status = self.graph_service.update_object(graph_object, graph_uri)
 
@@ -202,7 +198,7 @@ class VitalService(BaseService):
 
         return service_status
 
-    def update_object_list(self, graph_object_list: List[G], graph_uri: str, update_index=True) -> VitalServiceStatus:
+    def update_object_list(self, graph_object_list: List[G], graph_uri: str, *, upsert: bool = False, update_index: bool = True) -> VitalServiceStatus:
 
         graph_status = self.graph_service.update_object_list(graph_object_list, graph_uri)
 
@@ -222,7 +218,7 @@ class VitalService(BaseService):
 
         return self.graph_service.get_object_list(object_uri_list, graph_uri)
 
-    def delete_object(self, object_uri: str, graph_uri: str, update_index=True) -> VitalServiceStatus:
+    def delete_object(self, object_uri: str, graph_uri: str, *, update_index: bool = True) -> VitalServiceStatus:
 
         graph_status = self.graph_service.delete_object(object_uri, graph_uri)
 
@@ -232,7 +228,7 @@ class VitalService(BaseService):
 
         return service_status
 
-    def delete_object_list(self, object_uri_list: List[str], graph_uri: str, update_index=True) -> VitalServiceStatus:
+    def delete_object_list(self, object_uri_list: List[str], graph_uri: str, *, update_index: bool = True) -> VitalServiceStatus:
 
         graph_status = self.graph_service.delete_object_list(object_uri_list, graph_uri)
 
@@ -244,13 +240,13 @@ class VitalService(BaseService):
 
     # filter graph
 
-    def filter_query(self, graph_uri: str, sparql_query: str, uri_binding='uri', resolve_objects=True) -> ResultList:
+    def filter_query(self, graph_uri: str, sparql_query: str, uri_binding='uri', *, resolve_objects=True) -> ResultList:
 
         return self.graph_service.filter_query(graph_uri, sparql_query, uri_binding=uri_binding, resolve_objects=resolve_objects)
 
     # query graph
 
-    def query(self, sparql_query: str, graph_uri: str, uri_binding='uri', resolve_objects=True) -> ResultList:
+    def query(self, sparql_query: str, graph_uri: str, uri_binding='uri', *, resolve_objects=True) -> ResultList:
 
         return self.graph_service.query(sparql_query, graph_uri, uri_binding=uri_binding, resolve_objects=resolve_objects)
 

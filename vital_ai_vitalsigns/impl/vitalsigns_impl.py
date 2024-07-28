@@ -11,6 +11,7 @@ from vital_ai_vitalsigns.model.properties.MultiValueProperty import MultiValuePr
 from vital_ai_vitalsigns.model.properties.StringProperty import StringProperty
 from vital_ai_vitalsigns.model.properties.URIProperty import URIProperty
 from vital_ai_vitalsigns.model.trait.PropertyTrait import PropertyTrait
+from functools import lru_cache
 
 # from vital_ai_vitalsigns.model.trait.PropertyTrait import PropertyTrait
 
@@ -18,6 +19,31 @@ T = TypeVar('T', bound=PropertyTrait)
 
 
 class VitalSignsImpl:
+
+    @classmethod
+    @lru_cache(maxsize=None)
+    def create_property_with_trait_class(cls, property_class, trait_class):
+
+        multiple_values = trait_class.multiple_values
+
+        if not multiple_values:
+            class CombinedProperty(property_class, trait_class):
+                def get_uri(self):
+                    return super().get_uri()
+
+                def __hash__(self):
+                    return hash((self.get_uri(), self.value))
+
+            return CombinedProperty
+        else:
+            class CombinedProperty(MultiValueProperty, trait_class):
+                def get_uri(self):
+                    return super().get_uri()
+
+                def __hash__(self):
+                    return hash((self.get_uri(), self.value))
+
+            return CombinedProperty
 
     @classmethod
     def create_property_with_trait(cls, property_class, trait_uri, value):
@@ -29,25 +55,12 @@ class VitalSignsImpl:
 
         multiple_values = trait_class.multiple_values
 
+        prop = cls.create_property_with_trait_class(property_class, trait_class)
+
         if not multiple_values:
-
-            class CombinedProperty(property_class, trait_class):
-                def get_uri(self):
-                    return super().get_uri()
-
-                def __hash__(self):
-                    return hash((self.get_uri(), self.value))
-
-            return CombinedProperty(value)
+            return prop(value)
         else:
-            class CombinedProperty(MultiValueProperty, trait_class):
-                def get_uri(self):
-                    return super().get_uri()
-
-                def __hash__(self):
-                    return hash((self.get_uri(), self.value))
-
-            return CombinedProperty(value, property_class)
+            return prop(value, property_class)
 
     @classmethod
     def create_extern_property(cls, value):
@@ -62,6 +75,7 @@ class VitalSignsImpl:
         return property_instance
 
     @classmethod
+    @lru_cache(maxsize=None)
     def get_trait_class_from_uri(cls, uri) -> Type[T]:
 
         from vital_ai_vitalsigns.vitalsigns import VitalSigns
