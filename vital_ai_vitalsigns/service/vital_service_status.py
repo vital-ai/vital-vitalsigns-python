@@ -13,6 +13,9 @@ class VitalServiceStatus:
     def get_status(self):
         return self.status
 
+    def is_ok(self) -> bool:
+        return self.status == 0
+
     def get_message(self):
         return self.message
 

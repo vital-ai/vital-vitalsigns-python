@@ -6,12 +6,12 @@ G = TypeVar('G', bound='GraphObject')
 
 
 class ResultList(List[ResultElement]):
-    def __init__(self, *args):
+    def __init__(self, *args, limit: int = None, offset: int = None, status: int = 0, message: str = None):
         super().__init__(*args)
-        self.offset = None
-        self.limit = None
-        self.message = None
-        self.status = None
+        self.limit = limit
+        self.offset = offset
+        self.message = message
+        self.status = status
 
     def add_result(self, graph_object: G, score: float = 1.0):
         """
@@ -44,6 +44,9 @@ class ResultList(List[ResultElement]):
 
     def get_offset(self):
         return self.offset
+
+    def is_ok(self) -> bool:
+        return self.status == 0
 
 
 

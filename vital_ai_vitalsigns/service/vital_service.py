@@ -16,10 +16,12 @@ G = TypeVar('G', bound=Optional['GraphObject'])
 
 class VitalService(BaseService):
     def __init__(self,
+                 vitalservice_name: str = None,
                  graph_service: VitalGraphService = None,
                  vector_service: VitalVectorService = None,
                  synchronize_service=True,
                  synchronize_task=True):
+        self.vitalservice_name = vitalservice_name
         self.graph_service = graph_service
         self.vector_service = vector_service
         self.graph_info_lock = threading.RLock()
@@ -190,7 +192,7 @@ class VitalService(BaseService):
 
     def update_object(self, graph_object: G, graph_uri: str, *, upsert: bool = False, update_index: bool = True) -> VitalServiceStatus:
 
-        graph_status = self.graph_service.update_object(graph_object, graph_uri)
+        graph_status = self.graph_service.update_object(graph_object, graph_uri, upsert=upsert)
 
         service_status = VitalServiceStatus(graph_status.get_status(), graph_status.get_message())
 
@@ -200,7 +202,7 @@ class VitalService(BaseService):
 
     def update_object_list(self, graph_object_list: List[G], graph_uri: str, *, upsert: bool = False, update_index: bool = True) -> VitalServiceStatus:
 
-        graph_status = self.graph_service.update_object_list(graph_object_list, graph_uri)
+        graph_status = self.graph_service.update_object_list(graph_object_list, graph_uri=graph_uri, upsert=upsert)
 
         service_status = VitalServiceStatus(graph_status.get_status(), graph_status.get_message())
 
@@ -210,17 +212,17 @@ class VitalService(BaseService):
 
     def get_object(self, object_uri: str, graph_uri: str) -> G:
 
-        graph_object = self.graph_service.get_object(object_uri, graph_uri)
+        graph_object = self.graph_service.get_object(object_uri, graph_uri=graph_uri)
 
         return graph_object
 
     def get_object_list(self, object_uri_list: List[str], graph_uri: str) -> ResultList:
 
-        return self.graph_service.get_object_list(object_uri_list, graph_uri)
+        return self.graph_service.get_object_list(object_uri_list, graph_uri=graph_uri)
 
     def delete_object(self, object_uri: str, graph_uri: str, *, update_index: bool = True) -> VitalServiceStatus:
 
-        graph_status = self.graph_service.delete_object(object_uri, graph_uri)
+        graph_status = self.graph_service.delete_object(object_uri, graph_uri=graph_uri)
 
         service_status = VitalServiceStatus(graph_status.get_status(), graph_status.get_message())
 
@@ -230,7 +232,7 @@ class VitalService(BaseService):
 
     def delete_object_list(self, object_uri_list: List[str], graph_uri: str, *, update_index: bool = True) -> VitalServiceStatus:
 
-        graph_status = self.graph_service.delete_object_list(object_uri_list, graph_uri)
+        graph_status = self.graph_service.delete_object_list(object_uri_list, graph_uri=graph_uri)
 
         service_status = VitalServiceStatus(graph_status.get_status(), graph_status.get_message())
 
@@ -242,13 +244,12 @@ class VitalService(BaseService):
 
     def filter_query(self, graph_uri: str, sparql_query: str, uri_binding='uri', *, resolve_objects=True) -> ResultList:
 
-        return self.graph_service.filter_query(graph_uri, sparql_query, uri_binding=uri_binding, resolve_objects=resolve_objects)
+        return self.graph_service.filter_query(graph_uri, sparql_query, uri_binding, resolve_objects=resolve_objects)
 
     # query graph
 
     def query(self, sparql_query: str, graph_uri: str, uri_binding='uri', *, resolve_objects=True) -> ResultList:
-
-        return self.graph_service.query(sparql_query, graph_uri, uri_binding=uri_binding, resolve_objects=resolve_objects)
+        return self.graph_service.query(sparql_query, graph_uri, uri_binding, resolve_objects=resolve_objects)
 
     #################################################
     # Vector functions

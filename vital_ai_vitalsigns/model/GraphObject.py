@@ -329,6 +329,33 @@ class GraphObject(metaclass=GraphObjectMeta):
     def get_class_uri(cls) -> str:
         pass
 
+    def to_dict(self) -> dict:
+
+        from vital_ai_vitalsigns.model.VITAL_GraphContainerObject import VITAL_GraphContainerObject
+
+        serializable_dict = {}
+
+        for uri, prop in self._properties.items():
+            prop_value = prop.to_json()["value"]
+            if uri == 'http://vital.ai/ontology/vital-core#URIProp':
+                serializable_dict['URI'] = prop_value
+            else:
+                serializable_dict[uri] = prop_value
+
+        if isinstance(self, VITAL_GraphContainerObject):
+            for name, prop in self._extern_properties.items():
+                prop_value = prop.to_json()["value"]
+                uri = "urn:extern:" + name
+                serializable_dict[uri] = prop_value
+
+        class_uri = self.get_class_uri()
+
+        serializable_dict['type'] = class_uri
+
+        serializable_dict['types'] = [class_uri]
+
+        return serializable_dict
+
     def to_json(self, pretty_print=True) -> str:
 
         from vital_ai_vitalsigns.model.VITAL_GraphContainerObject import VITAL_GraphContainerObject
@@ -838,6 +865,7 @@ class GraphObject(metaclass=GraphObjectMeta):
             generated_triples.append((subject, predicate, obj))
 
         for subject, predicate, obj in generated_triples:
+            # print(f"Triple: {subject}, {predicate}, {obj}")
             if predicate == RDF.type:
                 type_uri = str(obj)
                 subject_uri = str(subject)

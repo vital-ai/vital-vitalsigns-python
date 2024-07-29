@@ -31,6 +31,26 @@ class VitalServiceManager:
 
         return self.services[vitalservice_name]
 
+    # should only use config file to define vitalservices, but
+    # for testing and other in-memory cases would be useful to define dynamically
+
+    # todo confirm name unique, etc.
+
+    def add_vitalservice(self, vitalservice_name: str, vitalservice: VitalService):
+        if self.initialized is False:
+            self._initialize()
+
+        self.services[vitalservice_name] = vitalservice
+        return True
+
+    def remove_vitalservice(self, vitalservice_name: str):
+
+        if self.initialized is False:
+            self._initialize()
+
+        del self.services[vitalservice_name]
+        return True
+
 
 
 

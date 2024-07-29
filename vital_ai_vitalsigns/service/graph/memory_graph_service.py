@@ -69,6 +69,76 @@ class MemoryGraphService(VitalGraphService):
     def import_nquads(self):
         pass
 
+    def export_ntriples(self, graph_uri: str, file_path: str, *,
+                        overwrite=True) -> bool:
+
+        if os.path.exists(file_path):
+            if overwrite is False:
+                print(f"Exporting canceled: {graph_uri}. File path exists and overwrite is false.")
+                return False
+
+        for graph in self.graph.graphs():
+            context_graph_uri = str(graph.identifier)
+            if context_graph_uri == graph_uri:
+                print(f"Exporting: {graph_uri}")
+                print(f"Exporting: {graph_uri} into {file_path}")
+
+                try:
+                    # Exclude triples from the segment
+                    query = f"""
+                                SELECT ?subject
+                                    WHERE {{
+                                        ?subject <http://vital.ai/ontology/vital-core#hasSegmentID> "{graph_uri}"^^<http://www.w3.org/2001/XMLSchema#string> .
+                                    }}
+                            """
+
+                    result = graph.query(query)
+
+                    subject = None
+
+                    for row in result:
+                        # print(row)
+                        subject = row.subject
+
+                    if not subject:
+                        print(f"Exporting: {graph_uri} failed.  Segment not found in source graph.")
+                        return False
+
+                    new_graph = Graph()
+
+                    for s, p, o in graph:
+                        if s != subject:
+                            new_graph.add((s, p, o))
+
+                    with open(file_path, 'wb') as f:
+                        new_graph.serialize(destination=f, format='nt', encoding='utf-8')
+                    return True
+
+                except Exception as e:
+                    print(f"Export Exception {e}")
+
+        print(f"Exporting: {graph_uri} failed.")
+
+        return False
+
+    def import_ntriples(self, graph_uri: str, file_path: str) -> bool:
+        for graph in self.graph.graphs():
+            context_graph_uri = str(graph.identifier)
+            if context_graph_uri == graph_uri:
+                print(f"Importing: {graph_uri}")
+                print(f"Purging: {graph_uri}")
+                self.purge_graph(graph_uri)
+                print(f"Importing: {graph_uri} from file: {file_path}")
+                try:
+                    graph.parse(source=file_path, format='nt')
+                    print(f"Imported: {graph_uri} with Triple Count: {len(graph)}")
+                    return True
+                except Exception as e:
+                    print(f"Import Exception {e}")
+
+        print(f"Importing: {graph_uri} failed.")
+        return False
+
     def list_graphs(self, *, vital_managed=True) -> List[VitalNameGraph]:
 
         name_graph_list = []
@@ -143,7 +213,7 @@ class MemoryGraphService(VitalGraphService):
 
             subject_to_remove = None
             for row in result:
-                print(row)
+                # print(row)
                 subject_to_remove = row.subject
 
             print(f"Subject to Remove: {subject_to_remove}")
@@ -180,7 +250,7 @@ class MemoryGraphService(VitalGraphService):
             subject = None
 
             for row in result:
-                print(row)
+                # print(row)
                 subject = row.subject
 
             if subject:
@@ -210,6 +280,23 @@ class MemoryGraphService(VitalGraphService):
         # sort by subject uri
         # count total unique subjects and throw exception if over some number?
 
+        graph = self.graph.get_graph(URIRef(graph_uri))
+
+        query = f"""
+                    SELECT ?subject
+                        WHERE {{
+                            ?subject <http://vital.ai/ontology/vital-core#hasSegmentID> "{graph_uri}"^^<http://www.w3.org/2001/XMLSchema#string> .
+                        }}
+                    """
+
+        result = graph.query(query)
+
+        subject = None
+
+        for row in result:
+            # print(row)
+            subject = row.subject
+
         query = f"""
                 CONSTRUCT {{
                     ?s ?p ?o .
@@ -217,25 +304,29 @@ class MemoryGraphService(VitalGraphService):
                 WHERE {{
                     {{
                         SELECT DISTINCT ?s WHERE {{
-                                GRAPH <{graph_uri}> {{ ?s ?p ?o }}
+                                ?s ?p ?o .
+                                FILTER (?s != <{subject}>)
                         }}
                         ORDER BY ?s
                         LIMIT {limit}
                         OFFSET {offset}
                     }}
-                    GRAPH <{graph_uri}> {{
-                        ?s ?p ?o .
-                    }}
+                   
+                    ?s ?p ?o .
+                    
                 }}
                 """
 
-        print(query)
+        # print(query)
 
-        result = self.graph.query(query)
+        result = graph.query(query)
+
+        # print(result)
 
         result_graph = Graph()
 
         for triple in result:
+            # print(triple)
             result_graph.add(triple)
 
         subjects = set(result_graph.subjects())
@@ -243,6 +334,7 @@ class MemoryGraphService(VitalGraphService):
         result_list = ResultList()
 
         for s in subjects:
+            # print(s)
             triples = result_graph.triples((s, None, None))
             vitalsigns_object = vs.from_triples(triples)
             result_list.add_result(vitalsigns_object)
@@ -304,7 +396,7 @@ class MemoryGraphService(VitalGraphService):
         else:
             self.delete_object(object_uri, graph_uri)
 
-        self.insert_object(graph_object, graph_uri)
+        self.insert_object(graph_uri, graph_object)
 
         status = VitalGraphStatus()
         return status
@@ -329,8 +421,8 @@ class MemoryGraphService(VitalGraphService):
 
         for graph_object in graph_object_list:
             object_uri = str(graph_object.URI)
-            self.delete_object(object_uri, graph_uri)
-            self.insert_object(graph_object, graph_uri)
+            self.delete_object(object_uri, graph_uri=graph_uri)
+            self.insert_object(graph_uri, graph_object)
 
         status = VitalGraphStatus()
         return status
@@ -340,7 +432,11 @@ class MemoryGraphService(VitalGraphService):
 
         vs = VitalSigns()
 
+        # print(f"Graph URI {graph_uri}")
+
         graph = self.graph.get_graph(URIRef(graph_uri))
+
+        # print(f"Graph Length: {len(graph)}")
 
         subject = URIRef(object_uri)
 
@@ -358,7 +454,7 @@ class MemoryGraphService(VitalGraphService):
             return vitalsigns_object
 
         except Exception as e:
-            pass
+            print(f"get_object Exception {e}")
 
         return None
 
