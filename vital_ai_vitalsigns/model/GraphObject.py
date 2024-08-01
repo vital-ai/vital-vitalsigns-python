@@ -8,6 +8,7 @@ from urllib.parse import urlparse
 import rdflib
 from rdflib import Graph, Literal, URIRef, RDF, Dataset
 from vital_ai_vitalsigns.impl.vitalsigns_impl import VitalSignsImpl
+from vital_ai_vitalsigns.model.vital_constants import VitalConstants
 from vital_ai_vitalsigns.model.properties.IProperty import IProperty
 from vital_ai_vitalsigns.model.trait.PropertyTrait import PropertyTrait
 from vital_ai_vitalsigns.model.properties.BooleanProperty import BooleanProperty
@@ -17,7 +18,6 @@ from vital_ai_vitalsigns.model.properties.URIProperty import URIProperty
 from functools import wraps
 from functools import lru_cache
 from rdflib.term import _is_valid_uri
-
 from vital_ai_vitalsigns.model.utils.class_utils import ClassUtils
 
 
@@ -140,13 +140,22 @@ class GraphObject(metaclass=GraphObjectMeta):
 
             return
 
+        # this list should be the general all-inclusive list
+        # including properties added to classes after the
+        # class was defined
+        # this list is built using all OWL ontologies
+        # currently loaded
         domain_prop_list = self.get_allowed_domain_properties()
 
-        for d in domain_prop_list:
-            print(f"Domain Prop: {d}")
+        # for d in domain_prop_list:
+        #    print(f"Domain Prop: {d}")
 
-        prop_list = self.get_allowed_properties()
-
+        # this includes properties defined when the class was defined
+        # including properties associated with parent classes when
+        # those were defined
+        # if an extending ontology adds a property to an existing class
+        # this list will not include it
+        # prop_list = self.get_allowed_properties()
         # for prop_info in prop_list:
 
         for prop_info in domain_prop_list:
@@ -196,8 +205,10 @@ class GraphObject(metaclass=GraphObjectMeta):
         vs = VitalSigns()
 
         if name == 'URI':
-            return self._properties['http://vital.ai/ontology/vital-core#URIProp']
-        for prop_info in self.get_allowed_properties():
+            return self._properties[VitalConstants.uri_prop_uri]
+        if name == 'vitaltype':
+            return self.get_class_uri()
+        for prop_info in self.get_allowed_domain_properties():
             uri = prop_info['uri']
             # print(uri)
             trait_class = VitalSignsImpl.get_trait_class_from_uri(uri)
@@ -227,8 +238,8 @@ class GraphObject(metaclass=GraphObjectMeta):
         return NotImplemented
 
     def get_property_value(self, property_uri):
-        if property_uri == 'http://vital.ai/ontology/vital-core#URIProp':
-            return self._properties['http://vital.ai/ontology/vital-core#URIProp']
+        if property_uri == VitalConstants.uri_prop_uri:
+            return self._properties[VitalConstants.uri_prop_uri]
         trait_class = VitalSignsImpl.get_trait_class_from_uri(property_uri)
         if not trait_class:
             raise AttributeError(f"'{type(self).__name__}' object has no attribute with uri'{property_uri}'")
@@ -367,7 +378,7 @@ class GraphObject(metaclass=GraphObjectMeta):
 
         for uri, prop in self._properties.items():
             prop_value = prop.to_json()["value"]
-            if uri == 'http://vital.ai/ontology/vital-core#URIProp':
+            if uri == VitalConstants.uri_prop_uri:
                 serializable_dict['URI'] = prop_value
             else:
                 serializable_dict[uri] = prop_value
@@ -381,6 +392,8 @@ class GraphObject(metaclass=GraphObjectMeta):
         class_uri = self.get_class_uri()
 
         serializable_dict['type'] = class_uri
+
+        serializable_dict[VitalConstants.vitaltype_uri] = class_uri
 
         serializable_dict['types'] = [class_uri]
 
@@ -394,7 +407,7 @@ class GraphObject(metaclass=GraphObjectMeta):
 
         for uri, prop in self._properties.items():
             prop_value = prop.to_json()["value"]
-            if uri == 'http://vital.ai/ontology/vital-core#URIProp':
+            if uri == VitalConstants.uri_prop_uri:
                 serializable_dict['URI'] = prop_value
             else:
                 serializable_dict[uri] = prop_value
@@ -408,6 +421,8 @@ class GraphObject(metaclass=GraphObjectMeta):
         class_uri = self.get_class_uri()
 
         serializable_dict['type'] = class_uri
+
+        serializable_dict[VitalConstants.vitaltype_uri] = class_uri
 
         serializable_dict['types'] = [class_uri]
 
@@ -422,7 +437,7 @@ class GraphObject(metaclass=GraphObjectMeta):
 
         from vital_ai_vitalsigns.model.VITAL_GraphContainerObject import VITAL_GraphContainerObject
 
-        subject = URIRef(str(self._properties['http://vital.ai/ontology/vital-core#URIProp']))
+        subject = URIRef(str(self._properties[VitalConstants.uri_prop_uri]))
 
         triples = []
 
@@ -430,7 +445,7 @@ class GraphObject(metaclass=GraphObjectMeta):
 
         triples.append((subject, URIRef(RDF.type), URIRef(class_uri)))
 
-        # graph.add((subject, URIRef(RDF.type), URIRef(class_uri)))
+        triples.append((subject, URIRef(VitalConstants.vitaltype_uri), URIRef(class_uri)))
 
         for prop_uri, prop_instance in self._properties.items():
 
@@ -443,7 +458,6 @@ class GraphObject(metaclass=GraphObjectMeta):
 
                 for v in value_list:
                     if data_class == URIRef:
-                        # graph.add((subject, URIRef(prop_uri), URIRef(v)))
                         triples.append((subject, URIRef(prop_uri), URIRef(v)))
                     else:
                         if data_class == datetime:
@@ -457,14 +471,11 @@ class GraphObject(metaclass=GraphObjectMeta):
                         else:
                             datatype = rdflib.XSD.string
 
-                        # graph.add((subject, URIRef(prop_uri), Literal(v, datatype=datatype)))
                         triples.append((subject, URIRef(prop_uri), Literal(v, datatype=datatype)))
 
             elif rdf_data["datatype"] == URIRef:
-                # graph.add((subject, URIRef(prop_uri), URIRef(rdf_data["value"])))
                 triples.append((subject, URIRef(prop_uri), URIRef(rdf_data["value"])))
             else:
-                # graph.add((subject, URIRef(prop_uri), Literal(rdf_data["value"], datatype=rdf_data["datatype"])))
                 triples.append((subject, URIRef(prop_uri), Literal(rdf_data["value"], datatype=rdf_data["datatype"])))
 
         if isinstance(self, VITAL_GraphContainerObject):
@@ -481,7 +492,6 @@ class GraphObject(metaclass=GraphObjectMeta):
 
                     for v in value_list:
                         if data_class == URIRef:
-                            # graph.add((subject, URIRef(prop_uri), URIRef(v)))
                             triples.append((subject, URIRef(prop_uri), URIRef(v)))
                         else:
                             if data_class == datetime:
@@ -495,14 +505,11 @@ class GraphObject(metaclass=GraphObjectMeta):
                             else:
                                 datatype = rdflib.XSD.string
 
-                            # graph.add((subject, URIRef(prop_uri), Literal(v, datatype=datatype)))
                             triples.append((subject, URIRef(prop_uri), Literal(v, datatype=datatype)))
 
                 elif rdf_data["datatype"] == URIRef:
-                    # graph.add((subject, URIRef(prop_uri), URIRef(rdf_data["value"])))
                     triples.append((subject, URIRef(prop_uri), URIRef(rdf_data["value"])))
                 else:
-                    # graph.add((subject, URIRef(prop_uri), Literal(rdf_data["value"], datatype=rdf_data["datatype"])))
                     triples.append((subject, URIRef(prop_uri), Literal(rdf_data["value"], datatype=rdf_data["datatype"])))
 
         if len(triples) > 0:
@@ -515,11 +522,13 @@ class GraphObject(metaclass=GraphObjectMeta):
 
         from vital_ai_vitalsigns.model.VITAL_GraphContainerObject import VITAL_GraphContainerObject
 
-        subject = URIRef(str(self._properties['http://vital.ai/ontology/vital-core#URIProp']))
+        subject = URIRef(str(self._properties[VitalConstants.uri_prop_uri]))
 
         class_uri = self.get_class_uri()
 
         triple_list.append((subject, URIRef(RDF.type), URIRef(class_uri)))
+
+        triple_list.append((subject, URIRef(VitalConstants.vitaltype_uri), URIRef(class_uri)))
 
         for prop_uri, prop_instance in self._properties.items():
 
@@ -532,7 +541,6 @@ class GraphObject(metaclass=GraphObjectMeta):
 
                 for v in value_list:
                     if data_class == URIRef:
-                        # graph.add((subject, URIRef(prop_uri), URIRef(v)))
                         triple_list.append((subject, URIRef(prop_uri), URIRef(v)))
                     else:
                         if data_class == datetime:
@@ -546,14 +554,11 @@ class GraphObject(metaclass=GraphObjectMeta):
                         else:
                             datatype = rdflib.XSD.string
 
-                        # graph.add((subject, URIRef(prop_uri), Literal(v, datatype=datatype)))
                         triple_list.append((subject, URIRef(prop_uri), Literal(v, datatype=datatype)))
 
             elif rdf_data["datatype"] == URIRef:
-                # graph.add((subject, URIRef(prop_uri), URIRef(rdf_data["value"])))
                 triple_list.append((subject, URIRef(prop_uri), URIRef(rdf_data["value"])))
             else:
-                # graph.add((subject, URIRef(prop_uri), Literal(rdf_data["value"], datatype=rdf_data["datatype"])))
                 triple_list.append((subject, URIRef(prop_uri), Literal(rdf_data["value"], datatype=rdf_data["datatype"])))
 
         if isinstance(self, VITAL_GraphContainerObject):
@@ -584,28 +589,26 @@ class GraphObject(metaclass=GraphObjectMeta):
                             else:
                                 datatype = rdflib.XSD.string
 
-                            # graph.add((subject, URIRef(prop_uri), Literal(v, datatype=datatype)))
                             triple_list.append((subject, URIRef(prop_uri), Literal(v, datatype=datatype)))
 
                 elif rdf_data["datatype"] == URIRef:
-                    # graph.add((subject, URIRef(prop_uri), URIRef(rdf_data["value"])))
                     triple_list.append((subject, URIRef(prop_uri), URIRef(rdf_data["value"])))
                 else:
-                    # graph.add((subject, URIRef(prop_uri), Literal(rdf_data["value"], datatype=rdf_data["datatype"])))
                     triple_list.append((subject, URIRef(prop_uri), Literal(rdf_data["value"], datatype=rdf_data["datatype"])))
 
     def to_rdf(self, format='nt', graph_uri: str = None) -> str:
 
         from vital_ai_vitalsigns.model.VITAL_GraphContainerObject import VITAL_GraphContainerObject
 
-        # change to a Dataset for quads?
         g = Graph(identifier=URIRef(graph_uri) if graph_uri else None)
 
-        subject = URIRef(str(self._properties['http://vital.ai/ontology/vital-core#URIProp']))
+        subject = URIRef(str(self._properties[VitalConstants.uri_prop_uri]))
 
         class_uri = self.get_class_uri()
 
         g.add((subject, URIRef(RDF.type), URIRef(class_uri)))
+
+        g.add((subject, URIRef(VitalConstants.vitaltype_uri), URIRef(class_uri)))
 
         for prop_uri, prop_instance in self._properties.items():
 
@@ -688,8 +691,6 @@ class GraphObject(metaclass=GraphObjectMeta):
 
         triple_list = []
 
-        # print(json_string)
-
         object_map = json.loads(json_string)
 
         subject = URIRef(object_map['URI'])
@@ -700,13 +701,15 @@ class GraphObject(metaclass=GraphObjectMeta):
 
         triple_list.append((subject, RDF.type, type_uri_ref))
 
-        triple_list.append((subject, URIRef('http://vital.ai/ontology/vital-core#URIProp'), subject))
+        triple_list.append((subject, URIRef(VitalConstants.vitaltype_uri), type_uri_ref))
+
+        triple_list.append((subject, URIRef(VitalConstants.uri_prop_uri), subject))
 
         registry = vs.get_registry()
 
         graph_object_cls = registry.get_vitalsigns_class(type_uri)
 
-        allowed_prop_list = graph_object_cls.get_allowed_properties()
+        allowed_prop_list = graph_object_cls.get_allowed_domain_properties()
 
         # TODO
         # handle types
@@ -720,6 +723,10 @@ class GraphObject(metaclass=GraphObjectMeta):
             if property_uri == 'types':
                 continue
             if property_uri == 'URI':
+                continue
+            if property_uri == 'vitaltype':  # is this used?
+                continue
+            if property_uri == VitalConstants.vitaltype_uri:
                 continue
 
             triple_prop_class = None
@@ -765,6 +772,8 @@ class GraphObject(metaclass=GraphObjectMeta):
 
         type_uri = data['type']
 
+        vitaltype_class_uri = data.get(VitalConstants.vitaltype_uri)
+
         vs = VitalSigns()
 
         registry = vs.get_registry()
@@ -773,6 +782,9 @@ class GraphObject(metaclass=GraphObjectMeta):
 
         graph_object_cls = registry.get_vitalsigns_class(type_uri)
 
+        # TODO switch to this
+        # graph_object_cls = registry.get_vitalsigns_class(vitaltype_class_uri)
+
         graph_object = graph_object_cls(modified=modified)
 
         for key, value in data.items():
@@ -780,7 +792,11 @@ class GraphObject(metaclass=GraphObjectMeta):
                 continue
             if key == 'types':
                 continue
-            if key == 'http://vital.ai/ontology/vital-core#URIProp':
+            if key == 'vitaltype':  # is this used?
+                continue
+            if key == VitalConstants.vitaltype_uri:
+                continue
+            if key == VitalConstants.uri_prop_uri:
                 graph_object.URI = value
                 continue
 
@@ -815,9 +831,15 @@ class GraphObject(metaclass=GraphObjectMeta):
 
         subject_uri = None
 
+        vitaltype_class_uri = None
+
         for subject, predicate, obj in g.triples((None, RDF.type, None)):
             type_uri = str(obj)
             subject_uri = subject
+            break
+
+        for subject, predicate, obj in g.triples((None, URIRef(VitalConstants.vitaltype_uri), None)):
+            vitaltype_class_uri = str(obj)
             break
 
         if not type_uri:
@@ -826,11 +848,16 @@ class GraphObject(metaclass=GraphObjectMeta):
         if not subject_uri:
             raise ValueError("Subject URI not found in RDF data.")
 
+        # TODO enforce: vitaltype_class_uri
+
         vs = VitalSigns()
 
         registry = vs.get_registry()
 
-        graph_object_cls = registry.vitalsigns_classes[type_uri]
+        # TODO switch to
+        # graph_object_cls = registry.get_vitalsigns_class(vitaltype_class_uri)
+
+        graph_object_cls = registry.get_vitalsigns_class(type_uri)
 
         graph_object = graph_object_cls(modified=modified)
 
@@ -845,7 +872,10 @@ class GraphObject(metaclass=GraphObjectMeta):
 
             predicate = str(predicate)
 
-            if predicate == 'http://vital.ai/ontology/vital-core#URIProp':
+            if predicate == VitalConstants.vitaltype_uri:
+                continue
+
+            if predicate == VitalConstants.uri_prop_uri:
                 continue
 
             trait_cls = registry.vitalsigns_property_classes[predicate]
@@ -887,6 +917,7 @@ class GraphObject(metaclass=GraphObjectMeta):
 
         type_uri = None
         subject_uri = None
+        vitaltype_class_uri = None
 
         generated_triples = []
 
@@ -907,11 +938,16 @@ class GraphObject(metaclass=GraphObjectMeta):
         if not subject_uri:
             raise ValueError("Subject URI not found in RDF data.")
 
+        # TODO enforce vitaltype_class_uri
+
         vs = VitalSigns()
 
         registry = vs.get_registry()
 
-        graph_object_cls = registry.vitalsigns_classes[type_uri]
+        # TODO switch to: vitaltype_class_uri
+        # graph_object_cls = registry.get_vitalsigns_class(vitaltype_class_uri)
+
+        graph_object_cls = registry.get_vitalsigns_class(type_uri)
 
         graph_object = graph_object_cls(modified=modified)
 
@@ -925,7 +961,10 @@ class GraphObject(metaclass=GraphObjectMeta):
             predicate = str(predicate)
 
             # skip
-            if predicate == 'http://vital.ai/ontology/vital-core#URIProp':
+            if predicate == VitalConstants.vitaltype_uri:
+                continue
+
+            if predicate == VitalConstants.uri_prop_uri:
                 continue
 
             if isinstance(obj_value, Literal):

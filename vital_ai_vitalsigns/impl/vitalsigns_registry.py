@@ -8,6 +8,9 @@ import logging
 from pathlib import Path
 import importlib.resources as resources
 import concurrent.futures
+from typing import Type, Dict
+
+from vital_ai_vitalsigns.model.GraphObject import GraphObject
 from vital_ai_vitalsigns.ontology.vitalsigns_ontology_manager import VitalSignsOntologyManager
 
 
@@ -155,7 +158,7 @@ class VitalSignsRegistry:
 
     def __init__(self, *, ontology_manager: VitalSignsOntologyManager):
         self.vitalsigns_packages = []
-        self.vitalsigns_classes = {}
+        self.vitalsigns_classes: Dict[str, Type[GraphObject]] = {}
         self.vitalsigns_property_classes = {}
         self.vitalsigns_ontologies = set()
         self.ontology_manager = ontology_manager
@@ -168,7 +171,7 @@ class VitalSignsRegistry:
         return package_root
 
     @lru_cache(maxsize=None)
-    def get_vitalsigns_class(self, class_uri: str):
+    def get_vitalsigns_class(self, class_uri: str) -> Type[GraphObject]:
         return self.vitalsigns_classes[class_uri]
 
     def build_registry(self):
