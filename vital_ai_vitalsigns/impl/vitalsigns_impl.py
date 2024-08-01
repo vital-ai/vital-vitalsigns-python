@@ -3,12 +3,18 @@ import importlib
 from datetime import datetime
 from typing import TypeVar, Type
 from urllib.parse import urlparse
+
+import rdflib
+from rdflib import XSD
+
 from vital_ai_vitalsigns.model.properties.BooleanProperty import BooleanProperty
 from vital_ai_vitalsigns.model.properties.DateTimeProperty import DateTimeProperty
 from vital_ai_vitalsigns.model.properties.DoubleProperty import DoubleProperty
+from vital_ai_vitalsigns.model.properties.GeoLocationProperty import GeoLocationProperty
 from vital_ai_vitalsigns.model.properties.IntegerProperty import IntegerProperty
 from vital_ai_vitalsigns.model.properties.MultiValueProperty import MultiValueProperty
 from vital_ai_vitalsigns.model.properties.StringProperty import StringProperty
+from vital_ai_vitalsigns.model.properties.TruthProperty import TruthProperty
 from vital_ai_vitalsigns.model.properties.URIProperty import URIProperty
 from vital_ai_vitalsigns.model.trait.PropertyTrait import PropertyTrait
 from functools import lru_cache
@@ -131,4 +137,30 @@ class VitalSignsImpl:
 
         return None
 
+    @classmethod
+    def get_property_class_from_rdf_type(cls, rdf_type_iri):
 
+        if rdf_type_iri == str(XSD.boolean):
+            return BooleanProperty
+        elif rdf_type_iri == str(XSD.string):
+            return StringProperty
+        elif rdf_type_iri == str(XSD.integer):
+            return IntegerProperty
+        elif rdf_type_iri == str(XSD.int):
+            return IntegerProperty
+        elif rdf_type_iri == str(XSD.long):
+            return IntegerProperty
+        elif rdf_type_iri == str(XSD.double):
+            return DoubleProperty
+        elif rdf_type_iri == str(XSD.float):
+            return DoubleProperty
+        elif rdf_type_iri == str(XSD.dateTime):
+            return DateTimeProperty
+        elif rdf_type_iri == "http://vital.ai/ontology/vital-core#geoLocation":
+            return GeoLocationProperty
+        elif rdf_type_iri == "http://vital.ai/ontology/vital-core#truth":
+            return TruthProperty
+        elif rdf_type_iri == str(XSD.anyURI):
+            return StringProperty
+        else:
+            return None

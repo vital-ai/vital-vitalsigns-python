@@ -12,12 +12,14 @@ class GraphCollection(MutableSequence[G]):
 
     def __init__(self, data: List[G] | None = None,
                  use_rdfstore: bool = True,
+                 use_multigraph_store: bool = False,
                  use_vectordb: bool = True,
                  embedding_model_id: str = 'paraphrase-MiniLM-L3-v2'):
 
         from vital_ai_vitalsigns.vitalsigns import VitalSigns
 
         self._use_rdfstore = use_rdfstore
+        self._use_multigraph_store = use_multigraph_store
         self._use_vectordb = use_vectordb
         self._embedding_model_id = embedding_model_id
 
@@ -37,8 +39,11 @@ class GraphCollection(MutableSequence[G]):
             from vital_ai_vitalsigns.collection.vector_collection_impl import VectorCollectionImpl
             self._vectordb = VectorCollectionImpl(self)
 
-        if use_rdfstore is True:
+        if use_rdfstore is True and use_multigraph_store is False:
             self._rdfstore = RdfCollectionImpl()
+
+        if use_rdfstore is False and use_multigraph_store is True:
+            self._rdfstore = RdfCollectionImpl(multigraph=True)
 
         for item in self._data:
             if hasattr(item, 'URI'):

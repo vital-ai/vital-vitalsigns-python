@@ -3,7 +3,9 @@ from collections import deque, defaultdict
 from pathlib import Path
 from typing import List
 from owlready2 import get_ontology, onto_path, default_world, PREDEFINED_ONTOLOGIES
-from rdflib import Graph, URIRef, Namespace, RDF
+from rdflib import Graph, URIRef, Namespace, RDF, BNode, OWL, RDFS
+
+from vital_ai_vitalsigns.model.properties.URIProperty import URIProperty
 from vital_ai_vitalsigns.ontology.vitalsigns_ontology import VitalSignsOntology
 
 
@@ -21,9 +23,49 @@ class VitalSignsOntologyManager:
     def __init__(self):
         self._domain_graph = Graph()
         self._ont_map = {}
+        self._domain_property_map = {}
+        self._data_prop_results_dict = {}
+        self._ont_prop_results_dict = {}
+        self._range_property_map = {}
 
     # TODO adding single ontology to check if imports are already
     # loaded, and don't import if not
+
+    def get_domain_property_list(self, clazz):
+
+        prop_list = []
+
+        prop_set = set()
+
+        if clazz.get_class_uri():
+
+            clazz_uri = str(clazz.get_class_uri())
+
+            # print(f"Class URI: {clazz_uri}")
+
+            # print(domain_property_map.keys())
+            # print(len(domain_property_map.keys()))
+
+            class_map = self._domain_property_map.get(clazz_uri)
+
+            if class_map:
+                class_prop_set = class_map["prop_set"]
+                prop_set.update(class_prop_set)
+
+        for p in prop_set:
+            prop_map = self._range_property_map[p]
+            prop_class = prop_map["prop_class"]
+
+            # print(f"Property: {p} : {prop_class.__name__}")
+            # {'uri': 'http://vital.ai/ontology/vital-aimp#hasAccountEventAccountURI', 'prop_class': URIProperty},
+
+            prop_map = {
+                "uri": p,
+                "prop_class": prop_class,
+            }
+            prop_list.append(prop_map)
+
+        return prop_list
 
     def add_ontology(self, package_name: str, path: str):
 
@@ -39,6 +81,20 @@ class VitalSignsOntologyManager:
 
         for triple in ont_graph:
             self._domain_graph.add(triple)
+
+    def extract_classes(self, expression, graph):
+        classes = set()
+        if isinstance(expression, BNode):
+            for s, p, o in graph.triples((expression, None, None)):
+                if p == OWL.unionOf or p == OWL.intersectionOf:
+                    for item in graph.items(o):
+                        classes.update(self.extract_classes(item, graph))
+                else:
+                    classes.update(self.extract_classes(o, graph))
+        else:
+            if (expression, RDF.type, OWL.Class) in graph or (expression, RDF.type, RDFS.Class) in graph:
+                classes.add(expression)
+        return classes
 
     def get_ontology_iri(self, graph):
 
@@ -259,11 +315,142 @@ class VitalSignsOntologyManager:
 
             logging.info(f"Domain Graph Triple Count: {len(graph)}")
 
+            self.build_domain_property_map()
+
         else:
             logging.error('Failed to load ontology metadata.')
 
     def get_domain_graph(self) -> Graph:
         return self._domain_graph
+
+    def build_domain_property_map(self):
+
+        from vital_ai_vitalsigns.impl.vitalsigns_impl import VitalSignsImpl
+
+        data_property_query = """
+            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+            PREFIX owl: <http://www.w3.org/2002/07/owl#>
+            PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+            SELECT ?classExpression ?dataProperty ?dataType
+            WHERE {
+                ?dataProperty rdf:type owl:DatatypeProperty .
+                ?dataProperty rdfs:domain ?classExpression .
+                ?dataProperty rdfs:range ?dataType .
+            }
+            """
+
+        results = self._domain_graph.query(data_property_query)
+
+        for row in results:
+            class_expression = row['classExpression']
+            data_property_uri = str(row['dataProperty'])
+            data_type_uri = str(row['dataType'])
+
+            # Extract all classes from the class expression
+            domain_classes = list(self.extract_classes(class_expression, self._domain_graph))
+
+            # Add to results dictionary
+            if data_property_uri not in self._data_prop_results_dict:
+                self._data_prop_results_dict[data_property_uri] = {"domain": set(), "dataType": data_type_uri}
+
+            self._data_prop_results_dict[data_property_uri]["domain"].update(domain_classes)
+
+        object_property_query = """
+            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+            PREFIX owl: <http://www.w3.org/2002/07/owl#>
+            PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+            SELECT ?classExpression ?objectProperty ?rangeExpression
+            WHERE {
+                ?objectProperty rdf:type owl:ObjectProperty .
+                ?objectProperty rdfs:domain ?classExpression .
+                ?objectProperty rdfs:range ?rangeExpression .
+            }
+            """
+
+        results = self._domain_graph.query(object_property_query)
+
+        for row in results:
+            class_expression = row['classExpression']
+            object_property_uri = str(row['objectProperty'])
+            range_expression = row['rangeExpression']
+
+            # Extract all classes from the class expression and range expression
+            domain_classes = list(self.extract_classes(class_expression, self._domain_graph))
+            range_classes = list(self.extract_classes(range_expression, self._domain_graph))
+
+            # Add to results dictionary
+            if object_property_uri not in self._ont_prop_results_dict:
+                self._ont_prop_results_dict[object_property_uri] = {"domain": set(), "range": set()}
+
+            self._ont_prop_results_dict[object_property_uri]["domain"].update(domain_classes)
+            self._ont_prop_results_dict[object_property_uri]["range"].update(range_classes)
+
+        for prop_uri, domain_and_type in self._data_prop_results_dict.items():
+
+            class_list = list(domain_and_type["domain"])
+
+            data_type = domain_and_type["dataType"]
+
+            prop_class = VitalSignsImpl.get_property_class_from_rdf_type(data_type)
+
+            if prop_class is None:
+                # print(f"No property class found for {data_type}")
+                pass
+
+            property_range_map = {
+                "property_uri": prop_uri,
+                "property_type": "DataProperty",
+                "data_type": data_type,
+                "prop_class": prop_class
+            }
+
+            self._range_property_map[prop_uri] = property_range_map
+
+            # print(f"Data Prop: {class_list} {prop_uri} {data_type}")
+
+            for clz in class_list:
+                clz = str(clz)
+                if clz in self._domain_property_map.keys():
+                    class_map = self._domain_property_map[clz]
+                    class_prop_set = class_map["prop_set"]
+                else:
+                    class_map = {}
+                    self._domain_property_map[clz] = class_map
+                    class_prop_set = set()
+                    class_map["prop_set"] = class_prop_set
+                class_prop_set.add(prop_uri)
+
+        for prop_uri, domains_and_ranges in self._ont_prop_results_dict.items():
+
+            class_list = list(domains_and_ranges["domain"])
+
+            range_list = list(domains_and_ranges["range"])
+
+            property_range_map = {
+                "property_uri": prop_uri,
+                "property_type": "ObjectProperty",
+                "range_class_list": range_list,
+                "prop_class": URIProperty
+            }
+
+            self._range_property_map[prop_uri] = property_range_map
+
+            # print(f"Ont Prop: {class_list} {prop_uri} {range_list}")
+
+            for clz in class_list:
+                clz = str(clz)
+                if clz in self._domain_property_map.keys():
+                    class_map = self._domain_property_map[clz]
+                    class_prop_set = class_map["prop_set"]
+                else:
+                    class_map = {}
+                    self._domain_property_map[clz] = class_map
+                    class_prop_set = set()
+                    class_map["prop_set"] = class_prop_set
+
+                class_prop_set.add(prop_uri)
 
     def get_ontology_iri_list(self) -> List[str]:
         return list(self._ont_map.keys())

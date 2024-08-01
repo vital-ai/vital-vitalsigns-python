@@ -5,7 +5,6 @@ import json
 from datetime import datetime
 from typing import TypeVar, List, Generator, Tuple, Optional, Set
 from urllib.parse import urlparse
-
 import rdflib
 from rdflib import Graph, Literal, URIRef, RDF, Dataset
 from vital_ai_vitalsigns.impl.vitalsigns_impl import VitalSignsImpl
@@ -18,6 +17,8 @@ from vital_ai_vitalsigns.model.properties.URIProperty import URIProperty
 from functools import wraps
 from functools import lru_cache
 from rdflib.term import _is_valid_uri
+
+from vital_ai_vitalsigns.model.utils.class_utils import ClassUtils
 
 
 def cacheable_method(method):
@@ -78,6 +79,25 @@ class GraphObject(metaclass=GraphObjectMeta):
     def get_allowed_properties(cls):
         return GraphObject._allowed_properties
 
+    @classmethod
+    @cacheable_method
+    def get_allowed_domain_properties(cls):
+
+        property_list = []
+
+        parent_list = ClassUtils.get_class_hierarchy(cls, GraphObject)
+
+        from vital_ai_vitalsigns.vitalsigns import VitalSigns
+        vs = VitalSigns()
+
+        ont_manager = vs.get_ontology_manager()
+
+        for p in parent_list:
+            prop_list = ont_manager.get_domain_property_list(p)
+            property_list.extend(prop_list)
+
+        return property_list
+
     def __init__(self, *, modified=True):
         super().__setattr__('_properties', {})
         super().__setattr__('_extern_properties', {})
@@ -120,7 +140,17 @@ class GraphObject(metaclass=GraphObjectMeta):
 
             return
 
-        for prop_info in self.get_allowed_properties():
+        domain_prop_list = self.get_allowed_domain_properties()
+
+        for d in domain_prop_list:
+            print(f"Domain Prop: {d}")
+
+        prop_list = self.get_allowed_properties()
+
+        # for prop_info in prop_list:
+
+        for prop_info in domain_prop_list:
+
             uri = prop_info['uri']
             prop_class = prop_info['prop_class']
             trait_class = VitalSignsImpl.get_trait_class_from_uri(uri)

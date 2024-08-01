@@ -34,8 +34,7 @@ class IProperty:
             datatype = rdflib.XSD.boolean
         else:
             datatype = rdflib.XSD.string
-        datatype
-
+        return datatype
 
     def to_rdf(self):
         if isinstance(self.value, datetime):

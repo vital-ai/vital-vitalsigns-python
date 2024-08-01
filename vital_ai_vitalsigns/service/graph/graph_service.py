@@ -12,9 +12,8 @@ G = TypeVar('G', bound='GraphObject')
 
 
 class VitalGraphService:
-    def __init__(self):
-        # check_create vital service graph
-        pass
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     # initialize, create vital service graph if necessary
 
