@@ -49,7 +49,6 @@ setup(
         'onnx>=1.16.1',
         'tzdata>=2024.1',
         'pytz>=2024.1',
-        'python-dotenv>=1.0.1',
         'python-dateutil>=2.9.0',
         'transformers>=4.37.2',
         'vital-model-paraphrase-MiniLM-onnx>=0.2.1',

@@ -805,6 +805,49 @@ class GraphObject(metaclass=GraphObjectMeta):
         return graph_object
 
     @classmethod
+    def from_json_map(cls, json_map: dict, *, modified=False) -> G:
+
+        from vital_ai_vitalsigns.vitalsigns import VitalSigns
+
+        data = json_map
+
+        type_uri = data['type']
+
+        vitaltype_class_uri = data.get(VitalConstants.vitaltype_uri)
+
+        vs = VitalSigns()
+
+        registry = vs.get_registry()
+
+        # graph_object_cls = registry.vitalsigns_classes[type_uri]
+
+        graph_object_cls = registry.get_vitalsigns_class(type_uri)
+
+        # TODO switch to this
+        # graph_object_cls = registry.get_vitalsigns_class(vitaltype_class_uri)
+
+        graph_object = graph_object_cls(modified=modified)
+
+        for key, value in data.items():
+            if key == 'type':
+                continue
+            if key == 'types':
+                continue
+            if key == 'vitaltype':  # is this used?
+                continue
+            if key == VitalConstants.vitaltype_uri:
+                continue
+            if key == VitalConstants.uri_prop_uri:
+                graph_object.URI = value
+                continue
+
+            setattr(graph_object, key, value)
+
+        return graph_object
+
+
+
+    @classmethod
     def from_json_list(cls, json_map_list: str, *, modified=False) -> List[G]:
 
         graph_object_list = []
@@ -812,7 +855,7 @@ class GraphObject(metaclass=GraphObjectMeta):
         data_list = json.loads(json_map_list)
 
         for data in data_list:
-            graph_object = cls.from_json(data, modified=modified)
+            graph_object = cls.from_json_map(data, modified=modified)
             graph_object_list.append(graph_object)
 
         return graph_object_list
