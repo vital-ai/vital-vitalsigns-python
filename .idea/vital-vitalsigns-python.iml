@@ -5,7 +5,7 @@
       <excludeFolder url="file://$MODULE_DIR$/build" />
       <excludeFolder url="file://$MODULE_DIR$/dist" />
     </content>
-    <orderEntry type="jdk" jdkName="vital-vitalsigns-python" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="vital-vitalsigns-python (2)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>
