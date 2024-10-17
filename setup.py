@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='vital-ai-vitalsigns',
-    version='0.1.21',
+    version='0.1.22',
     author='Marc Hadfield',
     author_email='marc@vital.ai',
     description='VitalSigns knowledge graph bindings',
@@ -40,7 +40,7 @@ setup(
         'hnswlib>=0.8.0',
         'owlready2==0.46',
         'owlrl==6.0.2',
-        'weaviate-client==4.6.3',
+        'weaviate-client==4.8.1',
         'SPARQLWrapper==2.0.0',
         'pyshacl==0.25.0',
         'requests>=2.31.0',
@@ -52,7 +52,8 @@ setup(
         'python-dateutil>=2.9.0',
         'transformers>=4.37.2',
         'vital-model-paraphrase-MiniLM-onnx>=0.2.1',
-        'psutil>=6.0.0'
+        'psutil>=6.0.0',
+        'urllib3'
     ],
     extras_require={
         'dev': [

@@ -14,80 +14,93 @@ class QLeverGraphService(VitalGraphService):
     # TODO implement when name graph functionality in QLever is complete
     # TODO and when sparql update implementation is merged in
 
-    def __init__(self, username: str | None = None, password: str | None = None, endpoint: str | None = None):
+    def __init__(self, username: str | None = None, password: str | None = None, endpoint: str | None = None, **kwargs):
         self.username = username
         self.password = password
         self.endpoint = endpoint.rstrip('/')
-        super().__init__()
+        super().__init__(**kwargs)
 
-    def get_graph(self, graph_uri: str, *, vital_managed=True) -> VitalNameGraph:
+    def initialize_service(self, namespace: str) -> bool:
+        return True
+
+    def destroy_service(self, namespace: str) -> bool:
+        return True
+
+    def get_graph(self, graph_uri: str, *, safety_check: bool = True,
+                    namespace: str = None, vital_managed=True) -> VitalNameGraph:
         pass
 
-    def list_graphs(self, *, vital_managed=True) -> List[VitalNameGraph]:
+    def list_graphs(self, *, safety_check: bool = True,
+                    namespace: str = None, vital_managed=True) -> List[VitalNameGraph]:
         pass
 
-    def check_create_graph(self, graph_uri: str, *, vital_managed=True) -> bool:
+    def check_create_graph(self, graph_uri: str, *, safety_check: bool = True,
+                    namespace: str = None, vital_managed=True) -> bool:
         pass
 
-    def create_graph(self, graph_uri: str, *, vital_managed=True) -> bool:
+    def create_graph(self, graph_uri: str, *, safety_check: bool = True,
+                    namespace: str = None, vital_managed=True) -> bool:
         pass
 
-    def delete_graph(self, graph_uri: str, *, vital_managed=True) -> bool:
+    def delete_graph(self, graph_uri: str, *, safety_check: bool = True,
+                    namespace: str = None, vital_managed=True) -> bool:
         pass
 
-    def purge_graph(self, graph_uri: str, *, vital_managed=True) -> bool:
+    def purge_graph(self, graph_uri: str, *, safety_check: bool = True,
+                    namespace: str = None, vital_managed=True) -> bool:
         pass
 
     def get_graph_all_objects(self, graph_uri: str, *, limit=100, offset=0, safety_check: bool = True,
+                              namespace: str = None,
                               vital_managed=True) -> ResultList:
         pass
 
     def insert_object(self, graph_uri: str, graph_object: G, *, safety_check: bool = True,
-                      vital_managed=True) -> VitalGraphStatus:
+                      namespace: str = None, vital_managed=True) -> VitalGraphStatus:
         pass
 
     def insert_object_list(self, graph_uri: str, graph_object_list: List[G], *, safety_check: bool = True,
-                           vital_managed=True) -> VitalGraphStatus:
+                           namespace: str = None, vital_managed=True) -> VitalGraphStatus:
         pass
 
     def update_object(self, graph_object: G, *, graph_uri: str = None, upsert: bool = False, safety_check: bool = True,
-                      vital_managed: bool = True) -> VitalGraphStatus:
+                      namespace: str = None, vital_managed: bool = True) -> VitalGraphStatus:
         pass
 
     def update_object_list(self, graph_object_list: List[G], *, graph_uri: str = None, upsert: bool = False,
-                           safety_check: bool = True, vital_managed: bool = True) -> VitalGraphStatus:
+                           safety_check: bool = True, namespace: str = None, vital_managed: bool = True) -> VitalGraphStatus:
         pass
 
     def get_object(self, object_uri: str, *, graph_uri: str = None, safety_check: bool = True,
-                   vital_managed: bool = True) -> G:
+                   namespace: str = None, vital_managed: bool = True) -> G:
         pass
 
     def get_object_list(self, object_uri_list: List[str], *, graph_uri: str = None, safety_check: bool = True,
-                        vital_managed: bool = True) -> ResultList:
+                        namespace: str = None, vital_managed: bool = True) -> ResultList:
         pass
 
     def delete_object(self, object_uri: str, *, graph_uri: str = None, safety_check: bool = True,
-                      vital_managed: bool = True) -> VitalGraphStatus:
+                      namespace: str = None, vital_managed: bool = True) -> VitalGraphStatus:
         pass
 
     def delete_object_list(self, object_uri_list: List[str], *, graph_uri: str = None, safety_check: bool = True,
-                           vital_managed: bool = True) -> VitalGraphStatus:
+                           namespace: str = None, vital_managed: bool = True) -> VitalGraphStatus:
         pass
 
     def filter_query(self, graph_uri: str, sparql_query: str, uri_binding='uri', *, limit: int = 100, offset: int = 0,
-                     resolve_objects: bool = True, safety_check: bool = True, vital_managed: bool = True) -> ResultList:
+                     resolve_objects: bool = True, safety_check: bool = True, namespace: str = None, vital_managed: bool = True) -> ResultList:
         pass
 
     def query(self, graph_uri: str, sparql_query: str, uri_binding='uri', *, limit=100, offset=0, resolve_objects=True,
-              safety_check: bool = True, vital_managed=True) -> ResultList:
+              safety_check: bool = True, namespace: str = None, vital_managed=True) -> ResultList:
         pass
 
     def query_construct(self, graph_uri: str, sparql_query: str, namespace_list: List[Ontology],
                         binding_list: List[Binding], *, limit=100, offset=0, safety_check: bool = True,
-                        vital_managed: bool = True) -> ResultList:
+                        namespace: str = None, vital_managed: bool = True) -> ResultList:
         pass
 
     def query_construct_solution(self, graph_uri: str, sparql_query: str, namespace_list: List[Ontology],
                                  binding_list: List[Binding], root_binding: str | None = None, *, limit=100, offset=0,
-                                 safety_check: bool = True, vital_managed: bool = True) -> SolutionList:
+                                 safety_check: bool = True, namespace: str = None, vital_managed: bool = True) -> SolutionList:
         pass

@@ -21,6 +21,7 @@ class CollectionConfig:
 class VectorDatabaseConfig:
     vector_database_type: str
     endpoint: str
+    vector_database_schema_list: Optional[list[str]]
     vector_endpoint: Optional[str] = None
     grpc_endpoint: Optional[str] = None
     api_key: Optional[str] = None
@@ -41,6 +42,7 @@ class GraphDatabaseConfig:
 @dataclass
 class VitalServiceConfig:
     name: str
+    namespace: str
     graph_database: Optional[GraphDatabaseConfig] = None
     vector_database: Optional[VectorDatabaseConfig] = None
 
@@ -70,9 +72,11 @@ class VitalSignsConfigLoader:
         try:
             with open(config_path, 'r') as file:
                 config_content = yaml.safe_load(file)
+                print(config_content)
 
             return VitalSignsConfigLoader._parse_config(config_content)
         except Exception as e:
+            print(e)
             return VitalSignsConfig()
 
     @staticmethod
@@ -105,12 +109,14 @@ class VitalSignsConfigLoader:
                     endpoint=vector_db_data['endpoint'],
                     api_key=vector_db_data['api_key'],
                     vector_database_type=vector_db_data['vector_database_type'],
+                    vector_database_schema_list=vector_db_data['vector_database_schema_list'],
                     embedding_models=embedding_models,
                     collections=collections
                 )
 
             services.append(VitalServiceConfig(
                 name=service_data['name'],
+                namespace=service_data['namespace'],
                 graph_database=graph_database,
                 vector_database=vector_database
             ))

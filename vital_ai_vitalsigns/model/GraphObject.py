@@ -110,6 +110,10 @@ class GraphObject(metaclass=GraphObjectMeta):
         vs = VitalSigns()
         vs.include_graph_object(self)
 
+    def __repr__(self):
+        go_json = self.to_json(False)
+        return f"GraphObject(json={go_json})"
+
     def __del__(self):
         # print(f"deleting: {self}")
 
@@ -921,9 +925,14 @@ class GraphObject(metaclass=GraphObjectMeta):
             if predicate == VitalConstants.uri_prop_uri:
                 continue
 
-            trait_cls = registry.vitalsigns_property_classes[predicate]
+            trait_cls = registry.vitalsigns_property_classes.get(predicate, None)
 
-            multiple_values = trait_cls.multiple_values
+            multiple_values = False
+
+            # for GCO this is not set
+            # need to inspect the literal to detect multiple values?
+            if trait_cls:
+                multiple_values = trait_cls.multiple_values
 
             if multiple_values is True:
 
@@ -941,6 +950,7 @@ class GraphObject(metaclass=GraphObjectMeta):
 
                 continue
 
+            value = None
             if isinstance(obj_value, Literal):
                 value = obj_value.toPython()
             elif isinstance(obj_value, URIRef):

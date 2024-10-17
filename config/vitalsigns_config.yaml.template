@@ -9,6 +9,7 @@ vector_database:
 
 vitalservice:
   - name: example_service_1
+    namespace: example_namespace_1
     graph_database:
       username: "user1"
       password: "pass1"
@@ -18,18 +19,22 @@ vitalservice:
       endpoint: "http://example.com/vectordb"
       api_key: "apikey1"
       vector_database_type: "weaviate"
+      vector_database_schema_list: ["schema.yaml"]
   - name: example_service_2
+    namespace: example_namespace_2
     graph_database:
       username: "user2"
       password: "pass2"
       endpoint: "http://example.com/anothergraphdb"
       database_type: "fuseki"
   - name: example_service_3
+    namespace: example_namespace_3
     vector_database:
       endpoint: "http://example.com/othervectordb"
       api_key: "apikey2"
       vector_database_type: "weaviate"
-        embedding_models:
+      vector_database_schema_list: ["schema.yaml"]
+      embedding_models:
         - id: model_1
           type: type_1
           endpoint: https://example.com/api/endpoint_1
@@ -51,5 +56,3 @@ vitalservice:
           embedding_models:
             value: model_2
             type: model_3
-
-

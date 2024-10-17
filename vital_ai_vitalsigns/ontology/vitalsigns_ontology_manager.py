@@ -31,6 +31,9 @@ class VitalSignsOntologyManager:
     # TODO adding single ontology to check if imports are already
     # loaded, and don't import if not
 
+    def get_property_info(self, property_uri: str):
+        return self._range_property_map.get(property_uri, {})
+
     def get_domain_property_list(self, clazz):
 
         prop_list = []

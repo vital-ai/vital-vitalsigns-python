@@ -42,9 +42,11 @@ class VitalSigns(metaclass=VitalSignsMeta):
 
         self._vital_home = vital_home
 
-        self._vitalservice_manager = VitalServiceManager()
-
         self._vitalsigns_config = VitalSignsConfigLoader.vitalsigns_load_config(vital_home)
+
+        vitalservice_list = self._vitalsigns_config.vitalservice_list
+
+        self._vitalservice_manager = VitalServiceManager(config=vitalservice_list)
 
         if background_task:
             self.start()
@@ -59,6 +61,9 @@ class VitalSigns(metaclass=VitalSignsMeta):
         while self._running:
             self.cleanup_task()
             time.sleep(60)
+
+    def get_vitalhome(self):
+        return self._vital_home
 
     def get_config(self) -> VitalSignsConfig:
         return self._vitalsigns_config

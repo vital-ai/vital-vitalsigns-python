@@ -1,10 +1,18 @@
 from typing import List, TypeVar, Dict, Optional
+
+from vital_ai_vitalsigns.metaql.metaql_result_list import MetaQLResultList
+from vital_ai_vitalsigns.ontology.ontology import Ontology
 from vital_ai_vitalsigns.query.result_list import ResultList
+from vital_ai_vitalsigns.query.solution_list import SolutionList
 from vital_ai_vitalsigns.service.base_service import BaseService
 from vital_ai_vitalsigns.service.graph.graph_service import VitalGraphService
 from vital_ai_vitalsigns.service.vector.vector_service import VitalVectorService
 from vital_ai_vitalsigns.service.vital_namespace import VitalNamespace
 from vital_ai_vitalsigns.service.vital_service_status import VitalServiceStatus
+
+from vital_ai_vitalsigns.metaql.metaql_query import SelectQuery as MetaQLSelectQuery
+from vital_ai_vitalsigns.metaql.metaql_query import GraphQuery as MetaQLGraphQuery
+
 import threading
 import time
 
@@ -17,11 +25,13 @@ G = TypeVar('G', bound=Optional['GraphObject'])
 class VitalService(BaseService):
     def __init__(self,
                  vitalservice_name: str = None,
+                 vitalservice_namespace: str = None,
                  graph_service: VitalGraphService = None,
                  vector_service: VitalVectorService = None,
                  synchronize_service=True,
                  synchronize_task=True):
         self.vitalservice_name = vitalservice_name
+        self.vitalservice_namespace = vitalservice_namespace
         self.graph_service = graph_service
         self.vector_service = vector_service
         self.graph_info_lock = threading.RLock()
@@ -31,6 +41,12 @@ class VitalService(BaseService):
             self.synchronize_service()
         if synchronize_task:
             self.start()
+
+    def get_vitalservice_name(self) -> str:
+        return self.vitalservice_name
+
+    def get_vitalservice_namespace(self) -> str:
+        return self.vitalservice_namespace
 
     def query_graph_info(self):
         # put query to graph service and vector server here
@@ -268,3 +284,27 @@ class VitalService(BaseService):
 
     def query_vector_service(self, graphql: str) -> List[Dict]:
         pass
+
+    #################################################
+    # MetaQL Functions
+
+    def metaql_select_query(self, *,
+                            namespace: str = None,
+                            select_query: MetaQLSelectQuery,
+                            namespace_list: List[Ontology]) -> MetaQLResultList:
+
+        return self.graph_service.metaql_select_query(
+            namespace=namespace,
+            select_query=select_query,
+            namespace_list=namespace_list)
+
+    def metaql_graph_query(self, *,
+                           namespace: str = None,
+                           graph_query: MetaQLGraphQuery,
+                           namespace_list: List[Ontology]) -> MetaQLResultList:
+
+        return self.graph_service.metaql_graph_query(
+            namespace=namespace,
+            graph_query=graph_query,
+            namespace_list=namespace_list)
+

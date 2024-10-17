@@ -10,6 +10,14 @@ class VitalVectorService:
     # todo batch cases
 
     @abstractmethod
+    def initialize_vector_service(self, vital_managed=True):
+        pass
+
+    @abstractmethod
+    def destroy_vector_service(self, vital_managed=True):
+        pass
+
+    @abstractmethod
     def check_vital_collection(self, vital_managed=True):
         pass
 

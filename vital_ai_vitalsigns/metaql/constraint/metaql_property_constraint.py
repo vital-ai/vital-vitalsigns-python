@@ -1,0 +1,133 @@
+from datetime import datetime
+from typing import Literal
+
+from vital_ai_vitalsigns.metaql.constraint.metaql_constraint import MetaQLConstraint, COMPARATOR_TYPE
+
+TARGET_TYPE_NODE = "TARGET_TYPE_NODE"
+TARGET_TYPE_EDGE = "TARGET_TYPE_EDGE"
+
+TARGET_TYPE_HYPER_NODE = "TARGET_TYPE_HYPER_NODE"
+TARGET_TYPE_HYPER_EDGE = "TARGET_TYPE_HYPER_EDGE"
+TARGET_TYPE_GRAPH_CONTAINER_OBJECT = "TARGET_TYPE_GRAPH_CONTAINER_OBJECT"
+
+TARGET_TYPE = Literal[
+    "TARGET_TYPE_NODE",
+    "TARGET_TYPE_EDGE",
+    "TARGET_TYPE_HYPER_NODE",
+    "TARGET_TYPE_HYPER_EDGE",
+    "TARGET_TYPE_GRAPH_CONTAINER_OBJECT"
+]
+
+TRUTH_TYPE_YES = "TRUTH_TYPE_YES"
+TRUTH_TYPE_NO = "TRUTH_TYPE_NO"
+TRUTH_TYPE_UNKNOWN = "TRUTH_TYPE_UNKNOWN"
+TRUTH_TYPE_MU = "TRUTH_TYPE_MU"
+
+TRUTH_TYPE = Literal[
+    "TRUTH_TYPE_YES",
+    "TRUTH_TYPE_NO",
+    "TRUTH_TYPE_UNKNOWN",
+    "TRUTH_TYPE_MU"
+]
+
+EXISTS_PROPERTY_DATA_CONSTRAINT_TYPE = "EXISTS_PROPERTY_DATA_CONSTRAINT_TYPE"
+NOT_EXISTS_PROPERTY_DATA_CONSTRAINT_TYPE = "NOT_EXISTS_PROPERTY_DATA_CONSTRAINT_TYPE"
+STRING_PROPERTY_DATA_CONSTRAINT_TYPE = "STRING_PROPERTY_DATA_CONSTRAINT_TYPE"
+BOOLEAN_PROPERTY_DATA_CONSTRAINT_TYPE = "BOOLEAN_PROPERTY_DATA_CONSTRAINT_TYPE"
+INTEGER_PROPERTY_DATA_CONSTRAINT_TYPE = "INTEGER_PROPERTY_DATA_CONSTRAINT_TYPE"
+FLOAT_PROPERTY_DATA_CONSTRAINT_TYPE = "FLOAT_PROPERTY_DATA_CONSTRAINT_TYPE"
+URI_PROPERTY_DATA_CONSTRAINT_TYPE = "URI_PROPERTY_DATA_CONSTRAINT_TYPE"
+DATETIME_PROPERTY_DATA_CONSTRAINT_TYPE = "DATETIME_PROPERTY_DATA_CONSTRAINT_TYPE"
+LONG_PROPERTY_DATA_CONSTRAINT_TYPE = "LONG_PROPERTY_DATA_CONSTRAINT_TYPE"
+DOUBLE_PROPERTY_DATA_CONSTRAINT_TYPE = "DOUBLE_PROPERTY_DATA_CONSTRAINT_TYPE"
+GEOLOCATION_PROPERTY_DATA_CONSTRAINT_TYPE = "GEOLOCATION_PROPERTY_DATA_CONSTRAINT_TYPE"
+TRUTH_PROPERTY_DATA_CONSTRAINT_TYPE = "TRUTH_PROPERTY_DATA_CONSTRAINT_TYPE"
+OTHER_PROPERTY_DATA_CONSTRAINT_TYPE = "OTHER_PROPERTY_DATA_CONSTRAINT_TYPE"
+
+PROPERTY_DATA_CONSTRAINT_TYPE = Literal[
+    "EXISTS_PROPERTY_DATA_CONSTRAINT_TYPE",
+    "NOT_EXISTS_PROPERTY_DATA_CONSTRAINT_TYPE",
+    "STRING_PROPERTY_DATA_CONSTRAINT_TYPE",
+    "BOOLEAN_PROPERTY_DATA_CONSTRAINT_TYPE",
+    "INTEGER_PROPERTY_DATA_CONSTRAINT_TYPE",
+    "FLOAT_PROPERTY_DATA_CONSTRAINT_TYPE",
+    "URI_PROPERTY_DATA_CONSTRAINT_TYPE",
+    "DATETIME_PROPERTY_DATA_CONSTRAINT_TYPE",
+    "LONG_PROPERTY_DATA_CONSTRAINT_TYPE",
+    "DOUBLE_PROPERTY_DATA_CONSTRAINT_TYPE",
+    "GEOLOCATION_PROPERTY_DATA_CONSTRAINT_TYPE",
+    "TRUTH_PROPERTY_DATA_CONSTRAINT_TYPE",
+    "OTHER_PROPERTY_DATA_CONSTRAINT_TYPE",
+]
+
+
+class PropertyConstraint(MetaQLConstraint):
+
+    target: TARGET_TYPE
+
+    property_uri: str
+
+    comparator: COMPARATOR_TYPE
+
+    # this is determined by the property uri
+    is_multi_value: bool
+
+    property_constraint_type: PROPERTY_DATA_CONSTRAINT_TYPE
+
+
+class ExistsPropertyConstraint(PropertyConstraint):
+    pass
+
+
+class NotExistsPropertyConstraint(PropertyConstraint):
+    pass
+
+
+class StringPropertyConstraint(PropertyConstraint):
+
+    string_value: str
+
+
+class BooleanPropertyConstraint(PropertyConstraint):
+
+    boolean_value: bool
+
+
+class IntegerPropertyConstraint(PropertyConstraint):
+
+    integer_value: int
+
+
+class FloatPropertyConstraint(PropertyConstraint):
+
+    float_value: float
+
+
+class URIPropertyConstraint(PropertyConstraint):
+
+    uri_value: str
+
+
+class DateTimePropertyConstraint(PropertyConstraint):
+
+    datetime_value: datetime
+
+
+class LongPropertyConstraint(PropertyConstraint):
+    long_value: int
+
+
+class DoublePropertyConstraint(PropertyConstraint):
+    double_value: float
+
+
+class GeoLocationPropertyConstraint(PropertyConstraint):
+    geolocation_value: str
+
+
+class TruthPropertyConstraint(PropertyConstraint):
+    truth_value: TRUTH_TYPE
+
+
+class OtherPropertyConstraint(PropertyConstraint):
+    other_value: str

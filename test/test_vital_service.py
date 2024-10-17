@@ -1,6 +1,5 @@
 from utils.config_utils import ConfigUtils
 from vital_ai_vitalsigns.service.graph.virtuoso_service import VirtuosoGraphService
-from vital_ai_vitalsigns.service.vital_service import VitalService
 from vital_ai_vitalsigns.utils.uri_generator import URIGenerator
 from vital_ai_vitalsigns.vitalsigns import VitalSigns
 from vital_ai_vitalsigns_core.model.VitalServiceConfig import VitalServiceConfig

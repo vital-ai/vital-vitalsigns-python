@@ -1,3 +1,5 @@
+from abc import ABC
 
-class BaseService:
+
+class BaseService(ABC):
     pass

@@ -9,6 +9,7 @@ from pathlib import Path
 import importlib.resources as resources
 import concurrent.futures
 from typing import Type, Dict
+from importlib.metadata import entry_points
 
 from vital_ai_vitalsigns.model.GraphObject import GraphObject
 from vital_ai_vitalsigns.ontology.vitalsigns_ontology_manager import VitalSignsOntologyManager
@@ -156,6 +157,8 @@ def scan_vitalsigns_classes_parallel(vitalsigns_packages):
 
 class VitalSignsRegistry:
 
+    from vital_ai_vitalsigns.model.trait.PropertyTrait import PropertyTrait
+
     def __init__(self, *, ontology_manager: VitalSignsOntologyManager):
         self.vitalsigns_packages = []
         self.vitalsigns_classes: Dict[str, Type[GraphObject]] = {}
@@ -173,6 +176,10 @@ class VitalSignsRegistry:
     @lru_cache(maxsize=None)
     def get_vitalsigns_class(self, class_uri: str) -> Type[GraphObject]:
         return self.vitalsigns_classes[class_uri]
+
+    @lru_cache(maxsize=None)
+    def get_vitalsigns_property_class(self, property_uri: str) -> Type[PropertyTrait]:
+        return self.vitalsigns_property_classes[property_uri]
 
     def build_registry(self):
         self.vitalsigns_packages = []
@@ -200,7 +207,9 @@ class VitalSignsRegistry:
 
         ont_tuple_list = []
 
-        for ep in entry_points().get('vitalsigns_packages', []):
+        # for ep in entry_points().get('vitalsigns_packages', []):
+        for ep in entry_points(group='vitalsigns_packages'):
+
             try:
                 module = importlib.import_module(ep.value)
                 self.vitalsigns_packages.append(module)

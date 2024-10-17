@@ -1,6 +1,7 @@
 
 vitalservice:
   - name: example_service_1
+    namespace: example_namespace_1
     graph_database:
       username: "user1"
       password: "pass1"
@@ -21,12 +22,14 @@ vitalservice:
           endpoint: https://example.com/api/endpoint_2
           api_key: your_api_key_2
   - name: example_service_2
+    namespace: example_namespace_2
     graph_database:
       username: "user2"
       password: "pass2"
       endpoint: "http://example.com/anothergraphdb"
       database_type: "fuseki"
   - name: example_service_3
+    namespace: example_namespace_3
     vector_database:
       endpoint: "http://example.com/othervectordb"
       api_key: "apikey2"

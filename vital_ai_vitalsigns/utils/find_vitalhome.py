@@ -29,6 +29,14 @@ def load_env_file():
     if dotenv_path:
         load_dotenv(dotenv_path, override=True)
         logging.info(f"Loaded vital_env.env file from {dotenv_path}")
+
+        relative_vital_home = os.environ.get('RELATIVE_VITAL_HOME')
+
+        if relative_vital_home:
+            vh_parent = os.path.dirname(dotenv_path)
+            vh_path = os.path.join(vh_parent, relative_vital_home)
+            os.environ['VITAL_HOME'] = vh_path
+
     else:
         logging.info("vital_env.env file not found")
 

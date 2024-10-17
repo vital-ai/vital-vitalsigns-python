@@ -6,8 +6,8 @@ G = TypeVar('G', bound='GraphObject')
 
 class FusekiMemoryService(FusekiService):
 
-    def __init__(self):
-        pass
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     # port, path to java home
 

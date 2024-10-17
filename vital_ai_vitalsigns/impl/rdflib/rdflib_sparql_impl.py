@@ -79,6 +79,10 @@ class RDFlibSparqlImpl:
             # uni-graph case
             return False
 
+        if not isinstance(self.graph, Dataset):
+            # enforce multi-graph case
+            return False
+
         if not enforce_segment:
             try:
                 new_graph = Graph(identifier=URIRef(graph_uri))
