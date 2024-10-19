@@ -428,6 +428,7 @@ class MetaQLBuilder:
                                   property_constraint_type: PROPERTY_CONSTRAINT_TYPE,
                                   target: TARGET_TYPE,
                                   property_uri: str = None,
+                                  include_subproperties: bool = False,
                                   comparator: COMPARATOR_TYPE,
                                   string_value: str = None,
                                   boolean_value: bool = None,
@@ -443,6 +444,7 @@ class MetaQLBuilder:
 
         property_constraint = None
 
+        # look up value
         is_multi_value = False
 
         if property_constraint_type is None:
@@ -457,6 +459,7 @@ class MetaQLBuilder:
                 target=target,
                 property_uri=property_uri,
                 comparator=comparator,
+                include_subproperties=include_subproperties,
                 is_multi_value=is_multi_value,
                 constraint_type=PROPERTY_CONSTRAINT_TYPE
             )
@@ -469,6 +472,7 @@ class MetaQLBuilder:
                 target=target,
                 property_uri=property_uri,
                 comparator=comparator,
+                include_subproperties=include_subproperties,
                 is_multi_value=is_multi_value,
                 constraint_type=PROPERTY_CONSTRAINT_TYPE
             )
@@ -481,6 +485,7 @@ class MetaQLBuilder:
                 target=target,
                 property_uri=property_uri,
                 comparator=comparator,
+                include_subproperties=include_subproperties,
                 is_multi_value=is_multi_value,
                 constraint_type=PROPERTY_CONSTRAINT_TYPE,
                 string_value=string_value
@@ -493,6 +498,7 @@ class MetaQLBuilder:
                 target=target,
                 property_uri=property_uri,
                 comparator=comparator,
+                include_subproperties=include_subproperties,
                 is_multi_value=is_multi_value,
                 constraint_type=PROPERTY_CONSTRAINT_TYPE,
                 boolean_value=boolean_value
@@ -505,6 +511,7 @@ class MetaQLBuilder:
                 target=target,
                 property_uri=property_uri,
                 comparator=comparator,
+                include_subproperties=include_subproperties,
                 is_multi_value=is_multi_value,
                 constraint_type=PROPERTY_CONSTRAINT_TYPE,
                 float_value=float_value
@@ -517,6 +524,7 @@ class MetaQLBuilder:
                 target=target,
                 property_uri=property_uri,
                 comparator=comparator,
+                include_subproperties=include_subproperties,
                 is_multi_value=is_multi_value,
                 constraint_type=PROPERTY_CONSTRAINT_TYPE,
                 integer_value=integer_value
@@ -529,6 +537,7 @@ class MetaQLBuilder:
                 target=target,
                 property_uri=property_uri,
                 comparator=comparator,
+                include_subproperties=include_subproperties,
                 is_multi_value=is_multi_value,
                 constraint_type=PROPERTY_CONSTRAINT_TYPE,
                 long_value=long_value)
@@ -540,6 +549,7 @@ class MetaQLBuilder:
                 target=target,
                 property_uri=property_uri,
                 comparator=comparator,
+                include_subproperties=include_subproperties,
                 is_multi_value=is_multi_value,
                 constraint_type=PROPERTY_CONSTRAINT_TYPE,
                 datetime_value=datetime_value
@@ -552,6 +562,7 @@ class MetaQLBuilder:
                 target=target,
                 property_uri=property_uri,
                 comparator=comparator,
+                include_subproperties=include_subproperties,
                 is_multi_value=is_multi_value,
                 constraint_type=PROPERTY_CONSTRAINT_TYPE,
                 double_value=double_value
@@ -564,6 +575,7 @@ class MetaQLBuilder:
                 target=target,
                 property_uri=property_uri,
                 comparator=comparator,
+                include_subproperties=include_subproperties,
                 is_multi_value=is_multi_value,
                 constraint_type=PROPERTY_CONSTRAINT_TYPE,
                 truth_value=truth_value
@@ -576,6 +588,7 @@ class MetaQLBuilder:
                 target=target,
                 property_uri=property_uri,
                 comparator=comparator,
+                include_subproperties=include_subproperties,
                 is_multi_value=is_multi_value,
                 constraint_type=PROPERTY_CONSTRAINT_TYPE,
                 geolocation_value=geolocation_value
@@ -588,6 +601,7 @@ class MetaQLBuilder:
                 target=target,
                 property_uri=property_uri,
                 comparator=comparator,
+                include_subproperties=include_subproperties,
                 is_multi_value=is_multi_value,
                 constraint_type=PROPERTY_CONSTRAINT_TYPE,
                 other_value=other_value

@@ -4,7 +4,7 @@ from vital_ai_vitalsigns.part.graph_part import GraphPart
 
 
 G = TypeVar('G', bound=Optional[GraphObject])
-GP = TypeVar('G', bound=Optional[GraphPart])
+GP = TypeVar('GP', bound=Optional[GraphPart])
 
 
 class PartList(List[GraphPart]):

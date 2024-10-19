@@ -33,7 +33,11 @@ def main():
     print("VitalSigns Initialized")
 
     gq = (
-        QueryBuilder.graph_query()
+        QueryBuilder.graph_query(
+            limit=100,
+            offset=0,
+            resolve_objects=True
+        )
         .graph_uri("urn:123")
         .arc(
             Arc()
@@ -180,6 +184,27 @@ def main():
 
     print(metaql_result)
 
+    rl = metaql_result.get_result_list()
+
+    result_list = []
+
+    for r in rl:
+        result_element = MetaQLBuilder.build_result_element(
+            graph_object=r.graph_object,
+            score=r.score
+        )
+        result_list.append(result_element)
+
+    metaql_result_list = MetaQLBuilder.build_result_list(
+        offset=metaql_result.get_offset(),
+        limit=metaql_result.get_limit(),
+        result_count=len(metaql_result.get_result_list()),
+        total_result_count=metaql_result.get_total_result_count(),
+        binding_list=metaql_result.get_binding_list(),
+        result_list=result_list,
+        result_object_list=metaql_result.get_result_object_list(),
+    )
+
     status = OK_STATUS_TYPE
 
     metaql_status = MetaQLBuilder.build_status(
@@ -188,7 +213,7 @@ def main():
 
     metaql_response = MetaQLBuilder.build_response(
         result_status=metaql_status,
-        result_list=metaql_result
+        result_list=metaql_result_list
     )
 
     print(metaql_response)

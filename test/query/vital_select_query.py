@@ -1,4 +1,4 @@
-from vital_ai_vitalsigns.query.vital_query import VitalQuery
+from test.query.vital_query import VitalQuery
 
 
 class VitalSelectQuery(VitalQuery):

@@ -8,6 +8,7 @@ from vital_ai_vitalsigns.metaql.metaql_result_list import MetaQLResultList
 
 from vital_ai_vitalsigns.model.GraphObject import GraphObject
 from vital_ai_vitalsigns.ontology.ontology import Ontology
+from vital_ai_vitalsigns.query.metaql_result import MetaQLResult
 from vital_ai_vitalsigns.query.result_list import ResultList
 from vital_ai_vitalsigns.query.solution_list import SolutionList
 from vital_ai_vitalsigns.service.graph.binding import Binding
@@ -232,14 +233,14 @@ class VitalGraphService(ABC):
     def metaql_select_query(self, *,
                             namespace: str = None,
                             select_query: MetaQLSelectQuery,
-                            namespace_list: List[Ontology]) -> MetaQLResultList:
+                            namespace_list: List[Ontology]) -> MetaQLResult:
         pass
 
     @abstractmethod
     def metaql_graph_query(self, *,
                            namespace: str = None,
                            graph_query: MetaQLGraphQuery,
-                           namespace_list: List[Ontology]) -> MetaQLResultList:
+                           namespace_list: List[Ontology]) -> MetaQLResult:
         pass
 
 

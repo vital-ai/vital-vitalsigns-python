@@ -1,7 +1,7 @@
 from vital_ai_vitalsigns.model.VITAL_Edge import VITAL_Edge
 from vital_ai_vitalsigns.model.VITAL_Node import VITAL_Node
-from vital_ai_vitalsigns.query.vital_graph_query import VitalGraphQuery, Arc, ref, ArcAnd, bind
-from vital_ai_vitalsigns.query.vital_select_query import VitalSelectQuery
+from test.query.vital_graph_query import VitalGraphQuery, Arc, ref, ArcAnd, bind
+from test.query.vital_select_query import VitalSelectQuery
 from vital_ai_vitalsigns_core.model.properties.Property_URIProp import Property_URIProp
 
 

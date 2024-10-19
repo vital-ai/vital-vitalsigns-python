@@ -344,10 +344,14 @@ class SelectQuery(Query):
 
 
 class GraphQuery(Query):
-    def __init__(self, *, offset: int = 0, limit: int = 100,
+    def __init__(self, *,
+                 offset: int = 0,
+                 limit: int = 100,
+                 resolve_objects: bool = False,
                  container: "QueryContainer"):
         self._graph_uri_list = []
         self._root_arc = None
+        self._resolve_objects = resolve_objects
         self._offset = offset
         self._limit = limit
         self._container = container
@@ -735,7 +739,7 @@ class QueryContainer:
 
         if isinstance(self.query, SelectQuery):
 
-            print(self.query)
+            # print(f"Build Query: {self.query}")
 
             # selects only have constraint list
             root_arc = self.build_root_arc(
@@ -759,7 +763,7 @@ class QueryContainer:
 
         if isinstance(self.query, GraphQuery):
 
-            print(self.query)
+            # print(f"Build Query: {self.query}")
 
             root_arc = self.build_root_arc(
                 self.query._root_arc._sub_arc,
@@ -773,6 +777,7 @@ class QueryContainer:
             gq = MetaQLBuilder.build_metaql_query(
                 metaql_query_type=METAQL_GRAPH_QUERY,
                 graph_uri_list=self.query._graph_uri_list,
+                resolve_objects=self.query._resolve_objects,
                 limit=self.query._limit,
                 offset=self.query._offset,
                 root_arc=root_arc
@@ -847,13 +852,15 @@ class QueryBuilder:
     @classmethod
     def graph_query(cls, *,
                     offset: int = 0,
-                    limit: int = 100):
+                    limit: int = 100,
+                    resolve_objects: bool = False):
 
         query_container = QueryContainer()
 
         graph_query = GraphQuery(
             offset=offset,
             limit=limit,
+            resolve_objects=resolve_objects,
             container=query_container)
 
         query_container.query = graph_query

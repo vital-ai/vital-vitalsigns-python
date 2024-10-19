@@ -20,7 +20,7 @@ class MetaQLResultList(TypedDict):
     binding_list: Optional[list[str]]
 
     # result elements are graph objects from select
-    # or graphmatch for graph queries
+    # or graph match for graph queries
     result_list: List[MetaQLResultElement]
 
     # in graph query, list of objects resolved if requested

@@ -339,6 +339,7 @@ class MetaQLParser:
             params_dict['target'] = parse_dict.get('target', None)
             params_dict['property_uri'] = parse_dict.get('property_uri', None)
             params_dict['comparator'] = parse_dict.get('comparator', None)
+            params_dict['include_subproperties'] = parse_dict.get('include_subproperties', None)
 
             params_dict['string_value'] = parse_dict.get('string_value', None)
             params_dict['boolean_value'] = parse_dict.get('boolean_value', None)

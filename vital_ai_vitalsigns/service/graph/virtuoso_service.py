@@ -11,12 +11,13 @@ from requests.exceptions import ChunkedEncodingError
 from urllib3 import Retry
 from urllib3.exceptions import ProtocolError
 from vital_ai_vitalsigns.collection.graph_collection import GraphCollection
+from vital_ai_vitalsigns.metaql.arc.metaql_arc import ArcRoot
 from vital_ai_vitalsigns.metaql.metaql_builder import MetaQLBuilder
-from vital_ai_vitalsigns.metaql.metaql_result_list import MetaQLResultList
-from vital_ai_vitalsigns.metaql.metaql_status import OK_STATUS_TYPE
 from vital_ai_vitalsigns.model.VITAL_Edge import VITAL_Edge
 from vital_ai_vitalsigns.model.VITAL_Node import VITAL_Node
 from vital_ai_vitalsigns.ontology.ontology import Ontology
+from vital_ai_vitalsigns.query.metaql_result import MetaQLResult
+from vital_ai_vitalsigns.query.result_element import ResultElement
 from vital_ai_vitalsigns.query.result_list import ResultList
 from vital_ai_vitalsigns.query.solution import Solution
 from vital_ai_vitalsigns.query.solution_list import SolutionList
@@ -27,6 +28,7 @@ from vital_ai_vitalsigns.service.graph.name_graph import VitalNameGraph
 from vital_ai_vitalsigns.model.GraphObject import GraphObject
 from vital_ai_vitalsigns.service.graph.utils.virtuoso_utils import VirtuosoUtils
 from vital_ai_vitalsigns.service.graph.vital_graph_status import VitalGraphStatus
+from vital_ai_vitalsigns.service.metaql.metaql_sparql_impl import MetaQLSparqlImpl
 from vital_ai_vitalsigns.utils.uri_generator import URIGenerator
 from vital_ai_vitalsigns.vitalsigns import VitalSigns
 from vital_ai_vitalsigns_core.model.GraphMatch import GraphMatch
@@ -1620,8 +1622,10 @@ OFFSET {offset}
                                  vital_managed: bool = True) -> SolutionList:
 
         # object cache to use during query
-        # todo bulk retrieval of objects
-        graph_collection = GraphCollection(use_rdfstore=False, use_vectordb=False)
+        # added bulk retrieval of objects
+        # graph_collection = GraphCollection(use_rdfstore=False, use_vectordb=False)
+
+        graph_map: dict = {}
 
         result_list = self.query_construct(
             graph_uri,
@@ -1653,7 +1657,52 @@ OFFSET {offset}
 
         solutions = []
 
-        unique_subjects = set(graph.subjects())
+        unique_objects = set(graph.objects())
+
+        uri_objects = {o for o in unique_objects if isinstance(o, URIRef)}
+
+        retrieve_list: List[str] = []
+
+        for obj_uri in uri_objects:
+            object_uri_str = str(obj_uri)
+            # print(f"object uri: {object_uri_str}")
+            retrieve_list.append(object_uri_str)
+
+        # print(f"Bulk Retrieving URIs length: {len(retrieve_list)}")
+
+        total_objects = len(retrieve_list)
+
+        start_index = 0
+
+        chunk_size = 1_000
+
+        while start_index < total_objects:
+            end_index = min(start_index + chunk_size, total_objects)
+            chunk = retrieve_list[start_index:end_index]
+
+            # print(f"Bulk Retrieving URIs Chunk length: {len(chunk)}")
+
+            result_list = self.get_object_list_bulk(chunk, graph_uri=graph_uri)
+
+            for re in result_list:
+                graph_object = re.graph_object
+                # graph_collection.add(graph_object)
+                graph_map[str(graph_object.URI)] = graph_object
+
+            start_index += chunk_size
+
+        # print(f"Bulk Retrieving URIs Complete length: {len(retrieve_list)}")
+
+        unique_triples = set(graph.triples((None, None, None)))
+
+        unique_graph = Graph()
+
+        for triple in unique_triples:
+            unique_graph.add(triple)
+
+        unique_subjects = set(unique_graph.subjects())
+
+        solution_count = 0
 
         for subject in unique_subjects:
 
@@ -1663,7 +1712,9 @@ OFFSET {offset}
             # root_binding_uri = None
             root_binding_obj = None
 
-            triples = set(graph.triples((subject, None, None)))
+            # triples = set(graph.triples((subject, None, None)))
+
+            triples = unique_graph.triples((subject, None, None))
 
             for s, p, o in triples:
 
@@ -1674,19 +1725,29 @@ OFFSET {offset}
                     matching_binding = matching_bindings[0]
 
                     binding_var = matching_binding.variable
+
                     binding_value = o
 
-                    uri_map[binding_var] = binding_value
+                    # set to string instead of Node
+                    uri_map[binding_var] = str(binding_value)
 
                     if matching_binding.value_type == BindingValueType.URIREF:
 
                         # cache individual objects
+                        # should already be cached
 
-                        cache_obj = graph_collection.get(str(o))
+                        # cache_obj = graph_collection.get(str(o))
+
+                        cache_obj = graph_map[str(o)]
 
                         if cache_obj is None:
+
+                            # print(f"Retrieving cache miss: {str(o)}")
+
                             binding_obj = self.get_object(str(o), graph_uri=graph_uri)
-                            graph_collection.add(binding_obj)
+                            # graph_collection.add(binding_obj)
+                            graph_map[str(o)] = binding_obj
+
                         else:
                             binding_obj = cache_obj
 
@@ -1696,50 +1757,139 @@ OFFSET {offset}
                             # root_binding_uri = binding_value
                             root_binding_obj = binding_obj
 
+            solution_count += 1
+            # print(f"Adding Solution: {solution_count}")
             solution = Solution(uri_map, obj_map, root_binding, root_binding_obj)
 
             solutions.append(solution)
 
         solution_list = SolutionList(solutions, limit, offset)
 
+        # print(f"Completed Solutions: {solution_count}")
+
         return solution_list
 
     def metaql_select_query(self, *,
                             namespace: str = None,
                             select_query: MetaQLSelectQuery,
-                            namespace_list: List[Ontology]) -> MetaQLResultList:
+                            namespace_list: List[Ontology]) -> MetaQLResult:
 
-        offset = 0
-        limit = 100
-        result_count = 1
-        total_result_count = 1
+        namespace = "VITALTEST"
 
-        node = VITAL_Node()
-        node.URI = URIGenerator.generate_uri()
-        node.name = "Marc"
+        namespace_list = [
+            Ontology("vital-core", "http://vital.ai/ontology/vital-core#"),
+            Ontology("vital", "http://vital.ai/ontology/vital#"),
+            Ontology("vital-aimp", "http://vital.ai/ontology/vital-aimp#"),
+            Ontology("haley", "http://vital.ai/ontology/haley"),
+            Ontology("haley-ai-question", "http://vital.ai/ontology/haley-ai-question#"),
+            Ontology("haley-ai-kg", "http://vital.ai/ontology/haley-ai-kg#")
+        ]
 
-        result_element = MetaQLBuilder.build_result_element(
-            graph_object=node
-        )
+        sparql_impl = MetaQLSparqlImpl()
 
-        result_list = [result_element]
+        graph_uri_list = select_query.get('graph_uri_list', [])
+        offset = select_query.get('offset', 0)
+        limit = select_query.get('limit', 10)
 
-        metaql_result_list = MetaQLBuilder.build_result_list(
+        arc: ArcRoot = select_query.get('arc', None)
+
+        if arc is None:
+            # error
+            metaql_result = MetaQLResult()
+            return metaql_result
+
+        constraint_list_list = arc.get('constraint_list_list', [])
+
+        term_count = 0
+
+        for cl in constraint_list_list:
+
+            constraint_list = cl.get('constraint_list', [])
+
+            for constraint in constraint_list:
+
+                print(f"Constraint: {constraint}")
+
+                term_count += 1
+
+                metaql_class = constraint.get('metaql_class')
+
+                if metaql_class == 'NodeConstraint':
+                    class_uri = constraint.get('class_uri')
+
+                    constraint_str = f" ?uri a <{class_uri}> ."
+                    sparql_impl.add_constraint(constraint_str)
+
+                if metaql_class == 'StringPropertyConstraint':
+
+                    property_uri = constraint.get('property_uri')
+                    string_value = constraint.get('string_value')
+
+                    constraint_str = f"""
+                    ?uri <{property_uri}> ?term_{term_count} .
+                    ?term_{term_count} bif:contains "{string_value}" .
+                    """
+
+                    sparql_impl.add_constraint(constraint_str)
+
+        binding_list = [
+            Binding("?uri", "urn:hasUri"),
+        ]
+
+        constraint_list_str = ""
+
+        for c in sparql_impl.get_constraint_list():
+
+            constraint_list_str += f"""
+            {{
+                {c}
+            }}
+            """
+
+        query_str = f"""
+        {{
+            {constraint_list_str}
+        }}
+        """
+
+        root_binding = "?uri"
+
+        print(query_str)
+
+        solutions = self.query_construct_solution(
+            graph_uri_list[0],
+            query_str,
+            namespace_list,
+            binding_list,
+            root_binding,
+            limit=limit, offset=offset)
+
+        print(f"Solution Count: {len(solutions.solution_list)}")
+
+        rl = ResultList()
+
+        for solution in solutions.solution_list:
+            for binding, obj in solution.object_map.items():
+                binding_uri = solution.uri_map[binding]
+                # print(f"Solution Binding: {binding} : {binding_uri}")
+                # print(obj.to_rdf())
+                rl.add_result(obj, 1.0)
+
+        total_result_count = len(rl)
+
+        metaql_result = MetaQLResult(
             offset=offset,
             limit=limit,
-            result_count=result_count,
             total_result_count=total_result_count,
-            result_list=result_list,
+            result_list=rl
         )
 
-        return metaql_result_list
-
-
+        return metaql_result
 
     def metaql_graph_query(self, *,
                            namespace: str = None,
                            graph_query: MetaQLGraphQuery,
-                           namespace_list: List[Ontology]) -> MetaQLResultList:
+                           namespace_list: List[Ontology]) -> MetaQLResult:
 
         offset = 0
         limit = 100
@@ -1787,6 +1937,19 @@ OFFSET {offset}
             result_object_list=result_object_list,
         )
 
-        return metaql_result_list
+        rl = ResultList()
+
+        rl.add_result(gm, 0.75)
+
+        metaql_result = MetaQLResult(
+            offset=offset,
+            limit=limit,
+            total_result_count=total_result_count,
+            binding_list=binding_list,
+            result_list=rl,
+            result_object_list=result_object_list
+        )
+
+        return metaql_result
 
 

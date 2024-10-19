@@ -72,6 +72,8 @@ class PropertyConstraint(MetaQLConstraint):
     # this is determined by the property uri
     is_multi_value: bool
 
+    include_subproperties: bool
+
     property_constraint_type: PROPERTY_DATA_CONSTRAINT_TYPE
 
 

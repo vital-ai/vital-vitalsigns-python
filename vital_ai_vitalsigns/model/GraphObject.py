@@ -112,7 +112,8 @@ class GraphObject(metaclass=GraphObjectMeta):
 
     def __repr__(self):
         go_json = self.to_json(False)
-        return f"GraphObject(json={go_json})"
+        clazz=type(self)
+        return f"GraphObject(class={clazz}, json={go_json})"
 
     def __del__(self):
         # print(f"deleting: {self}")

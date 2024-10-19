@@ -1,6 +1,5 @@
 import json
 from typing import List
-
 from utils.config_utils import ConfigUtils
 from vital_ai_vitalsigns.metaql.metaql_builder import MetaQLBuilder
 from vital_ai_vitalsigns.metaql.metaql_parser import MetaQLParser
@@ -104,15 +103,34 @@ def main():
 
     print(metaql_result)
 
+    rl = metaql_result.get_result_list()
+
+    result_list = []
+
+    for r in rl:
+        result_element = MetaQLBuilder.build_result_element(
+            graph_object=r.graph_object,
+            score=r.score
+        )
+        result_list.append(result_element)
+
     status = OK_STATUS_TYPE
 
     metaql_status = MetaQLBuilder.build_status(
         status_type=status
     )
 
+    metaql_result_list = MetaQLBuilder.build_result_list(
+        offset=metaql_result.get_offset(),
+        limit=metaql_result.get_limit(),
+        result_count=len(metaql_result.get_result_list()),
+        total_result_count=metaql_result.get_total_result_count(),
+        result_list=result_list,
+    )
+
     metaql_response = MetaQLBuilder.build_response(
         result_status=metaql_status,
-        result_list=metaql_result
+        result_list=metaql_result_list
     )
 
     print(metaql_response)

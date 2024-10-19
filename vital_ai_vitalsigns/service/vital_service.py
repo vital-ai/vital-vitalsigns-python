@@ -2,6 +2,7 @@ from typing import List, TypeVar, Dict, Optional
 
 from vital_ai_vitalsigns.metaql.metaql_result_list import MetaQLResultList
 from vital_ai_vitalsigns.ontology.ontology import Ontology
+from vital_ai_vitalsigns.query.metaql_result import MetaQLResult
 from vital_ai_vitalsigns.query.result_list import ResultList
 from vital_ai_vitalsigns.query.solution_list import SolutionList
 from vital_ai_vitalsigns.service.base_service import BaseService
@@ -291,7 +292,10 @@ class VitalService(BaseService):
     def metaql_select_query(self, *,
                             namespace: str = None,
                             select_query: MetaQLSelectQuery,
-                            namespace_list: List[Ontology]) -> MetaQLResultList:
+                            namespace_list: List[Ontology]) -> MetaQLResult:
+
+        if namespace is None:
+            namespace = self.vitalservice_namespace
 
         return self.graph_service.metaql_select_query(
             namespace=namespace,
@@ -301,7 +305,10 @@ class VitalService(BaseService):
     def metaql_graph_query(self, *,
                            namespace: str = None,
                            graph_query: MetaQLGraphQuery,
-                           namespace_list: List[Ontology]) -> MetaQLResultList:
+                           namespace_list: List[Ontology]) -> MetaQLResult:
+
+        if namespace is None:
+            namespace = self.vitalservice_namespace
 
         return self.graph_service.metaql_graph_query(
             namespace=namespace,
