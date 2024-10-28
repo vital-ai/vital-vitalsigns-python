@@ -47,6 +47,10 @@ class PathArcBinding(MetaQLArcBinding):
     pass
 
 
+class SolutionArcBinding(MetaQLArcBinding):
+    pass
+
+
 # Later include max depth of traversing
 # currently applies to a single traversal
 class MetaQLPropertyPath(TypedDict):
@@ -76,6 +80,8 @@ class MetaQLArc(TypedDict):
     edge_binding: Optional[EdgeArcBinding]
 
     path_binding: Optional[PathArcBinding]
+
+    solution_binding: Optional[SolutionArcBinding]
 
     # for property traverse type, the properties used for
     # traversing are listed

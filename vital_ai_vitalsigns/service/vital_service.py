@@ -10,10 +10,8 @@ from vital_ai_vitalsigns.service.graph.graph_service import VitalGraphService
 from vital_ai_vitalsigns.service.vector.vector_service import VitalVectorService
 from vital_ai_vitalsigns.service.vital_namespace import VitalNamespace
 from vital_ai_vitalsigns.service.vital_service_status import VitalServiceStatus
-
 from vital_ai_vitalsigns.metaql.metaql_query import SelectQuery as MetaQLSelectQuery
 from vital_ai_vitalsigns.metaql.metaql_query import GraphQuery as MetaQLGraphQuery
-
 import threading
 import time
 
@@ -305,10 +303,43 @@ class VitalService(BaseService):
     def metaql_graph_query(self, *,
                            namespace: str = None,
                            graph_query: MetaQLGraphQuery,
-                           namespace_list: List[Ontology]) -> MetaQLResult:
+                           namespace_list: List[Ontology] = None) -> MetaQLResult:
+
+        # circular dependency
+        from vital_ai_vitalsigns.vitalsigns import VitalSigns
+
+        vs = VitalSigns()
 
         if namespace is None:
             namespace = self.vitalservice_namespace
+
+        if namespace_list is None:
+
+            namespace_list = [
+                Ontology("owl", "http://www.w3.org/2002/07/owl#"),
+                Ontology("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#"),
+                Ontology("rdfs", "http://www.w3.org/2000/01/rdf-schema#"),
+            ]
+
+            iri_list = vs.get_ontology_manager().get_ontology_iri_list()
+
+            ont_prefix_map = {}
+
+            for iri in iri_list:
+
+                if iri.startswith("http://vital.ai/ontology/"):
+                    prefix = iri[len("http://vital.ai/ontology/"):]
+
+                    prefix = prefix.removesuffix("#")
+
+                    # print(f"Vital Prefix: {prefix} IRI: {iri}")
+
+                    ont_prefix_map[prefix] = iri
+
+            for k in ont_prefix_map.keys():
+                # print(f"Ont Prefix: {k} IRI: {ont_prefix_map[k]}")
+                ont = Ontology(k, ont_prefix_map[k])
+                namespace_list.append(ont)
 
         return self.graph_service.metaql_graph_query(
             namespace=namespace,

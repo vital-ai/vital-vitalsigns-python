@@ -678,6 +678,7 @@ class RDFlibSparqlImpl:
 
     def _query_construct_solution_impl(self, *, graph_uri: str, sparql_query: str, namespace_list: List[Ontology],
                                        binding_list: List[Binding], root_binding: str | None = None, limit=100, offset=0,
+                                       resolve_objects: bool = True,
                                        safety_check: bool = True) -> SolutionList:
 
         from vital_ai_vitalsigns.collection.graph_collection import GraphCollection

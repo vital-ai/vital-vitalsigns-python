@@ -7,7 +7,7 @@ from vital_ai_vitalsigns.metaql.metaql_parser import MetaQLParser
 from vital_ai_vitalsigns.metaql.metaql_status import OK_STATUS_TYPE
 from vital_ai_vitalsigns.metaql.query.query_builder import QueryBuilder, Arc, AndConstraintList, PropertyConstraint, \
     ConstraintType, ClassConstraint, OrConstraintList, PropertyPathList, AndArcList, MetaQLPropertyPath, NodeBind, \
-    EdgeBind, PathBind
+    EdgeBind, PathBind, SolutionBind
 from vital_ai_vitalsigns.model.VITAL_Edge import VITAL_Edge
 from vital_ai_vitalsigns.model.VITAL_Node import VITAL_Node
 from vital_ai_vitalsigns.ontology.ontology import Ontology
@@ -59,6 +59,7 @@ def main():
             .node_bind(NodeBind(name="node1"))
             .edge_bind(EdgeBind(name="edge1"))
             .path_bind(PathBind(name="path1"))
+            .solution_bind(SolutionBind(name="solution1"))
             .arc(
                 Arc()
                 .constraint_list(
@@ -103,6 +104,30 @@ def main():
                             .node_constraint(
                                 ClassConstraint(
                                     clazz=VITAL_Node.get_class_uri()
+                                )
+                            )
+                        )
+                    )
+                    .arc_list(
+                        AndArcList()
+                        .arc(
+                            Arc()
+                            .node_bind(NodeBind(name="node3"))
+                            .edge_bind(EdgeBind(name="edge3"))
+                            .path_bind(PathBind(name="path3"))
+                            .constraint_list(
+                                AndConstraintList()
+                                .node_constraint(
+                                    PropertyConstraint(
+                                        property=Property_hasName.get_uri(),
+                                        comparator=ConstraintType.STRING_CONTAINS,
+                                        value="Edgar"
+                                    )
+                                )
+                                .node_constraint(
+                                    ClassConstraint(
+                                        clazz=VITAL_Node.get_class_uri()
+                                    )
                                 )
                             )
                         )

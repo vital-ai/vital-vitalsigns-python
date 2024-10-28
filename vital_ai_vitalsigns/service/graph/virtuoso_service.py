@@ -28,6 +28,7 @@ from vital_ai_vitalsigns.service.graph.name_graph import VitalNameGraph
 from vital_ai_vitalsigns.model.GraphObject import GraphObject
 from vital_ai_vitalsigns.service.graph.utils.virtuoso_utils import VirtuosoUtils
 from vital_ai_vitalsigns.service.graph.vital_graph_status import VitalGraphStatus
+from vital_ai_vitalsigns.service.metaql.metaql_sparql_builder import MetaQLSparqlBuilder
 from vital_ai_vitalsigns.service.metaql.metaql_sparql_impl import MetaQLSparqlImpl
 from vital_ai_vitalsigns.utils.uri_generator import URIGenerator
 from vital_ai_vitalsigns.vitalsigns import VitalSigns
@@ -1617,6 +1618,7 @@ OFFSET {offset}
                                  root_binding: str | None = None, *,
                                  limit=100,
                                  offset=0,
+                                 resolve_objects: bool = True,
                                  safety_check: bool = True,
                                  namespace: str = None,
                                  vital_managed: bool = True) -> SolutionList:
@@ -1693,6 +1695,8 @@ OFFSET {offset}
 
         # print(f"Bulk Retrieving URIs Complete length: {len(retrieve_list)}")
 
+        # is necessary?
+        # does construct create duplicates?
         unique_triples = set(graph.triples((None, None, None)))
 
         unique_graph = Graph()
@@ -1712,6 +1716,7 @@ OFFSET {offset}
             # root_binding_uri = None
             root_binding_obj = None
 
+            # created unique set of all triples instead
             # triples = set(graph.triples((subject, None, None)))
 
             triples = unique_graph.triples((subject, None, None))
@@ -1818,7 +1823,7 @@ OFFSET {offset}
                     class_uri = constraint.get('class_uri')
 
                     constraint_str = f" ?uri a <{class_uri}> ."
-                    sparql_impl.add_constraint(constraint_str)
+                    sparql_impl.add_arc_constraint(constraint_str)
 
                 if metaql_class == 'StringPropertyConstraint':
 
@@ -1830,7 +1835,7 @@ OFFSET {offset}
                     ?term_{term_count} bif:contains "{string_value}" .
                     """
 
-                    sparql_impl.add_constraint(constraint_str)
+                    sparql_impl.add_arc_constraint(constraint_str)
 
         binding_list = [
             Binding("?uri", "urn:hasUri"),
@@ -1838,7 +1843,8 @@ OFFSET {offset}
 
         constraint_list_str = ""
 
-        for c in sparql_impl.get_constraint_list():
+        # for an OR list these would be UNION-ed together
+        for c in sparql_impl.get_arc_constraint_list():
 
             constraint_list_str += f"""
             {{
@@ -1864,7 +1870,7 @@ OFFSET {offset}
             root_binding,
             limit=limit, offset=offset)
 
-        print(f"Solution Count: {len(solutions.solution_list)}")
+        # print(f"Solution Count: {len(solutions.solution_list)}")
 
         rl = ResultList()
 
@@ -1891,65 +1897,94 @@ OFFSET {offset}
                            graph_query: MetaQLGraphQuery,
                            namespace_list: List[Ontology]) -> MetaQLResult:
 
-        offset = 0
-        limit = 100
-        result_count = 1
-        total_result_count = 1
+        sparql_builder = MetaQLSparqlBuilder()
 
-        binding_list = ["source1", "edge1", "target1"]
+        sparql_impl: MetaQLSparqlImpl = sparql_builder.build_sparql(graph_query)
 
-        node1 = VITAL_Node()
-        node1.URI = URIGenerator.generate_uri()
-        node1.name = "Mary"
+        limit = sparql_impl.get_limit()
 
-        node2 = VITAL_Node()
-        node2.URI = URIGenerator.generate_uri()
-        node2.name = "John"
+        offset = sparql_impl.get_offset()
 
-        edge1 = VITAL_Edge()
-        edge1.URI = URIGenerator.generate_uri()
-        edge1.edgeSource = node1.URI
-        edge1.edgeDestination = node2.URI
+        graph_uri = sparql_impl.get_graph_uri_list()[0]
 
-        gm = GraphMatch()
-        gm.URI = URIGenerator.generate_uri()
+        resolve_objects = sparql_impl.get_resolve_objects()
 
-        gm.source1 = str(node1.URI)
-        gm.edge1 = str(edge1.URI)
-        gm.target1 = str(node2.URI)
+        binding_string_list = []
 
-        result_element = MetaQLBuilder.build_result_element(
-            graph_object=gm,
-            score=0.75
-        )
+        binding_list = []
 
-        result_list = [result_element]
+        for binding in sparql_impl.get_binding_list():
+            b = Binding(f"?{binding}", f"urn:{binding}")
+            binding_string_list.append(binding)
+            binding_list.append(b)
 
-        result_object_list = [node1, edge1, node2]
+        root_binding = f"?{sparql_impl.get_root_binding()}"
 
-        metaql_result_list = MetaQLBuilder.build_result_list(
-            offset=offset,
-            limit=limit,
-            result_count=result_count,
-            total_result_count=total_result_count,
-            binding_list=binding_list,
-            result_list=result_list,
-            result_object_list=result_object_list,
-        )
+        term_list = "\n".join(sparql_impl.get_arc_constraint_list())
+
+        bind_constraint_list = "\n".join(sparql_impl.get_bind_constraint_list())
+
+        query_string = f"""
+        {term_list}
+
+        {bind_constraint_list}
+        """
+
+        solutions = self.query_construct_solution(
+            graph_uri,
+            query_string,
+            namespace_list,
+            binding_list,
+            root_binding,
+            limit=limit, offset=offset)
+
+        print(f"Solution Count: {len(solutions.solution_list)}")
+
+        count = 0
+
+        result_object_map = {}
+
+        result_object_list = []
 
         rl = ResultList()
 
-        rl.add_result(gm, 0.75)
+        for solution in solutions.solution_list:
+            count += 1
+
+            gm = GraphMatch()
+            gm.URI = URIGenerator.generate_uri()
+
+            print("-------------------------------------")
+            print(f"Solution Count: {count}")
+            print(f"Root Binding: {solution.root_binding}")
+            print(f"Binding Map: {solution.uri_map}")
+            for binding, obj in solution.object_map.items():
+                binding_uri = solution.uri_map[binding]
+                print(f"Solution Binding: {binding} : {binding_uri}")
+                print(obj.to_rdf())
+                result_object_map[str(obj.URI)] = obj
+
+                prop_string = binding
+
+                if prop_string.startswith("?"):
+                    prop_string = prop_string[1:]
+
+                gm.set_property(prop_string, str(binding_uri))
+
+            print("-------------------------------------")
+
+            rl.add_result(gm, 1.0)
+
+        for v in  result_object_map.values():
+            result_object_list.append(v)
 
         metaql_result = MetaQLResult(
             offset=offset,
             limit=limit,
-            total_result_count=total_result_count,
-            binding_list=binding_list,
+            total_result_count=count,
+            binding_list=binding_string_list,
             result_list=rl,
             result_object_list=result_object_list
         )
 
         return metaql_result
-
-

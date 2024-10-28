@@ -3,7 +3,9 @@ from typing import List
 from rdflib import Dataset, URIRef, Graph, Literal
 from vital_ai_vitalsigns.collection.graph_collection import GraphCollection
 from vital_ai_vitalsigns.impl.rdflib.rdflib_sparql_impl import RDFlibSparqlImpl
+from vital_ai_vitalsigns.metaql.metaql_query import GraphQuery as MetaQLGraphQuery, SelectQuery as MetaQLSelectQuery
 from vital_ai_vitalsigns.ontology.ontology import Ontology
+from vital_ai_vitalsigns.query.metaql_result import MetaQLResult
 from vital_ai_vitalsigns.query.result_list import ResultList
 from vital_ai_vitalsigns.query.solution import Solution
 from vital_ai_vitalsigns.query.solution_list import SolutionList
@@ -195,6 +197,7 @@ class MemoryGraphService(VitalGraphService, RDFlibSparqlImpl):
 
     def query_construct_solution(self, graph_uri: str, sparql_query: str, namespace_list: List[Ontology],
                                  binding_list: List[Binding], root_binding: str | None = None, *, limit=100, offset=0,
+                                 resolve_objects: bool = True,
                                  safety_check: bool = True, namespace: str = None, vital_managed: bool = True) -> SolutionList:
 
         return self._query_construct_solution_impl(
@@ -205,4 +208,13 @@ class MemoryGraphService(VitalGraphService, RDFlibSparqlImpl):
             root_binding=root_binding,
             limit=limit,
             offset=offset,
+            resolve_objects=resolve_objects,
             safety_check=safety_check)
+
+    def metaql_select_query(self, *, namespace: str = None, select_query: MetaQLSelectQuery,
+                            namespace_list: List[Ontology]) -> MetaQLResult:
+        pass
+
+    def metaql_graph_query(self, *, namespace: str = None, graph_query: MetaQLGraphQuery,
+                           namespace_list: List[Ontology]) -> MetaQLResult:
+        pass

@@ -6,6 +6,7 @@ from owlready2 import get_ontology, onto_path, default_world, PREDEFINED_ONTOLOG
 from rdflib import Graph, URIRef, Namespace, RDF, BNode, OWL, RDFS
 
 from vital_ai_vitalsigns.model.properties.URIProperty import URIProperty
+from vital_ai_vitalsigns.ontology.ontology import Ontology
 from vital_ai_vitalsigns.ontology.vitalsigns_ontology import VitalSignsOntology
 
 
@@ -326,6 +327,55 @@ class VitalSignsOntologyManager:
     def get_domain_graph(self) -> Graph:
         return self._domain_graph
 
+    def get_subclass_uri_list(self, class_uri: str) -> List[str]:
+
+        domain_graph = self.get_domain_graph()
+
+        class_query = f"""
+                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                PREFIX owl: <http://www.w3.org/2002/07/owl#>
+                PREFIX vital: <http://vital.ai/ontology/vital-core#>
+
+                SELECT ?subclass ?label ?parent
+                WHERE {{
+                    ?subclass rdfs:subClassOf*  <{class_uri}> .
+
+                    OPTIONAL {{ ?subclass rdfs:label ?label }}
+                    OPTIONAL {{ ?subclass rdfs:subClassOf ?parent }}
+                }}
+                """
+
+        results = domain_graph.query(class_query)
+
+        subclass_list: List[str] = []
+
+        for row in results:
+            subclass_uri = str(row['subclass'])
+            label = str(row['label']) if row['label'] else subclass_uri.split('#')[-1]
+            parent_uri = str(row['parent']) if row['parent'] else None
+
+            print(f"Subclass URI: {subclass_uri}, Label: {label}, Parent URI: {parent_uri}")
+
+            subclass_list.append(subclass_uri)
+
+        return subclass_list
+
+    def get_ontology_list(self) -> List[Ontology]:
+
+        domain_graph = self.get_domain_graph()
+
+        namespaces = { prefix: str(namespace) for prefix, namespace in domain_graph.namespace_manager.namespaces()}
+
+        ontology_list = []
+
+        for prefix in namespaces.keys():
+            ontology = Ontology(prefix, namespaces[prefix])
+            ontology_list.append(ontology)
+
+        return ontology_list
+
+
     def build_domain_property_map(self):
 
         from vital_ai_vitalsigns.impl.vitalsigns_impl import VitalSignsImpl
@@ -454,6 +504,19 @@ class VitalSignsOntologyManager:
                     class_map["prop_set"] = class_prop_set
 
                 class_prop_set.add(prop_uri)
+
+            # exceptional case, used to get property type for query builder
+            # should this be added into class info?
+            uri_prop_uri = str("http://vital.ai/ontology/vital-core#URIProp")
+
+            uri_property_range_map = {
+                "property_uri": uri_prop_uri,
+                "property_type": "ObjectProperty",
+                "range_class_list": [],
+                "prop_class": URIProperty
+            }
+
+            self._range_property_map[uri_prop_uri] = uri_property_range_map
 
     def get_ontology_iri_list(self) -> List[str]:
         return list(self._ont_map.keys())

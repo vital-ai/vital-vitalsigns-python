@@ -224,6 +224,7 @@ class VitalGraphService(ABC):
                                  binding_list: List[Binding],
                                  root_binding: str | None = None, *,
                                  limit=100, offset=0,
+                                 resolve_objects: bool = True,
                                  safety_check: bool = True,
                                  namespace: str = None,
                                  vital_managed: bool = True) -> SolutionList:

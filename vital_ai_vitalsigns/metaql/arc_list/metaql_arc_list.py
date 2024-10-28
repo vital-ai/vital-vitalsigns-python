@@ -1,4 +1,4 @@
-from typing import Literal, List
+from typing import Literal, List, Optional
 from typing_extensions import TypedDict
 from vital_ai_vitalsigns.metaql.arc.metaql_arc import Arc
 
@@ -15,10 +15,12 @@ class MetaQLArcList(TypedDict):
 
     metaql_class: str
 
-    arc_list: List["Arc"]
+    # either it has a list of arcs
+    arc_list: Optional[List["Arc"]]
 
-    # make this recursive or use ARC as the container?
-    # arclist_list: List["MetaQLArcList"]
+    # or it contains a list of arcs lists
+    # recursively
+    arclist_list: Optional[List["MetaQLArcList"]]
 
     arc_list_type: ARC_LIST_TYPE
 

@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import List
 
+from vital_ai_vitalsigns.metaql.arc.metaql_arc import ARC_TRAVERSE_TYPE, ARC_DIRECTION_TYPE
 from vital_ai_vitalsigns.metaql.arc_list.metaql_arc_list import AND_ARC_LIST_TYPE, OR_ARC_LIST_TYPE
 from vital_ai_vitalsigns.metaql.constraint.metaql_class_constraint import NODE_CLASS_CONSTRAINT_TYPE, \
     EDGE_CLASS_CONSTRAINT_TYPE
@@ -166,11 +167,17 @@ class OrConstraintList(ConstraintList):
 class ArcList:
     def __init__(self):
         self._arc_list = []
+        self._arclist_list = []
         self._container = None
 
     def arc(self, arc: "Arc"):
         arc.set_container(self._container)
         self._arc_list.append(arc)
+        return self
+
+    def arc_list(self, arc_list: "ArcList"):
+        arc_list.set_container(self._container)
+        self._arclist_list.append(arc_list)
         return self
 
     def set_container(self, container: "QueryContainer"):
@@ -260,8 +267,22 @@ class PathBind(Bind):
         return f"PathBind(name={self._name})"
 
 
+class SolutionBind(Bind):
+    def __init__(self, *, name: str):
+        self._name = name
+        self._container = None
+
+    def set_container(self, container: "QueryContainer"):
+        self._container = container
+
+    def __repr__(self):
+        return f"SolutionBind(name={self._name})"
+
+
 class Arc:
-    def __init__(self):
+    def __init__(self, *,
+                 arc_traverse_type: ARC_TRAVERSE_TYPE = None,
+                 arc_direction_type: ARC_DIRECTION_TYPE = None):
         self._is_root = False
         self._sub_arc = None
         self._constraint_list_list = []
@@ -271,6 +292,16 @@ class Arc:
         self._node_binding = None
         self._edge_binding = None
         self._path_binding = None
+        self._solution_binding = None
+
+        self._arc_traverse_type = None
+        self._arc_direction_type = None
+
+        if arc_traverse_type:
+            self._arc_traverse_type = arc_traverse_type
+
+        if arc_direction_type:
+            self._arc_direction_type = arc_direction_type
 
     def set_is_root(self, is_root: bool):
         self._is_root = is_root
@@ -295,6 +326,10 @@ class Arc:
 
     def path_bind(self, path_binding: PathBind):
         self._path_binding = path_binding
+        return self
+
+    def solution_bind(self, solution_binding: SolutionBind):
+        self._solution_binding = solution_binding
         return self
 
     def arc(self, arc: "Arc"):
@@ -581,7 +616,11 @@ class QueryContainer:
                   in_property_path_list_list,
                   in_node_binding: NodeBind = None,
                   in_edge_binding: EdgeBind = None,
-                  in_path_binding: PathBind = None):
+                  in_path_binding: PathBind = None,
+                  in_solution_binding: SolutionBind = None,
+                  in_arc_traverse_type: ARC_TRAVERSE_TYPE = None,
+                  in_arc_direction_type: ARC_DIRECTION_TYPE = None
+                  ):
 
         if in_arc:
             sub_arc = self.build_arc(
@@ -591,7 +630,10 @@ class QueryContainer:
                 in_arc._property_path_list_list,
                 in_arc._node_binding,
                 in_arc._edge_binding,
-                in_arc._path_binding
+                in_arc._path_binding,
+                in_arc._solution_binding,
+                in_arc._arc_traverse_type,
+                in_arc._arc_direction_type
             )
         else:
             sub_arc = None
@@ -608,6 +650,7 @@ class QueryContainer:
         node_binding=None
         edge_binding=None
         path_binding=None
+        solution_binding=None
 
         if in_node_binding:
             node_binding = MetaQLBuilder.build_node_binding(
@@ -624,6 +667,11 @@ class QueryContainer:
                 name=in_path_binding._name
             )
 
+        if in_solution_binding:
+            solution_binding = MetaQLBuilder.build_solution_binding(
+                name=in_solution_binding._name
+            )
+
         arc = MetaQLBuilder.build_arc(
             sub_arc=sub_arc,
             arclist_list=arclist_list,
@@ -631,7 +679,10 @@ class QueryContainer:
             property_path_list_list=property_path_list_list,
             node_binding=node_binding,
             edge_binding=edge_binding,
-            path_binding=path_binding
+            path_binding=path_binding,
+            solution_binding=solution_binding,
+            arc_traverse_type=in_arc_traverse_type,
+            arc_direction_type=in_arc_direction_type
         )
 
         return arc
@@ -640,16 +691,27 @@ class QueryContainer:
 
         metaql_arclist_list = []
 
-        for arc_list in in_arclist_list:
+        for in_arc_list in in_arclist_list:
+
             arc_list_type = AND_ARC_LIST_TYPE
 
-            if isinstance(arc_list, AndArcList):
+            if isinstance(in_arc_list, AndArcList):
                 arc_list_type = AND_ARC_LIST_TYPE
 
-            if isinstance(arc_list, OrArcList):
+            if isinstance(in_arc_list, OrArcList):
                 arc_list_type = OR_ARC_LIST_TYPE
 
-            arc_list = arc_list._arc_list
+            arc_list = in_arc_list._arc_list
+
+            sub_arclist_list = in_arc_list._arclist_list
+
+            metaql_sub_arclist_list = []
+
+            for sub_arclist in sub_arclist_list:
+
+                sub_metaql_arclist_list = self.build_arclist_list([sub_arclist])
+                sub_metaql_arclist = sub_metaql_arclist_list[0]
+                metaql_sub_arclist_list.append(sub_metaql_arclist)
 
             metaql_arc_list = []
 
@@ -662,14 +724,18 @@ class QueryContainer:
                     in_arc._property_path_list_list,
                     in_arc._node_binding,
                     in_arc._edge_binding,
-                    in_arc._path_binding
+                    in_arc._path_binding,
+                    in_arc._solution_binding,
+                    in_arc._arc_traverse_type,
+                    in_arc._arc_direction_type
                 )
 
                 metaql_arc_list.append(metaql_arc)
 
             metaql_arclist = MetaQLBuilder.build_arc_list(
                 arc_list_type=arc_list_type,
-                arc_list_list=metaql_arc_list)
+                arc_list_list=metaql_arc_list,
+                arclist_list=metaql_sub_arclist_list)
 
             if metaql_arclist:
                 metaql_arclist_list.append(metaql_arclist)
@@ -682,7 +748,8 @@ class QueryContainer:
                        in_constraint_list_list: List[ConstraintList],
                        in_node_binding: NodeBind = None,
                        in_edge_binding: EdgeBind = None,
-                       in_path_binding: PathBind = None
+                       in_path_binding: PathBind = None,
+                       in_solution_binding: SolutionBind = None
                        ):
 
         if in_arc:
@@ -693,7 +760,8 @@ class QueryContainer:
                 in_arc._property_path_list_list,
                 in_arc._node_binding,
                 in_arc._edge_binding,
-                in_arc._path_binding
+                in_arc._path_binding,
+                in_arc._solution_binding
             )
         else:
             arc = None
@@ -708,6 +776,7 @@ class QueryContainer:
         node_binding = None
         edge_binding = None
         path_binding = None
+        solution_binding = None
 
         if in_node_binding:
             node_binding = MetaQLBuilder.build_node_binding(
@@ -724,13 +793,19 @@ class QueryContainer:
                 name=in_path_binding._name
             )
 
+        if in_solution_binding:
+            solution_binding = MetaQLBuilder.build_solution_binding(
+                name=in_solution_binding._name
+            )
+
         arc_root = MetaQLBuilder.build_root_arc(
             arc=arc,
             arclist_list=arclist_list,
             constraint_list_list=constraint_list_list,
             node_binding=node_binding,
             edge_binding=edge_binding,
-            path_binding=path_binding
+            path_binding=path_binding,
+            solution_binding=solution_binding
         )
 
         return arc_root
@@ -746,6 +821,7 @@ class QueryContainer:
                 None,
                 None,
                 self.query._constraint_list_list,
+                None,
                 None,
                 None,
                 None
@@ -771,7 +847,8 @@ class QueryContainer:
                 self.query._root_arc._constraint_list_list,
                 self.query._root_arc._node_binding,
                 self.query._root_arc._edge_binding,
-                self.query._root_arc._path_binding
+                self.query._root_arc._path_binding,
+                self.query._root_arc._solution_binding
             )
 
             gq = MetaQLBuilder.build_metaql_query(
@@ -792,6 +869,7 @@ class QueryContainer:
                 None,
                 None,
                 self.query._constraint_list_list,
+                None,
                 None,
                 None,
                 None
@@ -815,7 +893,8 @@ class QueryContainer:
                 self.query._root_arc._constraint_list_list,
                 self.query._root_arc._node_binding,
                 self.query._root_arc._edge_binding,
-                self.query._root_arc._path_binding
+                self.query._root_arc._path_binding,
+                self.query._root_arc._solution_binding
             )
 
             agq = MetaQLBuilder.build_metaql_query(

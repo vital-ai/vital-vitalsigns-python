@@ -2,11 +2,13 @@ from typing import List, TypeVar
 from rdflib import Graph, URIRef, Dataset
 from vital_ai_vitalsigns.impl.rdflib.rdflib_sparql_impl import RDFlibSparqlImpl
 from vital_ai_vitalsigns.ontology.ontology import Ontology
+from vital_ai_vitalsigns.query.metaql_result import MetaQLResult
 from vital_ai_vitalsigns.query.result_list import ResultList
 from vital_ai_vitalsigns.query.solution_list import SolutionList
 from vital_ai_vitalsigns.service.graph.binding import Binding
 from vital_ai_vitalsigns.service.graph.name_graph import VitalNameGraph
 from vital_ai_vitalsigns.service.graph.vital_graph_status import VitalGraphStatus
+from vital_ai_vitalsigns.metaql.metaql_query import GraphQuery as MetaQLGraphQuery, SelectQuery as MetaQLSelectQuery
 
 G = TypeVar('G', bound='GraphObject')
 
@@ -195,5 +197,13 @@ class RdfCollectionImpl(RDFlibSparqlImpl):
             limit=limit,
             offset=offset,
             safety_check=safety_check)
+
+    def metaql_select_query(self, *, namespace: str = None, select_query: MetaQLSelectQuery,
+                            namespace_list: List[Ontology]) -> MetaQLResult:
+        pass
+
+    def metaql_graph_query(self, *, namespace: str = None, graph_query: MetaQLGraphQuery,
+                           namespace_list: List[Ontology]) -> MetaQLResult:
+        pass
 
 

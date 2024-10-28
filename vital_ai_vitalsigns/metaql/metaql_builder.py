@@ -4,7 +4,7 @@ from typing import List, Dict, Callable, Any, Union
 from vital_ai_vitalsigns.metaql.aggregate.metaql_aggregate import MetaQLAggregate
 from vital_ai_vitalsigns.metaql.arc.metaql_arc import Arc, ArcRoot, ARC_TYPE_ARC_ROOT, ARC_TYPE_ARC, \
     ARC_TRAVERSE_TYPE_EDGE, ARC_DIRECTION_TYPE_FORWARD, MetaQLPropertyPath, MetaQLArc, ARC_TRAVERSE_TYPE, \
-    ARC_DIRECTION_TYPE, NodeArcBinding, EdgeArcBinding, PathArcBinding
+    ARC_DIRECTION_TYPE, NodeArcBinding, EdgeArcBinding, PathArcBinding, SolutionArcBinding
 from vital_ai_vitalsigns.metaql.arc_list.metaql_arc_list import MetaQLArcList, ARC_LIST_TYPE, AND_ARC_LIST_TYPE, \
     AndArcList, OrArcList, OR_ARC_LIST_TYPE
 from vital_ai_vitalsigns.metaql.constraint.metaql_class_constraint import NODE_CLASS_CONSTRAINT_TYPE, ClassConstraint, \
@@ -14,13 +14,15 @@ from vital_ai_vitalsigns.metaql.constraint.metaql_constraint import MetaQLConstr
     VECTOR_CONSTRAINT_TYPE, PROPERTY_CONSTRAINT_TYPE, COMPARATOR_TYPE
 from vital_ai_vitalsigns.metaql.constraint.metaql_property_constraint import STRING_PROPERTY_DATA_CONSTRAINT_TYPE, \
     StringPropertyConstraint, EXISTS_PROPERTY_DATA_CONSTRAINT_TYPE, NOT_EXISTS_PROPERTY_DATA_CONSTRAINT_TYPE, \
-    NotExistsPropertyConstraint, ExistsPropertyConstraint, BOOLEAN_PROPERTY_DATA_CONSTRAINT_TYPE, BooleanPropertyConstraint, \
+    NotExistsPropertyConstraint, ExistsPropertyConstraint, BOOLEAN_PROPERTY_DATA_CONSTRAINT_TYPE, \
+    BooleanPropertyConstraint, \
     FloatPropertyConstraint, FLOAT_PROPERTY_DATA_CONSTRAINT_TYPE, IntegerPropertyConstraint, \
     INTEGER_PROPERTY_DATA_CONSTRAINT_TYPE, LONG_PROPERTY_DATA_CONSTRAINT_TYPE, LongPropertyConstraint, \
     DATETIME_PROPERTY_DATA_CONSTRAINT_TYPE, DateTimePropertyConstraint, DOUBLE_PROPERTY_DATA_CONSTRAINT_TYPE, \
     DoublePropertyConstraint, TRUTH_PROPERTY_DATA_CONSTRAINT_TYPE, TruthPropertyConstraint, \
     GEOLOCATION_PROPERTY_DATA_CONSTRAINT_TYPE, GeoLocationPropertyConstraint, OtherPropertyConstraint, \
-    OTHER_PROPERTY_DATA_CONSTRAINT_TYPE, TARGET_TYPE, TRUTH_TYPE
+    OTHER_PROPERTY_DATA_CONSTRAINT_TYPE, TARGET_TYPE, TRUTH_TYPE, URI_PROPERTY_DATA_CONSTRAINT_TYPE, \
+    URIPropertyConstraint
 from vital_ai_vitalsigns.metaql.constraint.metaql_vector_constraint import VECTOR_COMPARATOR_TYPE, \
     VECTOR_COMPARATOR_TYPE_NEAR_TO, VECTOR_CONSTRAINT_TYPE_VECTOR, VECTOR_CONSTRAINT_TYPE_TEXT, VectorConstraint, \
     VectorConstraintVectorValue, VectorConstraintTextValue
@@ -175,7 +177,7 @@ class MetaQLBuilder:
     def build_node_binding(cls, *, name: str):
 
         node_binding = NodeArcBinding(
-            metaql_class = "NodeArcBinding",
+            metaql_class="NodeArcBinding",
             binding=name
         )
 
@@ -202,11 +204,22 @@ class MetaQLBuilder:
         return path_binding
 
     @classmethod
+    def build_solution_binding(cls, *, name: str):
+
+        solution_binding = SolutionArcBinding(
+            metaql_class="SolutionArcBinding",
+            binding=name
+        )
+
+        return solution_binding
+
+    @classmethod
     def build_root_arc(cls, *,
                        arc: Arc | None = None,
                        node_binding: NodeArcBinding | None = None,
                        edge_binding: EdgeArcBinding | None = None,
                        path_binding: PathArcBinding | None = None,
+                       solution_binding: SolutionArcBinding | None = None,
                        arclist_list: List[MetaQLArcList] | None = None,
                        constraint_list_list: List[MetaQLConstraintList] | None = None) -> ArcRoot | None:
 
@@ -225,6 +238,7 @@ class MetaQLBuilder:
             node_binding=node_binding,
             edge_binding=edge_binding,
             path_binding=path_binding,
+            solution_binding=solution_binding,
             property_path_list_list=[],
             arc=arc,
             arclist_list=arclist_list,
@@ -236,14 +250,21 @@ class MetaQLBuilder:
     @classmethod
     def build_arc(cls, *,
                   sub_arc: Arc = None,
-                  arc_traverse_type: ARC_TRAVERSE_TYPE = ARC_TRAVERSE_TYPE_EDGE,
-                  arc_direction_type: ARC_DIRECTION_TYPE = ARC_DIRECTION_TYPE_FORWARD,
+                  arc_traverse_type: ARC_TRAVERSE_TYPE | None = ARC_TRAVERSE_TYPE_EDGE,
+                  arc_direction_type: ARC_DIRECTION_TYPE | None = ARC_DIRECTION_TYPE_FORWARD,
                   node_binding: NodeArcBinding | None = None,
                   edge_binding: EdgeArcBinding | None = None,
                   path_binding: PathArcBinding | None = None,
+                  solution_binding: SolutionArcBinding | None = None,
                   arclist_list: List[MetaQLArcList] = None,
                   constraint_list_list: List[MetaQLConstraintList] = None,
                   property_path_list_list: List[List[MetaQLPropertyPath]] = None) -> Arc | None:
+
+        if arc_traverse_type is None:
+            arc_traverse_type = ARC_TRAVERSE_TYPE_EDGE
+
+        if arc_direction_type is None:
+            arc_direction_type = ARC_DIRECTION_TYPE_FORWARD
 
         if arclist_list is None:
             arclist_list = []
@@ -263,6 +284,7 @@ class MetaQLBuilder:
             node_binding=node_binding,
             edge_binding=edge_binding,
             path_binding=path_binding,
+            solution_binding=solution_binding,
             property_path_list_list=property_path_list_list,
             arc=sub_arc,
             arclist_list=arclist_list,
@@ -274,26 +296,35 @@ class MetaQLBuilder:
     @classmethod
     def build_arc_list(cls, *,
                        arc_list_type: ARC_LIST_TYPE = AND_ARC_LIST_TYPE,
-                       arc_list_list: List[MetaQLArc] = None) -> MetaQLArcList | None:
+                       arc_list_list: List[MetaQLArc] = None,
+                       arclist_list: List[MetaQLArcList] = None) -> MetaQLArcList | None:
 
         arc_list = None
 
+        if arc_list_list is None and arclist_list is None:
+            # this should be an exception
+            pass
+
         if arc_list_list is None:
-            # exception
             arc_list_list = []
+
+        if arclist_list is None:
+            arclist_list = []
 
         if arc_list_type == AND_ARC_LIST_TYPE:
             arc_list = AndArcList(
                 metaql_class="AndArcList",
                 arc_list_type=AND_ARC_LIST_TYPE,
-                arc_list=arc_list_list
+                arc_list=arc_list_list,
+                arclist_list=arclist_list
             )
 
         if arc_list_type == OR_ARC_LIST_TYPE:
             arc_list = OrArcList(
                 metaql_class="OrArcList",
                 arc_list_type=OR_ARC_LIST_TYPE,
-                arc_list=arc_list_list
+                arc_list=arc_list_list,
+                arclist_list=arclist_list
             )
 
         return arc_list
@@ -440,6 +471,7 @@ class MetaQLBuilder:
                                   geolocation_value: str = None,
                                   truth_value: TRUTH_TYPE = None,
                                   datetime_value: datetime = None,
+                                  uri_value: str = None,
                                   ):
 
         property_constraint = None
@@ -606,6 +638,20 @@ class MetaQLBuilder:
                 constraint_type=PROPERTY_CONSTRAINT_TYPE,
                 other_value=other_value
             )
+
+        if property_constraint_type == URI_PROPERTY_DATA_CONSTRAINT_TYPE:
+            property_constraint = URIPropertyConstraint(
+                metaql_class="URIPropertyConstraint",
+                property_constraint_type=property_constraint_type,
+                target=target,
+                property_uri=property_uri,
+                comparator=comparator,
+                include_subproperties=include_subproperties,
+                is_multi_value=is_multi_value,
+                constraint_type=PROPERTY_CONSTRAINT_TYPE,
+                uri_value=uri_value
+            )
+
 
         return property_constraint
 

@@ -1,6 +1,8 @@
 from typing import List, TypeVar, Tuple
 
+from vital_ai_vitalsigns.metaql.metaql_query import GraphQuery as MetaQLGraphQuery, SelectQuery as MetaQLSelectQuery
 from vital_ai_vitalsigns.ontology.ontology import Ontology
+from vital_ai_vitalsigns.query.metaql_result import MetaQLResult
 from vital_ai_vitalsigns.query.result_list import ResultList
 from vital_ai_vitalsigns.query.solution_list import SolutionList
 from vital_ai_vitalsigns.service.graph.binding import Binding
@@ -101,9 +103,14 @@ class FusekiService(VitalGraphService):
 
     def query_construct_solution(self, graph_uri: str, sparql_query: str, namespace_list: List[Ontology],
                                  binding_list: List[Binding], root_binding: str | None = None, *, limit=100, offset=0,
+                                 resolve_objects: bool = True,
                                  safety_check: bool = True, namespace: str = None, vital_managed: bool = True) -> SolutionList:
         pass
 
+    def metaql_select_query(self, *, namespace: str = None, select_query: MetaQLSelectQuery,
+                            namespace_list: List[Ontology]) -> MetaQLResult:
+        pass
 
-
-
+    def metaql_graph_query(self, *, namespace: str = None, graph_query: MetaQLGraphQuery,
+                           namespace_list: List[Ontology]) -> MetaQLResult:
+        pass

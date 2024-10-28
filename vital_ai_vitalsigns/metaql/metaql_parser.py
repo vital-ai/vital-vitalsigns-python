@@ -191,6 +191,16 @@ class MetaQLParser:
 
             return path_binding
 
+        if metaql_class == 'SolutionArcBinding':
+
+            params_dict = {}
+
+            params_dict['name'] = parse_dict.get('name', None)
+
+            solution_binding = MetaQLBuilder.build_solution_binding(**params_dict)
+
+            return solution_binding
+
         if metaql_class == 'ArcRoot':
 
             params_dict = {}
@@ -202,6 +212,7 @@ class MetaQLParser:
             params_dict['node_binding'] = parse_dict.get('node_binding', None)
             params_dict['edge_binding'] = parse_dict.get('edge_binding', None)
             params_dict['path_binding'] = parse_dict.get('path_binding', None)
+            params_dict['solution_binding'] = parse_dict.get('solution_binding', None)
 
             root_arc = MetaQLBuilder.build_root_arc(**params_dict)
 
@@ -218,6 +229,10 @@ class MetaQLParser:
             params_dict['node_binding'] = parse_dict.get('node_binding', None)
             params_dict['edge_binding'] = parse_dict.get('edge_binding', None)
             params_dict['path_binding'] = parse_dict.get('path_binding', None)
+            params_dict['solution_binding'] = parse_dict.get('solution_binding', None)
+
+            params_dict['arc_traverse_type'] = parse_dict.get('arc_traverse_type', None)
+            params_dict['arc_direction_type'] = parse_dict.get('arc_direction_type', None)
 
             arc = MetaQLBuilder.build_arc(**params_dict)
 
@@ -235,9 +250,12 @@ class MetaQLParser:
 
             arc_list_list = metaql_dict.get('arc_list', None)
 
+            arclist_list = metaql_dict.get('arclist_list', None)
+
             arc_list = MetaQLBuilder.build_arc_list(
                 arc_list_type=arc_list_type,
                 arc_list_list=arc_list_list,
+                arclist_list=arclist_list
             )
 
             return arc_list
