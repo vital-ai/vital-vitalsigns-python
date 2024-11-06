@@ -4,11 +4,14 @@ from vital_ai_vitalsigns.model.properties.IProperty import IProperty
 
 
 class DateTimeProperty(IProperty):
-    def __init__(self, value: datetime):
+    def __init__(self, value):
 
         if isinstance(value, datetime):
             datetime_value = value
             super().__init__(datetime_value)
+        elif isinstance(value, int):
+            datetime_value = datetime.fromtimestamp(value / 1000)
+            super().__init__(datetime_value )
         else:
             raise TypeError(f"Unsupported type for datetime property: {type(value).__name__}")
 
