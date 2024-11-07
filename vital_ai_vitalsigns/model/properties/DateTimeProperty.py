@@ -12,8 +12,14 @@ class DateTimeProperty(IProperty):
         elif isinstance(value, int):
             datetime_value = datetime.fromtimestamp(value / 1000)
             super().__init__(datetime_value )
+        elif isinstance(value, str):
+            try:
+                datetime_value = datetime.fromisoformat(value)
+                super().__init__(datetime_value)
+            except ValueError:
+                raise TypeError(f"Unsupported string {value} for datetime property: {type(value).__name__}")
         else:
-            raise TypeError(f"Unsupported type for datetime property: {type(value).__name__}")
+            raise TypeError(f"Unsupported type in value {value} for datetime property: {type(value).__name__}")
 
     @classmethod
     def get_data_class(cls):
