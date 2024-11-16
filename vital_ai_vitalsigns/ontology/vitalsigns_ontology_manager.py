@@ -7,6 +7,7 @@ from rdflib import Graph, URIRef, Namespace, RDF, BNode, OWL, RDFS
 from vital_ai_vitalsigns.model.properties.URIProperty import URIProperty
 from vital_ai_vitalsigns.ontology.ontology import Ontology
 from vital_ai_vitalsigns.ontology.vitalsigns_ontology import VitalSignsOntology
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 class VitalSignsOntologyManager:
@@ -142,6 +143,7 @@ class VitalSignsOntologyManager:
 
         return sorted_files
 
+
     def load_ontologies(self, ontology_list):
 
         ont_iri_list = []
@@ -154,38 +156,45 @@ class VitalSignsOntologyManager:
 
         import_graph = defaultdict(list)
 
-        for [ont_module, owl_file] in ontology_list:
-
+        def load_ontology(ont_module, owl_file):
             logging.info(f"Ont Module: {ont_module} : OWL File: {owl_file}")
 
             file_path = Path(owl_file)
 
-            file_paths.append(str(file_path))
-
             if not file_path.exists():
                 logging.error(f'File not found: {file_path}')
-                continue
+                return None
 
-            # logging.info(f"Adding Ontology: {ont_module} : {file_path}")
+            try:
+                ont_graph = Graph()
+                ont_graph.parse(file_path, format='xml')
+                ont_iri = self.get_ontology_iri(ont_graph)
+                imports = self.find_imports(ont_graph)
+                return (ont_module, file_path, ont_iri, imports)
+            except Exception as e:
+                logging.error(f"Failed to load ontology {owl_file}: {e}")
+                return None
 
-            ont_graph = Graph()
+        with ThreadPoolExecutor() as executor:
+            future_to_ontology = {
+                executor.submit(load_ontology, ont_module, owl_file): (ont_module, owl_file)
+                for ont_module, owl_file in ontology_list
+            }
 
-            ont_graph.parse(file_path, format='xml')
+            for future in as_completed(future_to_ontology):
+                result = future.result()
+                if result is None:
+                    continue
 
-            ont_iri = self.get_ontology_iri(ont_graph)
+                ont_module, file_path, ont_iri, imports = result
+                file_paths.append(str(file_path))
+                file_path_map[str(file_path)] = ont_iri
+                ont_mod_map[ont_iri] = ont_module
 
-            file_path_map[str(file_path)] = ont_iri
-
-            ont_mod_map[ont_iri] = ont_module
-
-            imports = self.find_imports(ont_graph)
-
-            # logging.info(f"{file_path}: imports: {imports}")
-
-            for imp in imports:
-                import_file_path = Path(imp).resolve()
-                if import_file_path.exists():
-                    import_graph[file_path].append(import_file_path)
+                for imp in imports:
+                    import_file_path = Path(imp).resolve()
+                    if import_file_path.exists():
+                        import_graph[file_path].append(import_file_path)
 
         try:
             sorted_files = self.topological_sort(file_paths, import_graph)
