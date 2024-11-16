@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import List
 from owlready2 import get_ontology, onto_path, default_world, PREDEFINED_ONTOLOGIES
 from rdflib import Graph, URIRef, Namespace, RDF, BNode, OWL, RDFS
-
 from vital_ai_vitalsigns.model.properties.URIProperty import URIProperty
 from vital_ai_vitalsigns.ontology.ontology import Ontology
 from vital_ai_vitalsigns.ontology.vitalsigns_ontology import VitalSignsOntology

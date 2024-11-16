@@ -291,15 +291,15 @@ class VitalSignsRegistry:
         for cls_name, cls in vars(module).items():
             if isinstance(cls, type):
                 if is_vitalsigns_ontology_class(cls):
-                    logging.info(f"Found VitalSigns Domain Ontology Class {cls_name} URI: {cls.OntologyURI}")
+                    # logging.info(f"Found VitalSigns Domain Ontology Class {cls_name} URI: {cls.OntologyURI}")
                     self.vitalsigns_ontologies.add(cls)
                 if is_vitalsigns_class(cls):
                     class_uri = cls.get_class_uri()
-                    logging.info(f"Found VitalSigns Graph Class {cls_name} URI: {class_uri}")
+                    # logging.info(f"Found VitalSigns Graph Class {cls_name} URI: {class_uri}")
                     self.vitalsigns_classes[class_uri] = cls
                 if is_vitalsigns_property_class(cls):
                     property_trait_uri = cls.get_uri()
-                    logging.info(f"Found VitalSigns Property Class {cls_name} URI: {property_trait_uri}")
+                    # logging.info(f"Found VitalSigns Property Class {cls_name} URI: {property_trait_uri}")
                     self.vitalsigns_property_classes[property_trait_uri] = cls
 
     def scan_vitalsigns_classes(self, package):
@@ -322,7 +322,7 @@ class VitalSignsRegistry:
         for ontology_dir in ['vital-ontology', 'domain-ontology']:
             ontology_path = base_path / ontology_dir
 
-            logging.info(f"Ontology check: {ontology_path}")
+            # logging.info(f"Ontology check: {ontology_path}")
 
             if ontology_path.exists() and ontology_path.is_dir():
 
