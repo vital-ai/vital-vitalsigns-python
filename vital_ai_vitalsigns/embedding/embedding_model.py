@@ -1,4 +1,4 @@
-from sentence_transformers import SentenceTransformer
+# from sentence_transformers import SentenceTransformer
 from typing import List, Union, Dict
 import hashlib
 from collections import OrderedDict
@@ -29,8 +29,10 @@ class EmbeddingModel:
     def __init__(self, model_id: str = 'paraphrase-MiniLM-L3-v2', cache_size=1000):
         # self.model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
         # self.model = SentenceTransformer('all-MiniLM-L6-v2')
+        # from sentence_transformers import SentenceTransformer
+
         self.model_id = model_id
-        self.model = SentenceTransformer(model_id)
+        self.model = None # SentenceTransformer(model_id)
         self.cache = LRUEmbeddingCache(maxsize=cache_size)
 
     def get_model_id(self):
@@ -66,11 +68,12 @@ class EmbeddingModel:
         logging.info(f"Cached Vector Count: {len(results)} Uncached Vector Count: {len(uncached_texts)}")
 
         if uncached_texts:
-            new_embeddings = self.model.encode(uncached_texts)
-            for t, vector in zip(uncached_texts, new_embeddings):
-                hash_key = self.hash_text(t)
-                self.cache.set(hash_key, vector)
-                results.append(vector)
+            if self.model:
+                new_embeddings = self.model.encode(uncached_texts)
+                for t, vector in zip(uncached_texts, new_embeddings):
+                    hash_key = self.hash_text(t)
+                    self.cache.set(hash_key, vector)
+                    results.append(vector)
 
         if single_string:
             """
