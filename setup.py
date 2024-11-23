@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='vital-ai-vitalsigns',
-    version='0.1.26',
+    version='0.1.27',
     author='Marc Hadfield',
     author_email='marc@vital.ai',
     description='VitalSigns knowledge graph bindings',
@@ -56,9 +56,17 @@ setup(
         'urllib3'
     ],
     extras_require={
+        # for embedding model, which uses onnx runtime
+        # sentence_transformers and torch needed for other models
+        'base': [
+            # 'sentence_transformers>=3.3.1',
+            'onnxruntime',
+            # 'transformers',
+            'numpy'
+        ],
         'dev': [
             'torch>=2.3.0',
-            'sentence_transformers==2.7.0',
+            'sentence_transformers==3.3.1',
             'wheel>=0.43.0'
         ],
     },
