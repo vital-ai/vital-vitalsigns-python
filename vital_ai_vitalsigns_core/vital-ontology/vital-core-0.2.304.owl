@@ -820,9 +820,27 @@ HiveSQL</rdfs:comment>
     
 
 
+    <!-- http://vital.ai/ontology/vital-core#hasSegmentGraphURI -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-core#hasSegmentGraphURI">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-core#VitalSegment"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
     <!-- http://vital.ai/ontology/vital-core#hasSegmentID -->
 
     <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-core#hasSegmentID">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-core#VitalSegment"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-core#hasSegmentTenantID -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-core#hasSegmentTenantID">
         <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-core#VitalSegment"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
     </owl:DatatypeProperty>
@@ -1120,6 +1138,15 @@ FAILED (failed on the server side)</rdfs:comment>
                 </owl:unionOf>
             </owl:Class>
         </rdfs:domain>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-core#isSegmentGlobal -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-core#isSegmentGlobal">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-core#VitalSegment"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
     </owl:DatatypeProperty>
     

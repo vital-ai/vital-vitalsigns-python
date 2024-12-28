@@ -15,8 +15,11 @@ from vital_ai_vitalsigns.model.VITAL_Node import VITAL_Node
 
 class VitalSegment(VITAL_Node):
     _allowed_properties = [
+        {'uri': 'http://vital.ai/ontology/vital-core#hasSegmentGraphURI', 'prop_class': StringProperty}, 
         {'uri': 'http://vital.ai/ontology/vital-core#hasSegmentID', 'prop_class': StringProperty}, 
+        {'uri': 'http://vital.ai/ontology/vital-core#hasSegmentTenantID', 'prop_class': StringProperty}, 
         {'uri': 'http://vital.ai/ontology/vital-core#isReadOnly', 'prop_class': BooleanProperty}, 
+        {'uri': 'http://vital.ai/ontology/vital-core#isSegmentGlobal', 'prop_class': BooleanProperty}, 
     ]
 
     @classmethod
