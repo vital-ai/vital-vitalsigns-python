@@ -25,12 +25,14 @@ class VitalService(BaseService):
     def __init__(self,
                  vitalservice_name: str = None,
                  vitalservice_namespace: str = None,
+                 vitalservice_base_uri: str = None,
                  graph_service: VitalGraphService = None,
                  vector_service: VitalVectorService = None,
                  synchronize_service=True,
                  synchronize_task=True):
         self.vitalservice_name = vitalservice_name
         self.vitalservice_namespace = vitalservice_namespace
+        self.vitalservice_base_uri = vitalservice_base_uri
         self.graph_service = graph_service
         self.vector_service = vector_service
         self.graph_info_lock = threading.RLock()
@@ -115,6 +117,12 @@ class VitalService(BaseService):
     # if delete is True, delete these
     # if delete is False and these are present, return exception
     # create new vital service graph and vital service collection
+
+    def list_graph_uris(self) -> List[str]:
+
+        graph_uri_list = self.graph_service.list_graph_uris()
+
+        return graph_uri_list
 
     def initialize_service(self, delete_service=False, delete_index=False):
 
@@ -256,10 +264,8 @@ class VitalService(BaseService):
         return service_status
 
     # filter graph
-
-    def filter_query(self, graph_uri: str, sparql_query: str, uri_binding='uri', *, resolve_objects=True) -> ResultList:
-
-        return self.graph_service.filter_query(graph_uri, sparql_query, uri_binding, resolve_objects=resolve_objects)
+    # def filter_query(self, graph_uri: str, sparql_query: str, uri_binding='uri', *, resolve_objects=True) -> ResultList:
+    #    return self.graph_service.filter_query(graph_uri, sparql_query, uri_binding, resolve_objects=resolve_objects)
 
     # query graph
 
@@ -272,46 +278,45 @@ class VitalService(BaseService):
     def get_vector_collections(self):
         pass
 
-    def add_vector_collection(self, collection_class):
+    def get_vital_vector_collections(self):
         pass
 
-    def delete_vector_collection(self, collection_class):
+    def add_vital_vector_collection(self, collection_class):
         pass
 
-    def index_vector_collection(self, collection_class, delete_index=False):
+    def delete_vital_vector_collection(self, collection_class):
         pass
 
-    def query_vector_service(self, graphql: str) -> List[Dict]:
+    def index_vital_vector_collection(self, collection_class, delete_index=False):
+        pass
+
+    def query_vital_vector_service(self, graphql: str) -> List[Dict]:
         pass
 
     #################################################
     # MetaQL Functions
 
     def metaql_select_query(self, *,
-                            namespace: str = None,
                             select_query: MetaQLSelectQuery,
                             namespace_list: List[Ontology]) -> MetaQLResult:
 
-        if namespace is None:
-            namespace = self.vitalservice_namespace
+        # check query to decide to send to vector or graph store
+
 
         return self.graph_service.metaql_select_query(
-            namespace=namespace,
             select_query=select_query,
             namespace_list=namespace_list)
 
     def metaql_graph_query(self, *,
-                           namespace: str = None,
                            graph_query: MetaQLGraphQuery,
                            namespace_list: List[Ontology] = None) -> MetaQLResult:
 
-        # circular dependency
+        # avoid circular dependency
         from vital_ai_vitalsigns.vitalsigns import VitalSigns
 
         vs = VitalSigns()
 
-        if namespace is None:
-            namespace = self.vitalservice_namespace
+        namespace = self.vitalservice_namespace
 
         if namespace_list is None:
 
@@ -332,7 +337,7 @@ class VitalService(BaseService):
 
                     prefix = prefix.removesuffix("#")
 
-                    # print(f"Vital Prefix: {prefix} IRI: {iri}")
+                    # logger.info(f"Vital Prefix: {prefix} IRI: {iri}")
 
                     ont_prefix_map[prefix] = iri
 
@@ -341,8 +346,10 @@ class VitalService(BaseService):
                 ont = Ontology(k, ont_prefix_map[k])
                 namespace_list.append(ont)
 
+        # check query to decide to send to vector or graph store
+
+
         return self.graph_service.metaql_graph_query(
-            namespace=namespace,
             graph_query=graph_query,
             namespace_list=namespace_list)
 

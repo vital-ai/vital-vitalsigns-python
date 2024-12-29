@@ -14,6 +14,7 @@ vitalservice:
       grpc_endpoint: "localhost"
       api_key: "apikey1"
       vector_database_type: "weaviate"
+      vector_database_schema_list: [  ]
       embedding_models:
         - id: model_1
           endpoint: https://example.com/api/endpoint_1
@@ -35,6 +36,7 @@ vitalservice:
       api_key: "apikey2"
       vector_database_type: "weaviate"
       namespace: "namespace"
+      vector_database_schema_list: [  ]
       embedding_models:
         - id: model_1
           endpoint: https://example.com/api/endpoint_1

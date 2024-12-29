@@ -6,6 +6,8 @@ import logging
 
 def load_env_file():
 
+    # print(f"os path: {os.path.abspath(__file__)}")
+
     file_directory = os.path.dirname(os.path.abspath(__file__))
 
     dotenv_path = find_dotenv_in_path(file_directory, "vital_env.env")
@@ -44,6 +46,8 @@ def load_env_file():
 def find_dotenv_in_path(start_path, filename="vital_env.env"):
 
     current_path = os.path.abspath(start_path)
+
+    # print(current_path)
 
     while True:
         potential_path = os.path.join(current_path, filename)

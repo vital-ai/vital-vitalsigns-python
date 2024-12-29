@@ -300,6 +300,7 @@ OFFSET {offset}
         print(f"Depth: {depth}, OrContext: {or_context}")
         print(f"Parent Arc Id: {parent_arc_id}, Arc Id: {arc_id}")
         print(arc)
+        print(f"Binding Map: {self.binding_map}")
 
         node_binding = arc.get('node_binding', None)
         edge_binding = arc.get('edge_binding', None)
@@ -344,6 +345,7 @@ OFFSET {offset}
 
         # node bindings
         parent_arc_binding = self.binding_map[parent_arc_id]
+
         arc_binding = self.binding_map[arc_id]
 
         if arc_traverse_type == ARC_TRAVERSE_TYPE_EDGE:
@@ -631,6 +633,9 @@ VALUES ?{subclass_list_name } {{
                     or_context=True,
                     parent_arc_id=parent_arc_id,
                 )
+                # TODO should this be added?
+                #  sparql_impl_out
+                # impl_list.append(sparql_impl_out)
 
             if metaql_class == 'AndArcList':
 

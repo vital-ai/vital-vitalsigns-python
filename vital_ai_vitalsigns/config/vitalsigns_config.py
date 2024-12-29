@@ -43,6 +43,7 @@ class GraphDatabaseConfig:
 class VitalServiceConfig:
     name: str
     namespace: str
+    base_uri: str
     graph_database: Optional[GraphDatabaseConfig] = None
     vector_database: Optional[VectorDatabaseConfig] = None
 
@@ -72,7 +73,7 @@ class VitalSignsConfigLoader:
         try:
             with open(config_path, 'r') as file:
                 config_content = yaml.safe_load(file)
-                print(config_content)
+                # print(config_content)
 
             return VitalSignsConfigLoader._parse_config(config_content)
         except Exception as e:
@@ -117,6 +118,7 @@ class VitalSignsConfigLoader:
             services.append(VitalServiceConfig(
                 name=service_data['name'],
                 namespace=service_data['namespace'],
+                base_uri=service_data['base_uri'],
                 graph_database=graph_database,
                 vector_database=vector_database
             ))

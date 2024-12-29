@@ -24,6 +24,7 @@ setup(
         'bin/vitalservice_delete',
         'bin/vitalservice_export',
         'bin/vitalservice_import',
+        'bin/vitalservice_query',
         'bin/vitalprovenance'
     ],
     package_data={

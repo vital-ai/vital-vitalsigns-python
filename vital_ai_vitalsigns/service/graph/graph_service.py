@@ -20,30 +20,33 @@ G = TypeVar('G', bound='GraphObject')
 
 class VitalGraphService(ABC):
     def __init__(self, **kwargs):
+        self.base_uri = kwargs.get('base_uri', None)
+        self.namespace = kwargs.get('namespace', None)
         super().__init__()
+
+    @abstractmethod
+    def list_graph_uris(self, *,
+                    safety_check: bool = True) -> List[str]:
+        pass
 
     # initialize, create vital service graph
     @abstractmethod
-    def initialize_service(self, namespace: str) -> bool:
+    def initialize_service(self) -> bool:
         pass
 
     # destroy vital service graph and all associated graphs
     @abstractmethod
-    def destroy_service(self, namespace: str) -> bool:
+    def destroy_service(self) -> bool:
         pass
 
     @abstractmethod
     def get_graph(self, graph_uri: str, *,
-                  safety_check: bool = True,
-                  namespace: str = None,
-                  vital_managed=True) -> VitalNameGraph:
+                  safety_check: bool = True) -> VitalNameGraph:
         pass
 
     @abstractmethod
     def list_graphs(self, *,
-                    safety_check: bool = True,
-                    namespace: str = None,
-                    vital_managed=True) -> List[VitalNameGraph]:
+                    safety_check: bool = True) -> List[VitalNameGraph]:
         pass
 
     # create graph
@@ -52,16 +55,12 @@ class VitalGraphService(ABC):
 
     @abstractmethod
     def check_create_graph(self, graph_uri: str, *,
-                           safety_check: bool = True,
-                           namespace: str = None,
-                           vital_managed=True) -> bool:
+                           safety_check: bool = True) -> bool:
         pass
 
     @abstractmethod
     def create_graph(self, graph_uri: str, *,
-                     safety_check: bool = True,
-                     namespace: str = None,
-                     vital_managed=True) -> bool:
+                     safety_check: bool = True) -> bool:
         pass
 
     # delete graph
@@ -69,27 +68,21 @@ class VitalGraphService(ABC):
 
     @abstractmethod
     def delete_graph(self, graph_uri: str, *,
-                     safety_check: bool = True,
-                     namespace: str = None,
-                     vital_managed=True) -> bool:
+                     safety_check: bool = True) -> bool:
         pass
 
     # purge graph (delete all but name graph)
 
     @abstractmethod
     def purge_graph(self, graph_uri: str, *,
-                    safety_check: bool = True,
-                    namespace: str = None,
-                    vital_managed=True) -> bool:
+                    safety_check: bool = True) -> bool:
         pass
 
     @abstractmethod
     def get_graph_all_objects(self, graph_uri: str, *,
                               limit=100,
                               offset=0,
-                              safety_check: bool = True,
-                              namespace: str = None,
-                              vital_managed=True) -> ResultList:
+                              safety_check: bool = True) -> ResultList:
         pass
 
     # insert object into graph (scoped to vital service graph uri, which must exist)
@@ -98,16 +91,12 @@ class VitalGraphService(ABC):
 
     @abstractmethod
     def insert_object(self, graph_uri: str, graph_object: G, *,
-                      safety_check: bool = True,
-                      namespace: str = None,
-                      vital_managed=True) -> VitalGraphStatus:
+                      safety_check: bool = True) -> VitalGraphStatus:
         pass
 
     @abstractmethod
     def insert_object_list(self, graph_uri: str, graph_object_list: List[G], *,
-                           safety_check: bool = True,
-                           namespace: str = None,
-                           vital_managed=True) -> VitalGraphStatus:
+                           safety_check: bool = True) -> VitalGraphStatus:
         pass
 
     # update object into graph (scoped to vital service graph uri, which must exist)
@@ -120,18 +109,14 @@ class VitalGraphService(ABC):
     def update_object(self, graph_object: G, *,
                       graph_uri: str = None,
                       upsert: bool = False,
-                      safety_check: bool = True,
-                      namespace: str = None,
-                      vital_managed: bool = True) -> VitalGraphStatus:
+                      safety_check: bool = True) -> VitalGraphStatus:
         pass
 
     @abstractmethod
     def update_object_list(self, graph_object_list: List[G], *,
                            graph_uri: str = None,
                            upsert: bool = False,
-                           safety_check: bool = True,
-                           namespace: str = None,
-                           vital_managed: bool = True) -> VitalGraphStatus:
+                           safety_check: bool = True) -> VitalGraphStatus:
         pass
 
     # get object (scoped to all vital service graphs)
@@ -145,17 +130,13 @@ class VitalGraphService(ABC):
     @abstractmethod
     def get_object(self, object_uri: str, *,
                    graph_uri: str = None,
-                   safety_check: bool = True,
-                   namespace: str = None,
-                   vital_managed: bool = True) -> G:
+                   safety_check: bool = True) -> G:
         pass
 
     @abstractmethod
     def get_object_list(self, object_uri_list: List[str], *,
                         graph_uri: str = None,
-                        safety_check: bool = True,
-                        namespace: str = None,
-                        vital_managed: bool = True) -> ResultList:
+                        safety_check: bool = True) -> ResultList:
         pass
 
     # delete uri (scoped to all vital service graphs)
@@ -169,17 +150,13 @@ class VitalGraphService(ABC):
     @abstractmethod
     def delete_object(self, object_uri: str, *,
                       graph_uri: str = None,
-                      safety_check: bool = True,
-                      namespace: str = None,
-                      vital_managed: bool = True) -> VitalGraphStatus:
+                      safety_check: bool = True) -> VitalGraphStatus:
         pass
 
     @abstractmethod
     def delete_object_list(self, object_uri_list: List[str], *,
                            graph_uri: str = None,
-                           safety_check: bool = True,
-                           namespace: str = None,
-                           vital_managed: bool = True) -> VitalGraphStatus:
+                           safety_check: bool = True) -> VitalGraphStatus:
         pass
 
     # filter graph
@@ -189,9 +166,7 @@ class VitalGraphService(ABC):
                      limit: int = 100,
                      offset: int = 0,
                      resolve_objects: bool = True,
-                     safety_check: bool = True,
-                     namespace: str = None,
-                     vital_managed: bool = True) -> ResultList:
+                     safety_check: bool = True) -> ResultList:
         pass
 
     # query graph
@@ -201,9 +176,7 @@ class VitalGraphService(ABC):
               limit=100,
               offset=0,
               resolve_objects=True,
-              safety_check: bool = True,
-              namespace: str = None,
-              vital_managed=True) -> ResultList:
+              safety_check: bool = True) -> ResultList:
         pass
 
     @abstractmethod
@@ -211,9 +184,7 @@ class VitalGraphService(ABC):
                         namespace_list: List[Ontology],
                         binding_list: List[Binding], *,
                         limit=100, offset=0,
-                        safety_check: bool = True,
-                        namespace: str = None,
-                        vital_managed: bool = True) -> ResultList:
+                        safety_check: bool = True) -> ResultList:
         pass
 
     @abstractmethod
@@ -225,21 +196,17 @@ class VitalGraphService(ABC):
                                  root_binding: str | None = None, *,
                                  limit=100, offset=0,
                                  resolve_objects: bool = True,
-                                 safety_check: bool = True,
-                                 namespace: str = None,
-                                 vital_managed: bool = True) -> SolutionList:
+                                 safety_check: bool = True) -> SolutionList:
         pass
 
     @abstractmethod
     def metaql_select_query(self, *,
-                            namespace: str = None,
                             select_query: MetaQLSelectQuery,
                             namespace_list: List[Ontology]) -> MetaQLResult:
         pass
 
     @abstractmethod
     def metaql_graph_query(self, *,
-                           namespace: str = None,
                            graph_query: MetaQLGraphQuery,
                            namespace_list: List[Ontology]) -> MetaQLResult:
         pass

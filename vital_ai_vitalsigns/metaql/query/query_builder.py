@@ -505,6 +505,20 @@ class QueryContainer:
 
             return pc
 
+        if isinstance(constraint, VectorConstraint):
+
+            vector_name = constraint._vector_name
+            vector_value = constraint._vector_value
+
+            prop_params = {
+                "vector_name": vector_name,
+                "text_constraint_value": vector_value
+            }
+
+            pc = MetaQLBuilder.build_vector_constraint(**prop_params)
+
+            return pc
+
         if isinstance(constraint, ClassConstraint):
 
             clazz = constraint._clazz

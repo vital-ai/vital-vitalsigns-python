@@ -166,7 +166,13 @@ def main():
 
     metaql_graph_query = MetaQLParser.parse_metaql_dict(metaql_query_dict)
 
-    print(metaql_graph_query)
+    # print(metaql_graph_query)
+
+    graph_query_json = json.dumps(metaql_graph_query, indent=4)
+
+    print(graph_query_json)
+
+    return
 
     namespace = "VITALTEST"
 
@@ -202,7 +208,6 @@ def main():
         print(f"Graph URI: {g.get_graph_uri()}")
 
     metaql_result = virtuoso_graph_service.metaql_graph_query(
-        namespace=namespace,
         graph_query=metaql_graph_query,
         namespace_list=ontology_list
     )

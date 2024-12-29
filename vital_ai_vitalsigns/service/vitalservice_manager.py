@@ -29,6 +29,8 @@ class VitalServiceManager:
 
                 vitalservice_name = config.name
                 vitalservice_namespace = config.namespace
+                vitalservice_base_uri = config.base_uri
+
                 vitalservice_graph_db = config.graph_database
                 vitalservice_vector_db = config.vector_database
 
@@ -44,6 +46,7 @@ class VitalServiceManager:
                         username=username,
                         password=password,
                         endpoint=endpoint,
+                        base_uri=vitalservice_base_uri,
                         namespace=vitalservice_namespace
                     )
 
@@ -60,6 +63,7 @@ class VitalServiceManager:
                 vital_service = VitalService(
                     vitalservice_name=vitalservice_name,
                     vitalservice_namespace=vitalservice_namespace,
+                    vitalservice_base_uri=vitalservice_base_uri,
                     graph_service=graph_service,
                     vector_service=vector_service)
 

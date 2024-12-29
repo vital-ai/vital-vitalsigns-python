@@ -66,6 +66,8 @@ class MetaQLParser:
 
         metaql_class = metaql_dict.get('metaql_class', None)
 
+        print(f"metaql_class: {metaql_class}")
+
         if metaql_class is None:
             return None
 
@@ -116,6 +118,7 @@ class MetaQLParser:
 
 
             graph_query = MetaQLBuilder.build_metaql_query(**params_dict)
+
             return graph_query
 
         if metaql_class == 'AggregateSelectQuery':
@@ -206,7 +209,23 @@ class MetaQLParser:
             params_dict = {}
 
             params_dict['arc'] = parse_dict.get('arc', None)
-            params_dict['arclist_list'] = parse_dict.get('arc_list', None)
+
+            arc_list = parse_dict.get('arc_list', None)
+
+            # are we using the 'arc_list' key?
+            # once the builder builds it is it always a list-list?
+            # or a arc_list or arclist_list but not both?
+            # should the arc_list case be wrapped in an AND to be consistent?
+
+            # TODO Testing this
+            # params_dict['arclist_list'] = parse_dict.get('arclist_list', None)
+
+            if arc_list is not None:
+                params_dict['arclist_list'] = parse_dict.get('arc_list', None)
+            else:
+                params_dict['arclist_list'] = parse_dict.get('arclist_list', None)
+
+
             params_dict['constraint_list_list'] = parse_dict.get('constraint_list_list', None)
 
             params_dict['node_binding'] = parse_dict.get('node_binding', None)
@@ -223,7 +242,20 @@ class MetaQLParser:
             params_dict = {}
 
             params_dict['sub_arc'] = parse_dict.get('arc', None)
-            params_dict['arclist_list'] = parse_dict.get('arc_list', None)
+
+            arc_list = parse_dict.get('arc_list', None)
+
+            # are we using the 'arc_list' key?
+            # should the arc_list case be wrapped in an AND to be consistent?
+
+            # TODO Testing this
+            # params_dict['arclist_list'] = parse_dict.get('arclist_list', None)
+
+            if arc_list is not None:
+                params_dict['arclist_list'] = parse_dict.get('arc_list', None)
+            else:
+                params_dict['arclist_list'] = parse_dict.get('arclist_list', None)
+
             params_dict['constraint_list_list'] = parse_dict.get('constraint_list_list', None)
 
             params_dict['node_binding'] = parse_dict.get('node_binding', None)
@@ -248,6 +280,7 @@ class MetaQLParser:
             if metaql_class == 'OrArcList':
                 arc_list_type = OR_ARC_LIST_TYPE
 
+            # are we using the key 'arc_list' ?
             arc_list_list = metaql_dict.get('arc_list', None)
 
             arclist_list = metaql_dict.get('arclist_list', None)

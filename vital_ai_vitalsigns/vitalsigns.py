@@ -11,6 +11,7 @@ from vital_ai_vitalsigns.ontology.vitalsigns_ontology_manager import VitalSignsO
 from vital_ai_vitalsigns.service.vitalservice_manager import VitalServiceManager
 from vital_ai_vitalsigns.utils.find_vitalhome import find_vitalhome
 from vital_ai_vitalsigns.config.vitalsigns_config import VitalSignsConfigLoader, VitalSignsConfig
+import os
 
 
 class VitalSignsMeta(type):
@@ -31,6 +32,9 @@ G = TypeVar('G', bound=Optional['GraphObject'])
 class VitalSigns(metaclass=VitalSignsMeta):
 
     def __init__(self, *, background_task=True):
+
+        os.environ['TRANSFORMERS_NO_ADVISORY_WARNINGS'] = '1'
+
         self._ont_manager = VitalSignsOntologyManager()
         self._registry = VitalSignsRegistry(ontology_manager=self._ont_manager)
         self._embedding_model_registry = {}
@@ -41,6 +45,7 @@ class VitalSigns(metaclass=VitalSignsMeta):
         self._background_thread = None
         self._running = False
 
+
         vital_home = find_vitalhome()
 
         self._vital_home = vital_home
@@ -50,6 +55,8 @@ class VitalSigns(metaclass=VitalSignsMeta):
         vitalservice_list = self._vitalsigns_config.vitalservice_list
 
         self._vitalservice_manager = VitalServiceManager(config=vitalservice_list)
+
+        self._vitalservice_manager._initialize()
 
         if background_task:
             self.start()

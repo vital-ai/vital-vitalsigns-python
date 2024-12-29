@@ -838,6 +838,15 @@ HiveSQL</rdfs:comment>
     
 
 
+    <!-- http://vital.ai/ontology/vital-core#hasSegmentStateJSON -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-core#hasSegmentStateJSON">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-core#VitalSegment"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
     <!-- http://vital.ai/ontology/vital-core#hasSegmentTenantID -->
 
     <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-core#hasSegmentTenantID">

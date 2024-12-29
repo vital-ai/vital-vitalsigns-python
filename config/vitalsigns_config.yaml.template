@@ -10,6 +10,7 @@ vector_database:
 vitalservice:
   - name: example_service_1
     namespace: example_namespace_1
+    base_uri: "http://vital.ai/"
     graph_database:
       username: "user1"
       password: "pass1"
@@ -19,9 +20,12 @@ vitalservice:
       endpoint: "http://example.com/vectordb"
       api_key: "apikey1"
       vector_database_type: "weaviate"
+      # this is a list to support having more than one
+      # schema defining sets of collections
       vector_database_schema_list: ["schema.yaml"]
   - name: example_service_2
     namespace: example_namespace_2
+    base_uri: "http://vital.ai/"
     graph_database:
       username: "user2"
       password: "pass2"
@@ -29,6 +33,7 @@ vitalservice:
       database_type: "fuseki"
   - name: example_service_3
     namespace: example_namespace_3
+    base_uri: "http://vital.ai/"
     vector_database:
       endpoint: "http://example.com/othervectordb"
       api_key: "apikey2"
