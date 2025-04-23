@@ -43,6 +43,16 @@ def main():
 
     print(meta_info)
 
+    collections = client.collections.list_all()
+
+    for c_name in collections:
+        print(f"{c_name}")
+        c = client.collections.get(c_name)
+        print(c.config.get())
+
+    # client.close()
+    # exit(0)
+
     try:
 
         try:

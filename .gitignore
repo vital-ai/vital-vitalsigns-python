@@ -2,14 +2,14 @@
 
 **/*.pyc
 **/*.pyo
-dist/*
-build/*
+dist/
+build/
 **/*.egg-info/
 
 **/.DS_Store
 
 config/vitalsigns_config.yaml
-.idea/*
+.idea/
 
 vitalhome/**/*.yaml
 
@@ -19,7 +19,11 @@ vital_home_test/domain-python/*/*.egg-info/*
 
 vital_home_test/domain-python/vital-aimp-python/com_vitalai_aimp_domain/*
 
+**/*.pem
 
+authentication/
+
+.vscode/
 
 
 

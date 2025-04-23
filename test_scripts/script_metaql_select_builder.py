@@ -69,7 +69,6 @@ def main():
     # add resolving graph objects true/false into query
 
     sparql_string = VirtuosoMetaQLImpl.generate_select_query_sparql(
-        namespace=namespace,
         select_query=metaql_select_query,
         namespace_list=ontology_list
     )
@@ -96,7 +95,6 @@ def main():
         print(f"Graph URI: {g.get_graph_uri()}")
 
     metaql_result = virtuoso_graph_service.metaql_select_query(
-        namespace=namespace,
         select_query=metaql_select_query,
         namespace_list=ontology_list
     )
