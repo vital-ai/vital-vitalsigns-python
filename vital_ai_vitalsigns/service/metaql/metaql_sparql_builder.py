@@ -63,11 +63,11 @@ class MetaQLSparqlBuilder:
 
     def build_sparql(self, metaql_query: MetaQLQuery) -> MetaQLSparqlImpl | None:
 
-        print(metaql_query)
+        # print(metaql_query)
 
         metaql_class = metaql_query.get('metaql_class', None)
 
-        print(f"MetaQL Class: {metaql_class}")
+        # print(f"MetaQL Class: {metaql_class}")
 
         if metaql_class == 'SelectQuery':
             # TODO
@@ -90,21 +90,21 @@ class MetaQLSparqlBuilder:
 
             graph_uri = graph_uri_list[0]
 
-            print("Binding List:")
-            for binding in sparql_impl_out.get_binding_list():
-                print(f"Binding: {binding}")
+            # print("Binding List:")
+            # for binding in sparql_impl_out.get_binding_list():
+            #    print(f"Binding: {binding}")
 
             bind_list = " ".join([f"?{bind}" for bind in sparql_impl_out.get_binding_list()])
 
-            print("Sparql Terms:")
-            for term in sparql_impl_out.get_arc_constraint_list():
-                print(term)
+            # print("Sparql Terms:")
+            # for term in sparql_impl_out.get_arc_constraint_list():
+            #    print(term)
 
             term_list = "\n".join(sparql_impl_out.get_arc_constraint_list())
 
-            print("Bind Constraint List:")
-            for bind in sparql_impl_out.get_bind_constraint_list():
-                print(f"Bind Constraint: {bind}")
+            # print("Bind Constraint List:")
+            # for bind in sparql_impl_out.get_bind_constraint_list():
+            #    print(f"Bind Constraint: {bind}")
 
             bind_constraint_list = "\n".join(sparql_impl_out.get_bind_constraint_list())
 
@@ -132,7 +132,7 @@ LIMIT {limit}
 OFFSET {offset}          
 """
 
-            print(f"Sparql String:\n{sparql_string}")
+            # print(f"Sparql String:\n{sparql_string}")
 
             return sparql_impl_out
 
@@ -174,13 +174,13 @@ OFFSET {offset}
                        sparql_impl: MetaQLSparqlImpl,
                        arc_id: int) -> MetaQLSparqlImpl:
 
-        print("building arc root...")
+        # print("building arc root...")
 
         depth = 0
         or_context: bool = False
-        print(f"Depth: {depth}, OrContext: {or_context}")
-        print(f"Root Arc Id: {arc_id}")
-        print(arc_root)
+        # print(f"Depth: {depth}, OrContext: {or_context}")
+        # print(f"Root Arc Id: {arc_id}")
+        # print(arc_root)
 
         leaf = True
 
@@ -196,7 +196,7 @@ OFFSET {offset}
 
         if node_binding:
             binding = node_binding.get('binding', None)
-            print(f"Node Binding: {binding}")
+            # print(f"Node Binding: {binding}")
             node_binding_name = binding
             sparql_impl.add_binding(node_binding_name)
             sparql_impl.set_root_binding(node_binding_name)
@@ -205,19 +205,19 @@ OFFSET {offset}
 
         if edge_binding:
             binding = edge_binding.get('binding', None)
-            print(f"Edge Binding: {binding}")
+            # print(f"Edge Binding: {binding}")
             edge_binding_name = binding
             sparql_impl.add_binding(edge_binding_name)
 
         if path_binding:
             binding = path_binding.get('binding', None)
-            print(f"Path Binding: {binding}")
+            # print(f"Path Binding: {binding}")
             path_binding_name = binding
             sparql_impl.add_binding(path_binding_name)
 
         if solution_binding:
             binding = solution_binding.get('binding', None)
-            print(f"Solution Binding: {binding}")
+            # print(f"Solution Binding: {binding}")
             solution_binding_name = binding
             sparql_impl.add_binding(solution_binding_name)
 
@@ -229,6 +229,8 @@ OFFSET {offset}
 
             self.current_arc_id += 1
             child_arc_id = self.current_arc_id
+
+            # print(f"child_arc_id: {child_arc_id}")
 
             sparql_impl_out = self.build_arc(
                 arc=arc,
@@ -243,7 +245,7 @@ OFFSET {offset}
 
         for arclist in arclist_list:
 
-            print(f"arclist: {arclist}")
+            # print(f"arclist: {arclist}")
 
             metaql_class = arclist.get('metaql_class', None)
 
@@ -282,9 +284,9 @@ OFFSET {offset}
 
         for term in terms:
             sparql_impl.add_arc_constraint(term)
-            print(f"Term: {term}")
+            # print(f"Term: {term}")
 
-        print(f"ArcRoot Leaf: {leaf}")
+        # print(f"ArcRoot Leaf: {leaf}")
 
         return sparql_impl
 
@@ -296,11 +298,11 @@ OFFSET {offset}
                   parent_arc_id: int,
                   arc_id: int) -> MetaQLSparqlImpl:
 
-        print("building arc...")
-        print(f"Depth: {depth}, OrContext: {or_context}")
-        print(f"Parent Arc Id: {parent_arc_id}, Arc Id: {arc_id}")
-        print(arc)
-        print(f"Binding Map: {self.binding_map}")
+        # print("building arc...")
+        # print(f"Depth: {depth}, OrContext: {or_context}")
+        # print(f"Parent Arc Id: {parent_arc_id}, Arc Id: {arc_id}")
+        # print(arc)
+        # print(f"Binding Map: {self.binding_map}")
 
         node_binding = arc.get('node_binding', None)
         edge_binding = arc.get('edge_binding', None)
@@ -314,26 +316,26 @@ OFFSET {offset}
 
         if node_binding:
             binding = node_binding.get('binding', None)
-            print(f"Node Binding: {binding}")
+            # print(f"Node Binding: {binding}")
             node_binding_name = binding
             sparql_impl.add_binding(node_binding_name)
             self.binding_map[arc_id] = binding
 
         if edge_binding:
             binding = edge_binding.get('binding', None)
-            print(f"Edge Binding: {binding}")
+            # print(f"Edge Binding: {binding}")
             edge_binding_name = binding
             sparql_impl.add_binding(edge_binding_name)
 
         if path_binding:
             binding = path_binding.get('binding', None)
-            print(f"Path Binding: {binding}")
+            # print(f"Path Binding: {binding}")
             path_binding_name = binding
             sparql_impl.add_binding(path_binding_name)
 
         if solution_binding:
             binding = solution_binding.get('binding', None)
-            print(f"Solution Binding: {binding}")
+            # print(f"Solution Binding: {binding}")
             solution_binding_name = binding
             sparql_impl.add_binding(solution_binding_name)
 
@@ -345,6 +347,8 @@ OFFSET {offset}
 
         # node bindings
         parent_arc_binding = self.binding_map[parent_arc_id]
+
+        # print(f"binding map: {self.binding_map}")
 
         arc_binding = self.binding_map[arc_id]
 
@@ -456,7 +460,7 @@ OFFSET {offset}
 
             leaf = False
 
-        print(f"Arc Leaf: {leaf}")
+        # print(f"Arc Leaf: {leaf}")
 
         node_binding_name = self.binding_map[arc_id]
 
@@ -471,7 +475,7 @@ OFFSET {offset}
             terms.append(ct)
 
         for term in terms:
-            print(f"Term: {term}")
+            # print(f"Term: {term}")
             sparql_impl.add_arc_constraint(term)
 
         if solution_binding:
@@ -527,7 +531,7 @@ OFFSET {offset}
 
                             subclass_value_term = f"""
 VALUES ?{subclass_list_name } {{
-    {subclass_list_string}
+{subclass_list_string}
 }}
 """
 
@@ -588,11 +592,11 @@ VALUES ?{subclass_list_name } {{
                           or_context: bool = False,
                           parent_arc_id: int) -> MetaQLSparqlImpl:
 
-        print("building or-arc list...")
-        print(f"Depth: {depth}, OrContext: {or_context}")
-        print(f"Parent Arc Id: {parent_arc_id}")
+        # print("building or-arc list...")
+        # print(f"Depth: {depth}, OrContext: {or_context}")
+        # print(f"Parent Arc Id: {parent_arc_id}")
 
-        print(or_arc_list)
+        # print(or_arc_list)
 
         leaf = True
 
@@ -666,11 +670,11 @@ VALUES ?{subclass_list_name } {{
             for bind_constraint in impl.get_bind_constraint_list():
                 bind_set.add(bind_constraint)
 
-        for term in term_set:
-            print(f"Unique Term: {term}")
+        # for term in term_set:
+        #    print(f"Unique Term: {term}")
 
-        for bind in bind_set:
-            print(f"Unique Bind Term: {bind}")
+        # for bind in bind_set:
+        #    print(f"Unique Bind Term: {bind}")
 
         for term in term_set:
 
@@ -686,10 +690,10 @@ VALUES ?{subclass_list_name } {{
                     impl.get_arc_constraint_list().remove(term)
                 and_term_list.append(term)
 
-        print("All List:")
+        # print("All List:")
 
-        for term in and_term_list:
-            print(f"All Term: {term}")
+        # for term in and_term_list:
+        #    print(f"All Term: {term}")
 
         for bind in bind_set:
 
@@ -705,10 +709,10 @@ VALUES ?{subclass_list_name } {{
                     impl.get_bind_constraint_list().remove(bind)
                 and_bind_list.append(bind)
 
-        print("All Bind List:")
+        # print("All Bind List:")
 
-        for bind in and_bind_list:
-            print(f"All Bind : {bind}")
+        # for bind in and_bind_list:
+        #    print(f"All Bind : {bind}")
 
         # put the top level AND ones in the list
         for term in and_term_list:
@@ -717,7 +721,7 @@ VALUES ?{subclass_list_name } {{
         for bind in and_bind_list:
             sparql_impl.add_bind_constraint(bind)
 
-        print("Remaining OR Terms:")
+        # print("Remaining OR Terms:")
 
         count = 0
 
@@ -725,10 +729,10 @@ VALUES ?{subclass_list_name } {{
 
             count += 1
 
-            print(f"Set: {count}")
+            # print(f"Set: {count}")
 
-            for term in impl.get_arc_constraint_list():
-                print(f"(Set {count}): Term: {term}")
+            # for term in impl.get_arc_constraint_list():
+            #    print(f"(Set {count}): Term: {term}")
 
         count = 0
 
@@ -736,10 +740,10 @@ VALUES ?{subclass_list_name } {{
 
             count += 1
 
-            print(f"Bind Set: {count}")
+            # print(f"Bind Set: {count}")
 
-            for bind in impl.get_bind_constraint_list():
-                print(f"(Set {count}): Bind: {bind}")
+            # for bind in impl.get_bind_constraint_list():
+            #    print(f"(Set {count}): Bind: {bind}")
 
         or_term_string: str | None = None
 
@@ -772,7 +776,7 @@ VALUES ?{subclass_list_name } {{
             for binding in impl.get_binding_list():
                 sparql_impl.add_binding(binding)
 
-        print(f"OrArcList Leaf: {leaf}")
+        # print(f"OrArcList Leaf: {leaf}")
 
         return sparql_impl
 
@@ -785,10 +789,10 @@ VALUES ?{subclass_list_name } {{
 
         leaf = True
 
-        print("building and-arc list...")
-        print(f"Depth: {depth}, OrContext: {or_context}")
-        print(f"Parent Arc Id: {parent_arc_id}")
-        print(and_arc_list)
+        # print("building and-arc list...")
+        # print(f"Depth: {depth}, OrContext: {or_context}")
+        # print(f"Parent Arc Id: {parent_arc_id}")
+        # print(and_arc_list)
 
         arc_list: List[Arc] | None = and_arc_list.get("arc_list", None)
 
@@ -835,6 +839,6 @@ VALUES ?{subclass_list_name } {{
 
             leaf = False
 
-        print(f"AndArcList Leaf: {leaf}")
+        # print(f"AndArcList Leaf: {leaf}")
 
         return sparql_impl

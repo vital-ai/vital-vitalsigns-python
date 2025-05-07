@@ -118,7 +118,7 @@ class GraphCollection(MutableSequence[G]):
         if not isinstance(value, GraphObject):
             raise ValueError("All items must be instances of GraphObject or its subclasses")
 
-        self.pop(value.URI)
+        self.pop_uri(value.URI)
 
         if hasattr(value, 'URI'):
             self._uri_map[value.URI] = value
@@ -135,7 +135,23 @@ class GraphCollection(MutableSequence[G]):
 
         return default
 
-    def pop(self, uri, default=None):
+    def pop(self, index: int = -1):
+
+        obj = self._data.pop(index)
+
+        if obj:
+            obj.remove_from_graph(self)
+            obj_uri = obj.URI
+
+            if self._use_rdfstore is True:
+                self._rdfstore.delete_triples(obj_uri)
+
+            if self._use_vectordb is True:
+                self._vectordb.remove_doc(obj_uri)
+
+        return obj
+
+    def pop_uri(self, uri, default=None):
 
         for i, item in enumerate(self._data):
 
@@ -161,7 +177,7 @@ class GraphCollection(MutableSequence[G]):
         return None
 
     def remove(self, uri, default=None) -> G:
-        return self.pop(uri, default)
+        return self.pop_uri(uri, default)
 
     def add(self, obj: G, graph_uri: str = None):
 
@@ -170,7 +186,7 @@ class GraphCollection(MutableSequence[G]):
         if not isinstance(obj, GraphObject):
             raise ValueError("Item must be instances of GraphObject or its subclasses")
 
-        self.pop(obj.URI)
+        self.pop_uri(obj.URI)
 
         obj.include_on_graph(self)
 
@@ -223,7 +239,7 @@ class GraphCollection(MutableSequence[G]):
 
         for obj in objects:
 
-            self.pop(obj.URI)
+            self.pop_uri(obj.URI)
 
             obj.include_on_graph(self)
 

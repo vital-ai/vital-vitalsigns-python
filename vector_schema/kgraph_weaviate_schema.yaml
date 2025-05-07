@@ -1,0 +1,374 @@
+# schema file for vector vitalservice
+# this is used to override using the ontology directly for the schema
+# which can be used in place of/or until the ontology has vector annotations
+# the vitalservice config file specifies the embedding models for classes (collections)
+# so either the ontology or schema must define collections/classes and the
+# vitalservice config info augments this
+
+# schema file for haley-kg weaviate
+
+name: HaleyKGSchema
+type: Weaviate
+namespace: VITALTEST
+version: 1.0
+
+collections:
+  - name: KGEntity
+    description: "Knowledge Graph Entity"
+    multi_tenant: true
+    class_uri: "http://vital.ai/ontology/haley-ai-kg#KGEntity"
+    named_vectors:
+      - name: value
+      - name: type
+    properties:
+      - name: uri
+        property_uri: "http://vital.ai/ontology/vital-core#URIProp"
+        type: string
+        description: "Unique identifier for the entity"
+      - name: name
+        property_uri: "http://vital.ai/ontology/vital-core#hasName"
+        type: string
+        named_vectors:
+          - value
+        description: "Name of the entity"
+      - name: kGraphDescription
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasKGraphDescription"
+        type: string
+        named_vectors:
+          - value
+        description: "Description of the entity"
+      - name: kGEntityType
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasKGEntityType"
+        type: string
+        description: "Type Identifier of the entity"
+      - name: kGEntityTypeDescription
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasKGEntityTypeDescription"
+        type: string
+        named_vectors:
+          - type
+        description: "Type Description of the entity"
+    cross_links:
+      - name: edge_Edge_hasEntityKGFrame
+        cross_link_type: Edge
+        edge_name: Edge_hasEntityKGFrame
+        edge_uri: "http://vital.ai/ontology/haley-ai-kg#Edge_hasEntityKGFrame"
+        target_collection: KGFrame
+        description: "Cross-link to KGFrame"
+
+  - name: KGNewsEntity
+    description: "Knowledge Graph News Entity"
+    multi_tenant: true
+    class_uri: "http://vital.ai/ontology/haley-ai-kg#KGNewsEntity"
+    named_vectors:
+      - name: value
+      - name: type
+    properties:
+      - name: uri
+        property_uri: "http://vital.ai/ontology/vital-core#URIProp"
+        type: string
+        description: "Unique identifier for the entity"
+      - name: name
+        property_uri: "http://vital.ai/ontology/vital-core#hasName"
+        type: string
+        named_vectors:
+          - value
+        description: "Name of the news entity"
+      - name: kGraphDescription
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasKGraphDescription"
+        type: string
+        named_vectors:
+          - value
+        description: "Description of the entity"
+      - name: kGEntityType
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasKGEntityType"
+        type: string
+        description: "Type Identifier of the news entity"
+      - name: kGEntityTypeDescription
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasKGEntityTypeDescription"
+        type: string
+        named_vectors:
+          - type
+        description: "Type Description of the new entity"
+    cross_links:
+      - name: edge_Edge_hasEntityKGFrame
+        cross_link_type: Edge
+        edge_name: Edge_hasEntityKGFrame
+        edge_uri: "http://vital.ai/ontology/haley-ai-kg#Edge_hasEntityKGFrame"
+        target_collection: KGFrame
+        description: "Cross-link to KGFrame"
+
+  - name: KGProductEntity
+    description: "Knowledge Graph Product Entity"
+    multi_tenant: true
+    class_uri: "http://vital.ai/ontology/haley-ai-kg#KGProductEntity"
+    named_vectors:
+      - name: value
+      - name: type
+    properties:
+      - name: uri
+        property_uri: "http://vital.ai/ontology/vital-core#URIProp"
+        type: string
+        description: "Unique identifier for the entity"
+      - name: name
+        property_uri: "http://vital.ai/ontology/vital-core#hasName"
+        type: string
+        named_vectors:
+          - value
+        description: "Name of the product entity"
+      - name: kGraphDescription
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasKGraphDescription"
+        type: string
+        named_vectors:
+          - value
+        description: "Description of the entity"
+      - name: kGEntityType
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasKGEntityType"
+        type: string
+        description: "Type Identifier of the product entity"
+      - name: kGEntityTypeDescription
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasKGEntityTypeDescription"
+        type: string
+        named_vectors:
+          - type
+        description: "Type Description of the product entity"
+    cross_links:
+      - name: edge_Edge_hasEntityKGFrame
+        cross_link_type: Edge
+        edge_name: Edge_hasEntityKGFrame
+        edge_uri: "http://vital.ai/ontology/haley-ai-kg#Edge_hasEntityKGFrame"
+        target_collection: KGFrame
+        description: "Cross-link to KGFrame"
+
+  - name: KGWebEntity
+    description: "Knowledge Graph Web Entity"
+    multi_tenant: true
+    class_uri: "http://vital.ai/ontology/haley-ai-kg#KGWebEntity"
+    named_vectors:
+      - name: value
+      - name: type
+    properties:
+      - name: uri
+        property_uri: "http://vital.ai/ontology/vital-core#URIProp"
+        type: string
+        description: "Unique identifier for the entity"
+      - name: name
+        property_uri: "http://vital.ai/ontology/vital-core#hasName"
+        type: string
+        named_vectors:
+          - value
+        description: "Name of the entity"
+      - name: kGraphDescription
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasKGraphDescription"
+        type: string
+        named_vectors:
+          - value
+        description: "Description of the entity"
+      - name: kGEntityType
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasKGEntityType"
+        type: string
+        description: "Type Identifier of the web entity"
+      - name: kGEntityTypeDescription
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasKGEntityTypeDescription"
+        type: string
+        named_vectors:
+          - type
+        description: "Type Description of the web entity"
+    cross_links:
+      - name: edge_Edge_hasEntityKGFrame
+        cross_link_type: Edge
+        edge_name: Edge_hasEntityKGFrame
+        edge_uri: "http://vital.ai/ontology/haley-ai-kg#Edge_hasEntityKGFrame"
+        target_collection: KGFrame
+        description: "Cross-link to KGFrame"
+
+  - name: KGFrame
+    description: "Knowledge Graph Frame"
+    multi_tenant: true
+    class_uri: "http://vital.ai/ontology/haley-ai-kg#KGFrame"
+    named_vectors:
+      - name: value
+      - name: type
+    properties:
+      - name: uri
+        property_uri: "http://vital.ai/ontology/vital-core#URIProp"
+        type: string
+        description: "Unique identifier for the frame"
+      - name: name
+        property_uri: "http://vital.ai/ontology/vital-core#hasName"
+        type: string
+        named_vectors:
+          - value
+        description: "Name of the frame"
+      - name: kGraphDescription
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasKGraphDescription"
+        type: string
+        named_vectors:
+          - value
+        description: "Description of the frame"
+      - name: kGFrameType
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasKGFrameType"
+        type: string
+        description: "Type Identifier of the frame"
+      - name: kGFrameTypeDescription
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasKGFrameTypeDescription"
+        type: string
+        named_vectors:
+          - type
+        description: "Type Description of the frame"
+    cross_links:
+      - name: edge_Edge_hasKGSlot
+        cross_link_type: Edge
+        edge_name: Edge_hasKGSlot
+        edge_uri: "http://vital.ai/ontology/haley-ai-kg#Edge_hasKGSlot"
+        target_collection: KGSlot
+        description: "Cross-link to KGSlot"
+
+  - name: KGSlot
+    description: "Knowledge Graph Slot"
+    multi_tenant: true
+    class_uri: "http://vital.ai/ontology/haley-ai-kg#KGSlot"
+    named_vectors:
+      - name: value
+      - name: type
+    properties:
+      - name: uri
+        property_uri: "http://vital.ai/ontology/vital-core#URIProp"
+        type: string
+        description: "Unique identifier for the slot"
+      - name: name
+        property_uri: "http://vital.ai/ontology/vital-core#hasName"
+        type: string
+        description: "Name of the slot"
+      - name: kGraphDescription
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasKGraphDescription"
+        type: string
+        named_vectors:
+          - value
+        description: "Description of the slot"
+      - name: subclass_uri
+        property_uri: "urn:type"
+        type: string
+        description: "Subclass uri of the slot"
+      - name: kGSlotType
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasKGSlotType"
+        type: string
+        description: "Type Identifier of the slot"
+      - name: kGSlotTypeDescription
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasKGSlotTypeDescription"
+        type: string
+        named_vectors:
+          - type
+        description: "Type Description of the slot"
+      - name: audioSlotValue
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasAudioSlotValue"
+        type: string
+        description: "audio slot uri value"
+      - name: booleanSlotValue
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasBooleanSlotValue"
+        type: boolean
+        description: "boolean slot value"
+      - name: choiceSlotOptionValues
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasChoiceSlotOptionValues"
+        type: string
+        named_vectors:
+          - value
+        description: "choice option multi slot value"
+      - name: choiceSlotValue
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasChoiceSlotValue"
+        type: string
+        named_vectors:
+          - value
+        description: "choice slot value"
+      - name: codeSlotValue
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasCodeSlotValue"
+        type: string
+        description: "code slot uri value"
+      - name: currencySlotValue
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasCurrencySlotValue"
+        type: float
+        description: "currency slot value"
+      - name: dateTimeSlotValue
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasDateTimeSlotValue"
+        type: date
+        description: "date time slot value"
+      - name: doubleSlotValue
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasDoubleSlotValue"
+        type: float
+        description: "double slot value"
+      - name: entitySlotValue
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasEntitySlotValue"
+        type: string
+        description: "entity uri slot value"
+      - name: fileUploadSlotValue
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasFileUploadSlotValue"
+        type: string
+        description: "file upload uri slot value"
+      - name: geoLocationSlotValue
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasGeoLocationSlotValue"
+        type: string
+        description: "geolocation slot value"
+      - name: imageSlotValue
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasImageSlotValue"
+        type: string
+        description: "image uri slot value"
+      - name: integerSlotValue
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasIntegerSlotValue"
+        type: integer
+        description: "integer slot value"
+      - name: jsonSlotValue
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasJsonSlotValue"
+        type: string
+        description: "json slot value"
+      - name: longSlotValue
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasLongSlotValue"
+        type: integer
+        description: "long slot value"
+      - name: longTextSlotValue
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasLongTextSlotValue"
+        type: string
+        named_vectors:
+          - value
+        description: "long text slot value"
+      - name: multiChoiceSlotValues
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasMultiChoiceSlotValues"
+        type: string
+        description: "multi choice slot values"
+      - name: kGTaxonomyOptionURI
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasKGTaxonomyOptionURI"
+        type: string
+        description: "kg taxonomy option slot uri value"
+      - name: multiTaxonomySlotValues
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasMultiTaxonomySlotValues"
+        type: string
+        description: "multi taxonomy slot values"
+      - name: runSlotValue
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#KGRunSlot"
+        type: string
+        description: "run slot uri value"
+      - name: taxonomySlotValue
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasTaxonomySlotValue"
+        type: string
+        description: "taxonomy slot uri value"
+      - name: textSlotValue
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasTextSlotValue"
+        type: string
+        named_vectors:
+          - value
+        description: "text slot value"
+      - name: uriSlotValue
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasUriSlotValue"
+        type: string
+        description: "uri slot value"
+      - name: videoSlotValue
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasVideoSlotValue"
+        type: string
+        description: "video slot uri value"
+
+    cross_links:
+      - name: property_hasEntitySlotValue
+        cross_link_type: Property
+        property_name: hasEntitySlotValue
+        property_uri: "http://vital.ai/ontology/haley-ai-kg#hasEntitySlotValue"
+        target_collection: KGEntity
+        description: "Cross-link to KGEntity"
+

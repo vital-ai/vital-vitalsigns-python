@@ -1,0 +1,477 @@
+{
+    "metaql_class": "GraphQuery",
+    "query_type": "METAQL_GRAPH_QUERY",
+    "graph_uri_list": [
+        "http://vital.ai/graph/wordnet-frames-graph-1"
+    ],
+    "resolve_objects": true,
+    "offset": 0,
+    "limit": 10,
+    "arc": {
+        "metaql_class": "ArcRoot",
+        "arc_type": "ARC_TYPE_ARC_ROOT",
+        "arc_traverse_type": "ARC_TRAVERSE_TYPE_EDGE",
+        "arc_direction_type": "ARC_DIRECTION_TYPE_FORWARD",
+        "node_binding": {
+            "metaql_class": "NodeArcBinding",
+            "binding": "frame"
+        },
+        "edge_binding": null,
+        "path_binding": null,
+        "solution_binding": null,
+        "property_path_list_list": [],
+        "arc": null,
+        "arclist_list": [
+            {
+                "metaql_class": "OrArcList",
+                "arc_list_type": "OR_ARC_LIST_TYPE",
+                "arc_list": [],
+                "arclist_list": [
+                    {
+                        "metaql_class": "AndArcList",
+                        "arc_list_type": "AND_ARC_LIST_TYPE",
+                        "arc_list": [
+                            {
+                                "metaql_class": "Arc",
+                                "arc_type": "ARC_TYPE_ARC",
+                                "arc_traverse_type": "ARC_TRAVERSE_TYPE_EDGE",
+                                "arc_direction_type": "ARC_DIRECTION_TYPE_FORWARD",
+                                "node_binding": {
+                                    "metaql_class": "NodeArcBinding",
+                                    "binding": "source_slot"
+                                },
+                                "edge_binding": {
+                                    "metaql_class": "EdgeArcBinding",
+                                    "binding": "source_slot_edge"
+                                },
+                                "path_binding": null,
+                                "solution_binding": null,
+                                "property_path_list_list": [],
+                                "arc": {
+                                    "metaql_class": "Arc",
+                                    "arc_type": "ARC_TYPE_ARC",
+                                    "arc_traverse_type": "ARC_TRAVERSE_TYPE_PROPERTY",
+                                    "arc_direction_type": "ARC_DIRECTION_TYPE_FORWARD",
+                                    "node_binding": {
+                                        "metaql_class": "NodeArcBinding",
+                                        "binding": "source_entity"
+                                    },
+                                    "edge_binding": null,
+                                    "path_binding": {
+                                        "metaql_class": "PathArcBinding",
+                                        "binding": "source_entity_path"
+                                    },
+                                    "solution_binding": {
+                                        "metaql_class": "SolutionArcBinding",
+                                        "binding": "entity"
+                                    },
+                                    "property_path_list_list": [
+                                        [
+                                            {
+                                                "metaql_class": "MetaQLPropertyPath",
+                                                "class_uri": null,
+                                                "include_subclasses": false,
+                                                "property_uri": "http://vital.ai/ontology/haley-ai-kg#hasEntitySlotValue",
+                                                "include_subproperties": false
+                                            }
+                                        ]
+                                    ],
+                                    "arc": null,
+                                    "arclist_list": [],
+                                    "constraint_list_list": [
+                                        {
+                                            "metaql_class": "OrConstraintList",
+                                            "constraint_list_type": "OR_CONSTRAINT_LIST_TYPE",
+                                            "constraint_list": [
+                                                {
+                                                    "metaql_class": "StringPropertyConstraint",
+                                                    "property_constraint_type": "STRING_PROPERTY_DATA_CONSTRAINT_TYPE",
+                                                    "target": "TARGET_TYPE_NODE",
+                                                    "property_uri": "http://vital.ai/ontology/haley-ai-kg#hasKGraphDescription",
+                                                    "comparator": "COMPARATOR_TYPE_STRING_CONTAINS",
+                                                    "include_subproperties": false,
+                                                    "is_multi_value": false,
+                                                    "constraint_type": "PROPERTY_CONSTRAINT_TYPE",
+                                                    "string_value": "happy"
+                                                },
+                                                {
+                                                    "metaql_class": "StringPropertyConstraint",
+                                                    "property_constraint_type": "STRING_PROPERTY_DATA_CONSTRAINT_TYPE",
+                                                    "target": "TARGET_TYPE_NODE",
+                                                    "property_uri": "http://vital.ai/ontology/vital-core#hasName",
+                                                    "comparator": "COMPARATOR_TYPE_STRING_CONTAINS",
+                                                    "include_subproperties": false,
+                                                    "is_multi_value": false,
+                                                    "constraint_type": "PROPERTY_CONSTRAINT_TYPE",
+                                                    "string_value": "happy"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "metaql_class": "AndConstraintList",
+                                            "constraint_list_type": "AND_CONSTRAINT_LIST_TYPE",
+                                            "constraint_list": [
+                                                {
+                                                    "metaql_class": "NodeConstraint",
+                                                    "class_constraint_type": "NODE_CLASS_CONSTRAINT_TYPE",
+                                                    "class_uri": "http://vital.ai/ontology/haley-ai-kg#KGEntity",
+                                                    "include_subclasses": false,
+                                                    "constraint_type": "CLASS_CONSTRAINT_TYPE"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                "arclist_list": [],
+                                "constraint_list_list": [
+                                    {
+                                        "metaql_class": "AndConstraintList",
+                                        "constraint_list_type": "AND_CONSTRAINT_LIST_TYPE",
+                                        "constraint_list": [
+                                            {
+                                                "metaql_class": "URIPropertyConstraint",
+                                                "property_constraint_type": "URI_PROPERTY_DATA_CONSTRAINT_TYPE",
+                                                "target": "TARGET_TYPE_NODE",
+                                                "property_uri": "http://vital.ai/ontology/haley-ai-kg#hasKGSlotType",
+                                                "comparator": "COMPARATOR_TYPE_EQUAL_TO",
+                                                "include_subproperties": false,
+                                                "is_multi_value": false,
+                                                "constraint_type": "PROPERTY_CONSTRAINT_TYPE",
+                                                "uri_value": "urn:hasSourceEntity"
+                                            },
+                                            {
+                                                "metaql_class": "NodeConstraint",
+                                                "class_constraint_type": "NODE_CLASS_CONSTRAINT_TYPE",
+                                                "class_uri": "http://vital.ai/ontology/haley-ai-kg#KGSlot",
+                                                "include_subclasses": true,
+                                                "constraint_type": "CLASS_CONSTRAINT_TYPE"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "metaql_class": "Arc",
+                                "arc_type": "ARC_TYPE_ARC",
+                                "arc_traverse_type": "ARC_TRAVERSE_TYPE_EDGE",
+                                "arc_direction_type": "ARC_DIRECTION_TYPE_FORWARD",
+                                "node_binding": {
+                                    "metaql_class": "NodeArcBinding",
+                                    "binding": "destination_slot"
+                                },
+                                "edge_binding": {
+                                    "metaql_class": "EdgeArcBinding",
+                                    "binding": "destination_slot_edge"
+                                },
+                                "path_binding": null,
+                                "solution_binding": null,
+                                "property_path_list_list": [],
+                                "arc": {
+                                    "metaql_class": "Arc",
+                                    "arc_type": "ARC_TYPE_ARC",
+                                    "arc_traverse_type": "ARC_TRAVERSE_TYPE_PROPERTY",
+                                    "arc_direction_type": "ARC_DIRECTION_TYPE_FORWARD",
+                                    "node_binding": {
+                                        "metaql_class": "NodeArcBinding",
+                                        "binding": "destination_entity"
+                                    },
+                                    "edge_binding": null,
+                                    "path_binding": {
+                                        "metaql_class": "PathArcBinding",
+                                        "binding": "destination_entity_path"
+                                    },
+                                    "solution_binding": null,
+                                    "property_path_list_list": [
+                                        [
+                                            {
+                                                "metaql_class": "MetaQLPropertyPath",
+                                                "class_uri": null,
+                                                "include_subclasses": false,
+                                                "property_uri": "http://vital.ai/ontology/haley-ai-kg#hasEntitySlotValue",
+                                                "include_subproperties": false
+                                            }
+                                        ]
+                                    ],
+                                    "arc": null,
+                                    "arclist_list": [],
+                                    "constraint_list_list": [
+                                        {
+                                            "metaql_class": "AndConstraintList",
+                                            "constraint_list_type": "AND_CONSTRAINT_LIST_TYPE",
+                                            "constraint_list": [
+                                                {
+                                                    "metaql_class": "NodeConstraint",
+                                                    "class_constraint_type": "NODE_CLASS_CONSTRAINT_TYPE",
+                                                    "class_uri": "http://vital.ai/ontology/haley-ai-kg#KGEntity",
+                                                    "include_subclasses": false,
+                                                    "constraint_type": "CLASS_CONSTRAINT_TYPE"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                "arclist_list": [],
+                                "constraint_list_list": [
+                                    {
+                                        "metaql_class": "AndConstraintList",
+                                        "constraint_list_type": "AND_CONSTRAINT_LIST_TYPE",
+                                        "constraint_list": [
+                                            {
+                                                "metaql_class": "URIPropertyConstraint",
+                                                "property_constraint_type": "URI_PROPERTY_DATA_CONSTRAINT_TYPE",
+                                                "target": "TARGET_TYPE_NODE",
+                                                "property_uri": "http://vital.ai/ontology/haley-ai-kg#hasKGSlotType",
+                                                "comparator": "COMPARATOR_TYPE_EQUAL_TO",
+                                                "include_subproperties": false,
+                                                "is_multi_value": false,
+                                                "constraint_type": "PROPERTY_CONSTRAINT_TYPE",
+                                                "uri_value": "urn:hasDestinationEntity"
+                                            },
+                                            {
+                                                "metaql_class": "NodeConstraint",
+                                                "class_constraint_type": "NODE_CLASS_CONSTRAINT_TYPE",
+                                                "class_uri": "http://vital.ai/ontology/haley-ai-kg#KGSlot",
+                                                "include_subclasses": true,
+                                                "constraint_type": "CLASS_CONSTRAINT_TYPE"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ],
+                        "arclist_list": []
+                    },
+                    {
+                        "metaql_class": "AndArcList",
+                        "arc_list_type": "AND_ARC_LIST_TYPE",
+                        "arc_list": [
+                            {
+                                "metaql_class": "Arc",
+                                "arc_type": "ARC_TYPE_ARC",
+                                "arc_traverse_type": "ARC_TRAVERSE_TYPE_EDGE",
+                                "arc_direction_type": "ARC_DIRECTION_TYPE_FORWARD",
+                                "node_binding": {
+                                    "metaql_class": "NodeArcBinding",
+                                    "binding": "source_slot"
+                                },
+                                "edge_binding": {
+                                    "metaql_class": "EdgeArcBinding",
+                                    "binding": "source_slot_edge"
+                                },
+                                "path_binding": null,
+                                "solution_binding": null,
+                                "property_path_list_list": [],
+                                "arc": {
+                                    "metaql_class": "Arc",
+                                    "arc_type": "ARC_TYPE_ARC",
+                                    "arc_traverse_type": "ARC_TRAVERSE_TYPE_PROPERTY",
+                                    "arc_direction_type": "ARC_DIRECTION_TYPE_FORWARD",
+                                    "node_binding": {
+                                        "metaql_class": "NodeArcBinding",
+                                        "binding": "source_entity"
+                                    },
+                                    "edge_binding": null,
+                                    "path_binding": {
+                                        "metaql_class": "PathArcBinding",
+                                        "binding": "source_entity_path"
+                                    },
+                                    "solution_binding": null,
+                                    "property_path_list_list": [
+                                        [
+                                            {
+                                                "metaql_class": "MetaQLPropertyPath",
+                                                "class_uri": null,
+                                                "include_subclasses": false,
+                                                "property_uri": "http://vital.ai/ontology/haley-ai-kg#hasEntitySlotValue",
+                                                "include_subproperties": false
+                                            }
+                                        ]
+                                    ],
+                                    "arc": null,
+                                    "arclist_list": [],
+                                    "constraint_list_list": [
+                                        {
+                                            "metaql_class": "AndConstraintList",
+                                            "constraint_list_type": "AND_CONSTRAINT_LIST_TYPE",
+                                            "constraint_list": [
+                                                {
+                                                    "metaql_class": "NodeConstraint",
+                                                    "class_constraint_type": "NODE_CLASS_CONSTRAINT_TYPE",
+                                                    "class_uri": "http://vital.ai/ontology/haley-ai-kg#KGEntity",
+                                                    "include_subclasses": false,
+                                                    "constraint_type": "CLASS_CONSTRAINT_TYPE"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                "arclist_list": [],
+                                "constraint_list_list": [
+                                    {
+                                        "metaql_class": "AndConstraintList",
+                                        "constraint_list_type": "AND_CONSTRAINT_LIST_TYPE",
+                                        "constraint_list": [
+                                            {
+                                                "metaql_class": "URIPropertyConstraint",
+                                                "property_constraint_type": "URI_PROPERTY_DATA_CONSTRAINT_TYPE",
+                                                "target": "TARGET_TYPE_NODE",
+                                                "property_uri": "http://vital.ai/ontology/haley-ai-kg#hasKGSlotType",
+                                                "comparator": "COMPARATOR_TYPE_EQUAL_TO",
+                                                "include_subproperties": false,
+                                                "is_multi_value": false,
+                                                "constraint_type": "PROPERTY_CONSTRAINT_TYPE",
+                                                "uri_value": "urn:hasSourceEntity"
+                                            },
+                                            {
+                                                "metaql_class": "NodeConstraint",
+                                                "class_constraint_type": "NODE_CLASS_CONSTRAINT_TYPE",
+                                                "class_uri": "http://vital.ai/ontology/haley-ai-kg#KGSlot",
+                                                "include_subclasses": true,
+                                                "constraint_type": "CLASS_CONSTRAINT_TYPE"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "metaql_class": "Arc",
+                                "arc_type": "ARC_TYPE_ARC",
+                                "arc_traverse_type": "ARC_TRAVERSE_TYPE_EDGE",
+                                "arc_direction_type": "ARC_DIRECTION_TYPE_FORWARD",
+                                "node_binding": {
+                                    "metaql_class": "NodeArcBinding",
+                                    "binding": "destination_slot"
+                                },
+                                "edge_binding": {
+                                    "metaql_class": "EdgeArcBinding",
+                                    "binding": "destination_slot_edge"
+                                },
+                                "path_binding": null,
+                                "solution_binding": null,
+                                "property_path_list_list": [],
+                                "arc": {
+                                    "metaql_class": "Arc",
+                                    "arc_type": "ARC_TYPE_ARC",
+                                    "arc_traverse_type": "ARC_TRAVERSE_TYPE_PROPERTY",
+                                    "arc_direction_type": "ARC_DIRECTION_TYPE_FORWARD",
+                                    "node_binding": {
+                                        "metaql_class": "NodeArcBinding",
+                                        "binding": "destination_entity"
+                                    },
+                                    "edge_binding": null,
+                                    "path_binding": {
+                                        "metaql_class": "PathArcBinding",
+                                        "binding": "destination_entity_path"
+                                    },
+                                    "solution_binding": {
+                                        "metaql_class": "SolutionArcBinding",
+                                        "binding": "entity"
+                                    },
+                                    "property_path_list_list": [
+                                        [
+                                            {
+                                                "metaql_class": "MetaQLPropertyPath",
+                                                "class_uri": null,
+                                                "include_subclasses": false,
+                                                "property_uri": "http://vital.ai/ontology/haley-ai-kg#hasEntitySlotValue",
+                                                "include_subproperties": false
+                                            }
+                                        ]
+                                    ],
+                                    "arc": null,
+                                    "arclist_list": [],
+                                    "constraint_list_list": [
+                                        {
+                                            "metaql_class": "OrConstraintList",
+                                            "constraint_list_type": "OR_CONSTRAINT_LIST_TYPE",
+                                            "constraint_list": [
+                                                {
+                                                    "metaql_class": "StringPropertyConstraint",
+                                                    "property_constraint_type": "STRING_PROPERTY_DATA_CONSTRAINT_TYPE",
+                                                    "target": "TARGET_TYPE_NODE",
+                                                    "property_uri": "http://vital.ai/ontology/haley-ai-kg#hasKGraphDescription",
+                                                    "comparator": "COMPARATOR_TYPE_STRING_CONTAINS",
+                                                    "include_subproperties": false,
+                                                    "is_multi_value": false,
+                                                    "constraint_type": "PROPERTY_CONSTRAINT_TYPE",
+                                                    "string_value": "happy"
+                                                },
+                                                {
+                                                    "metaql_class": "StringPropertyConstraint",
+                                                    "property_constraint_type": "STRING_PROPERTY_DATA_CONSTRAINT_TYPE",
+                                                    "target": "TARGET_TYPE_NODE",
+                                                    "property_uri": "http://vital.ai/ontology/vital-core#hasName",
+                                                    "comparator": "COMPARATOR_TYPE_STRING_CONTAINS",
+                                                    "include_subproperties": false,
+                                                    "is_multi_value": false,
+                                                    "constraint_type": "PROPERTY_CONSTRAINT_TYPE",
+                                                    "string_value": "happy"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "metaql_class": "AndConstraintList",
+                                            "constraint_list_type": "AND_CONSTRAINT_LIST_TYPE",
+                                            "constraint_list": [
+                                                {
+                                                    "metaql_class": "NodeConstraint",
+                                                    "class_constraint_type": "NODE_CLASS_CONSTRAINT_TYPE",
+                                                    "class_uri": "http://vital.ai/ontology/haley-ai-kg#KGEntity",
+                                                    "include_subclasses": false,
+                                                    "constraint_type": "CLASS_CONSTRAINT_TYPE"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                "arclist_list": [],
+                                "constraint_list_list": [
+                                    {
+                                        "metaql_class": "AndConstraintList",
+                                        "constraint_list_type": "AND_CONSTRAINT_LIST_TYPE",
+                                        "constraint_list": [
+                                            {
+                                                "metaql_class": "URIPropertyConstraint",
+                                                "property_constraint_type": "URI_PROPERTY_DATA_CONSTRAINT_TYPE",
+                                                "target": "TARGET_TYPE_NODE",
+                                                "property_uri": "http://vital.ai/ontology/haley-ai-kg#hasKGSlotType",
+                                                "comparator": "COMPARATOR_TYPE_EQUAL_TO",
+                                                "include_subproperties": false,
+                                                "is_multi_value": false,
+                                                "constraint_type": "PROPERTY_CONSTRAINT_TYPE",
+                                                "uri_value": "urn:hasDestinationEntity"
+                                            },
+                                            {
+                                                "metaql_class": "NodeConstraint",
+                                                "class_constraint_type": "NODE_CLASS_CONSTRAINT_TYPE",
+                                                "class_uri": "http://vital.ai/ontology/haley-ai-kg#KGSlot",
+                                                "include_subclasses": true,
+                                                "constraint_type": "CLASS_CONSTRAINT_TYPE"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ],
+                        "arclist_list": []
+                    }
+                ]
+            }
+        ],
+        "constraint_list_list": [
+            {
+                "metaql_class": "AndConstraintList",
+                "constraint_list_type": "AND_CONSTRAINT_LIST_TYPE",
+                "constraint_list": [
+                    {
+                        "metaql_class": "NodeConstraint",
+                        "class_constraint_type": "NODE_CLASS_CONSTRAINT_TYPE",
+                        "class_uri": "http://vital.ai/ontology/haley-ai-kg#KGFrame",
+                        "include_subclasses": false,
+                        "constraint_type": "CLASS_CONSTRAINT_TYPE"
+                    }
+                ]
+            }
+        ]
+    }
+}

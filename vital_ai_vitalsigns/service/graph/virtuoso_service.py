@@ -1,18 +1,21 @@
 import logging
 import time
 from typing import List, TypeVar, Tuple
+import pyodbc
 import rdflib.plugins.sparql.aggregates
 import requests
 from SPARQLWrapper import SPARQLWrapper, DIGEST, JSON, POST
 from rdflib import Graph, URIRef, BNode, Literal, RDF
 from requests.adapters import HTTPAdapter
-from requests.auth import HTTPDigestAuth
+from requests.auth import HTTPDigestAuth, HTTPBasicAuth
 from requests.exceptions import ChunkedEncodingError
 from urllib3 import Retry
 from urllib3.exceptions import ProtocolError
 from vital_ai_vitalsigns.collection.graph_collection import GraphCollection
 from vital_ai_vitalsigns.metaql.arc.metaql_arc import ArcRoot
 from vital_ai_vitalsigns.metaql.metaql_builder import MetaQLBuilder
+from vital_ai_vitalsigns.metaql.query.query_builder import QueryBuilder, AndConstraintList, PropertyConstraint, \
+    ClassConstraint
 from vital_ai_vitalsigns.model.VITAL_Edge import VITAL_Edge
 from vital_ai_vitalsigns.model.VITAL_Node import VITAL_Node
 from vital_ai_vitalsigns.ontology.ontology import Ontology
@@ -22,11 +25,14 @@ from vital_ai_vitalsigns.query.result_list import ResultList
 from vital_ai_vitalsigns.query.solution import Solution
 from vital_ai_vitalsigns.query.solution_list import SolutionList
 from vital_ai_vitalsigns.service.graph.binding import Binding, BindingValueType
+from vital_ai_vitalsigns.service.graph.graph_object_generator import GraphObjectGenerator
 from vital_ai_vitalsigns.service.graph.graph_service import VitalGraphService
 from vital_ai_vitalsigns.service.graph.graph_service_constants import VitalGraphServiceConstants
+from vital_ai_vitalsigns.service.graph.graph_service_status import GraphServiceStatus, GraphServiceStatusType
 from vital_ai_vitalsigns.service.graph.name_graph import VitalNameGraph
 from vital_ai_vitalsigns.model.GraphObject import GraphObject
 from vital_ai_vitalsigns.service.graph.utils.virtuoso_utils import VirtuosoUtils
+from vital_ai_vitalsigns.service.graph.virtuoso.virtuoso_metaql_impl import VirtuosoMetaQLImpl
 from vital_ai_vitalsigns.service.graph.vital_graph_status import VitalGraphStatus
 from vital_ai_vitalsigns.service.metaql.metaql_sparql_builder import MetaQLSparqlBuilder
 from vital_ai_vitalsigns.service.metaql.metaql_sparql_impl import MetaQLSparqlImpl
@@ -73,10 +79,21 @@ class VirtuosoGraphService(VitalGraphService):
                  username: str | None = None,
                  password: str | None = None,
                  endpoint: str | None = None,
+                 server_name: str | None = None,
+                 server_user: str | None = None,
+                 server_dataset_dir: str | None = None,
+                 pem_path: str | None = None,
                  **kwargs):
         self.username = username
         self.password = password
         self.endpoint = endpoint.rstrip('/')
+
+        self.server_name = server_name
+        self.server_user = server_user
+
+        self.server_dataset_dir = server_dataset_dir
+        self.pem_path = pem_path
+
         self.sparql_auth_endpoint = f"{self.endpoint}/sparql-auth"
         self.graph_crud_auth_endpoint = f"{self.endpoint}/sparql-graph-crud-auth"
         super().__init__(**kwargs)
@@ -85,6 +102,7 @@ class VirtuosoGraphService(VitalGraphService):
     # which gets managed by background thread?
     # could be at the service level, but that would mean
     # moving the graph existence checks to service level also
+    # this would account for other processes adding/removing graphs
 
     def _find_graph(self, graph_uri: str, object_uri: str) -> bool:
 
@@ -168,6 +186,100 @@ class VirtuosoGraphService(VitalGraphService):
 
         return False
 
+    def _get_graph_internal(self, graph_uri: str) -> VitalSegment | None:
+
+        base_uri = self.base_uri
+        namespace = self.namespace
+
+        logging.info(f"Getting graph: {graph_uri}")
+
+        query = f"""
+                   ASK WHERE {{
+                       GRAPH <{graph_uri}> {{ ?s ?p ?o }}
+                   }}
+                   """
+
+        sparql = SPARQLWrapper(self.sparql_auth_endpoint)
+        sparql.setCredentials(self.username, self.password)
+        sparql.setHTTPAuth(DIGEST)
+
+        sparql.setQuery(query)
+        sparql.setMethod(POST)
+        sparql.setReturnFormat(JSON)
+
+        result = sparql.query().convert()
+
+        if result["boolean"]:
+
+            sq = (
+                QueryBuilder.select_query()
+                .graph_uri(graph_uri)
+                .constraint_list(
+                    AndConstraintList()
+                    .node_constraint(
+                        ClassConstraint(
+                            clazz=VitalSegment.get_class_uri()
+                        )
+                    )
+                )
+                .build()
+            )
+
+            metaql_result = self.metaql_select_query(
+                select_query=sq
+            )
+
+            rl = metaql_result.get_result_list()
+
+            result_list = []
+
+            for r in rl:
+                graph_object=r.graph_object
+                score=r.score
+                result_list.append(graph_object)
+
+            if len(result_list) == 1:
+                return result_list[0]
+
+            return None
+
+        else:
+            # raise ValueError(f"Graph with URI {graph_uri} does not exist.")
+            return None
+
+    def service_status(self) -> GraphServiceStatus:
+
+        base_uri = self.base_uri
+        namespace = self.namespace
+
+        # check if connection is active
+        status_type = GraphServiceStatusType.CONNECTION_ERROR
+
+        service_graph_uri = f"{base_uri}/{namespace}/{VitalGraphServiceConstants.SERVICE_GRAPH_ID}"
+
+        vital_segment = self._get_graph_internal(service_graph_uri)
+
+        # check if initialized
+
+        if vital_segment is None:
+            status_type = GraphServiceStatusType.UNINITIALIZED
+            status = GraphServiceStatus(status_type, "Uninitialized")
+            return status
+
+        status_type = GraphServiceStatusType.READY
+
+        status = GraphServiceStatus(status_type)
+
+        return status
+
+    def service_info(self) -> dict:
+
+        base_uri = self.base_uri
+        namespace = self.namespace
+
+        service_info = {}
+
+        return service_info
 
     def list_graph_uris(self, *,
                     safety_check: bool = True) -> List[str]:
@@ -197,6 +309,52 @@ class VirtuosoGraphService(VitalGraphService):
 
         return graph_uri_list
 
+    def is_graph_global(self, graph_id: str, *,
+                        account_id: str|None = None) -> bool:
+
+        base_uri = self.base_uri
+        namespace = self.namespace
+
+        service_graph_uri = f"{base_uri}/{namespace}/{VitalGraphServiceConstants.SERVICE_GRAPH_ID}"
+
+        query = f"""
+
+                   SELECT ?global WHERE {{
+
+                   GRAPH ?g {{
+                        ?s <http://vital.ai/ontology/vital-core#hasSegmentNamespace> "{namespace}"^^xsd:string .
+                        ?s <http://vital.ai/ontology/vital-core#hasSegmentID> "{graph_id}"^^xsd:string .
+                        ?s <http://vital.ai/ontology/vital-core#isSegmentGlobal> ?global .
+                        
+                        ?s <http://vital.ai/ontology/vital-core#vitaltype> <http://vital.ai/ontology/vital-core#VitalSegment> .
+                        ?s ?p ?o .
+                   }}
+                   FILTER(?g != <{service_graph_uri}>)
+                   }}
+                   ORDER BY ?global
+               """
+
+        # logging.info(query)
+
+        sparql = SPARQLWrapper(self.sparql_auth_endpoint)
+        sparql.setCredentials(self.username, self.password)
+        sparql.setHTTPAuth(DIGEST)
+
+        sparql.setQuery(query)
+        sparql.setMethod(POST)
+        sparql.setReturnFormat(JSON)
+
+        results = sparql.query().convert()
+
+        for result in results["results"]["bindings"]:
+            is_global = result["global"]["value"]
+            if is_global:
+                return True
+
+        return False
+
+
+    # TODO return value for initialized vs error
     def initialize_service(self) -> bool:
 
         base_uri = self.base_uri
@@ -205,7 +363,7 @@ class VirtuosoGraphService(VitalGraphService):
         logging.info(f"initializing graph service with namespace: {namespace}")
         logging.info(f"initializing graph service with base uri: {base_uri}")
 
-        target_graph_uri = f"{VitalGraphServiceConstants.SERVICE_GRAPH_URI}_{namespace}"
+        target_graph_uri = f"{base_uri}/{namespace}/{VitalGraphServiceConstants.SERVICE_GRAPH_ID}"
 
         logging.info(f"target graph uri: {target_graph_uri}")
 
@@ -235,12 +393,12 @@ class VirtuosoGraphService(VitalGraphService):
         # check for graphs that include the namespace
         # if found, return false
 
-        prefix = f"urn:{namespace}_"
+        prefix = f"{base_uri}/{namespace}"
 
-        name_graph_list = self.list_graphs()
+        graph_uri_list = self.list_graph_uris()
 
-        for name_graph in name_graph_list:
-            graph_uri = str(name_graph.get_graph_uri())
+        for graph_uri in graph_uri_list:
+            graph_uri = str(graph_uri)
 
             if graph_uri.startswith(prefix):
                 logging.info(f"graph uri with prefix {prefix} exists: {graph_uri}")
@@ -252,18 +410,28 @@ class VirtuosoGraphService(VitalGraphService):
         vital_segment = VitalSegment()
         vital_segment.URI = URIGenerator.generate_uri()
 
-
         # re-arrange these?  add properties?
         # store base_uri?
-        vital_segment.name = namespace
-        vital_segment.segmentGraphURI = target_graph_uri
-        vital_segment.segmentTenantID = namespace
-        vital_segment.segmentGlobal = False
-        vital_segment.segmentID = target_graph_uri
 
+        vital_segment.name = VitalGraphServiceConstants.SERVICE_GRAPH_ID
+
+        # use this to find segments within a namespace
+        vital_segment.segmentNamespace = namespace
+
+        # each graph sets its own value for this
+        vital_segment.segmentGraphURI = target_graph_uri
+
+        vital_segment.segmentID = VitalGraphServiceConstants.SERVICE_GRAPH_ID
+        vital_segment.segmentTenantID = None
+        vital_segment.segmentGlobal = False
+
+        # add json for index state
         vital_segment.segmentStateJSON = "[]"
 
         rdf_string = vital_segment.to_rdf()
+
+        logging.info(f"{rdf_string}")
+
 
         endpoint_url = f"{self.graph_crud_auth_endpoint}?graph-uri={target_graph_uri}"
 
@@ -297,7 +465,7 @@ class VirtuosoGraphService(VitalGraphService):
         # check for service graph
         # if not found, return false
 
-        target_graph_uri = f"{VitalGraphServiceConstants.SERVICE_GRAPH_URI}_{namespace}"
+        target_graph_uri = f"{base_uri}/{namespace}/{VitalGraphServiceConstants.SERVICE_GRAPH_ID}"
 
         logging.info(f"target graph uri: {target_graph_uri}")
 
@@ -328,10 +496,12 @@ class VirtuosoGraphService(VitalGraphService):
 
         # find graphs that include namespace
         # TODO check that these graphs are in the service graph
-        # if not, return false
+        # query via segment objects
 
-        prefix = f"urn:{namespace}_"
+        prefix = f"{base_uri}/{namespace}"
 
+        # TODO this will return only graphs within this service
+        # once query updated
         name_graph_list = self.list_graphs()
 
         graph_to_delete_list = []
@@ -341,35 +511,74 @@ class VirtuosoGraphService(VitalGraphService):
 
             if graph_uri.startswith(prefix) and graph_uri != target_graph_uri:
                 logging.info(f"graph uri with prefix {prefix} exists: {graph_uri}")
-                graph_to_delete_list.append(graph_uri)
+                graph_to_delete_list.append(name_graph)
 
         # remove graphs with namespace
-        for graph_uri in graph_to_delete_list:
+        for name_graph in graph_to_delete_list:
+            graph_uri = str(name_graph.get_graph_uri())
             try:
-                delete_status = self.delete_graph(graph_uri)
+                graph_id = name_graph.get_graph_id()
+                global_graph = name_graph.is_global()
+                delete_status = self.delete_graph(graph_id, global_graph=global_graph)
                 logging.info(f"status of deleting graph uri {graph_uri}: {delete_status}")
             except Exception as e:
                 logging.error(f"error deleting graph uri {graph_uri}: {e}")
 
         # remove service graph
         try:
-            delete_status = self.delete_graph(target_graph_uri)
+            delete_status = self.delete_graph(VitalGraphServiceConstants.SERVICE_GRAPH_ID)
             logging.info(f"status of deleting service graph uri {target_graph_uri}: {delete_status}")
         except Exception as e:
             logging.error(f"error deleting graph uri {target_graph_uri}: {e}")
 
         return True
 
-    def list_graphs(self, *, safety_check: bool = True) -> List[VitalNameGraph]:
+    def list_graphs(self, *,
+                    account_id: str | None = None,
+                    include_global: bool = True,
+                    include_private: bool = True,
+                    safety_check: bool = True) -> List[VitalNameGraph]:
 
         base_uri = self.base_uri
         namespace = self.namespace
 
-        # todo only vitalsegment ones
+        service_graph_uri = f"{base_uri}/{namespace}/{VitalGraphServiceConstants.SERVICE_GRAPH_ID}"
 
-        query = """
-            SELECT DISTINCT ?g WHERE { GRAPH ?g {?s ?p ?o} } ORDER BY ?g
+        # SELECT DISTINCT ?g WHERE { GRAPH ?g {?s ?p ?o} } ORDER BY ?g
+
+        # TODO
+        # include_global: bool = True,
+        # include_private: bool = True,
+
+        account_id_term = ""
+
+        if account_id:
+            account_id_term = f"?s <http://vital.ai/ontology/vital-core#hasSegmentTenantID> \"{account_id}\"^^xsd:string ."
+        else:
+            account_id_term = """
+            FILTER NOT EXISTS {
+                ?s <http://vital.ai/ontology/vital-core#hasSegmentTenantID> ?value .
+            }"""
+
+        query = f"""
+            
+            SELECT DISTINCT ?graphID, ?graphGlobal WHERE {{
+            
+            GRAPH ?g {{
+                ?s <http://vital.ai/ontology/vital-core#hasSegmentNamespace> "{namespace}"^^xsd:string .
+                ?s <http://vital.ai/ontology/vital-core#hasSegmentID> ?graphID .
+                ?s <http://vital.ai/ontology/vital-core#isSegmentGlobal> ?graphGlobal .
+
+                {account_id_term}
+
+                ?s <http://vital.ai/ontology/vital-core#vitaltype> <http://vital.ai/ontology/vital-core#VitalSegment> .
+            }}
+            FILTER(?g != <{service_graph_uri}>)
+            }}
+            ORDER BY ?graphID
         """
+
+        # logging.info(query)
 
         sparql = SPARQLWrapper(self.sparql_auth_endpoint)
         sparql.setCredentials(self.username, self.password)
@@ -381,26 +590,36 @@ class VirtuosoGraphService(VitalGraphService):
 
         results = sparql.query().convert()
 
-        graph_uris = []
-
-        for result in results["results"]["bindings"]:
-            graph_uri = result["g"]["value"]
-            graph_uris.append(graph_uri)
-
         name_graph_list = []
 
-        for g_uri in graph_uris:
-            name_graph = VitalNameGraph(g_uri)
+        for result in results["results"]["bindings"]:
+            graph_id = result["graphID"]["value"]
+            graph_global = result["graphGlobal"]["value"]
+
+            g_uri = self.get_graph_uri(graph_id=graph_id,
+                                       account_id=account_id,
+                                       is_global=graph_global)
+
+            name_graph = VitalNameGraph(g_uri, graph_id=graph_id, is_global=graph_global)
+
+
             name_graph_list.append(name_graph)
 
         return name_graph_list
 
-    def get_graph(self, graph_uri: str, *, safety_check: bool = True) -> VitalNameGraph:
+    def get_graph(self, graph_id: str, *,
+                  global_graph: bool = False,
+                  account_id: str | None = None,
+                  safety_check: bool = True) -> VitalNameGraph:
 
         base_uri = self.base_uri
         namespace = self.namespace
 
-        # todo vital segment ones
+        graph_uri = self.get_graph_uri(
+            graph_id=graph_id,
+            account_id=account_id,
+            is_global=global_graph
+        )
 
         query = f"""
                 ASK WHERE {{
@@ -419,7 +638,10 @@ class VirtuosoGraphService(VitalGraphService):
         result = sparql.query().convert()
 
         if result["boolean"]:
-            return VitalNameGraph(graph_uri)
+            return VitalNameGraph(graph_uri,
+                                  graph_id=graph_id,
+                                  account_id=account_id,
+                                  is_global=global_graph)
         else:
             raise ValueError(f"Graph with URI {graph_uri} does not exist.")
 
@@ -427,12 +649,19 @@ class VirtuosoGraphService(VitalGraphService):
     # store name graph in vital service graph and in the graph itself
     # a graph needs to have some triples in it to exist
 
-    def check_create_graph(self, graph_uri: str, *, safety_check: bool = True) -> bool:
+    def check_create_graph(self, graph_id: str, *,
+                           global_graph: bool = False,
+                           account_id: str | None = None,
+                           safety_check: bool = True) -> bool:
 
         base_uri = self.base_uri
         namespace = self.namespace
 
-        # TODO check if it contains vitalsegment
+        graph_uri = self.get_graph_uri(
+            graph_id=graph_id,
+            account_id=account_id,
+            is_global=global_graph
+        )
 
         query = f"""
                 ASK WHERE {{
@@ -455,7 +684,16 @@ class VirtuosoGraphService(VitalGraphService):
 
         vital_segment = VitalSegment()
         vital_segment.URI = URIGenerator.generate_uri()
-        vital_segment.segmentID = graph_uri
+        vital_segment.name = graph_id
+
+        vital_segment.segmentNamespace = namespace
+
+        vital_segment.segmentID = graph_id
+        vital_segment.segmentTenantID = account_id
+
+        vital_segment.segmentGraphURI = graph_uri
+
+        vital_segment.segmentGlobal = global_graph
 
         rdf_string = vital_segment.to_rdf()
 
@@ -476,35 +714,6 @@ class VirtuosoGraphService(VitalGraphService):
 
         if response.status_code not in [200, 201]:
             response.raise_for_status()
-
-        if namespace:
-
-            target_graph_uri = f"{VitalGraphServiceConstants.SERVICE_GRAPH_URI}_{namespace}"
-
-            # new URI
-            vital_segment = VitalSegment()
-            vital_segment.URI = URIGenerator.generate_uri()
-            vital_segment.segmentID = graph_uri
-
-            rdf_string = vital_segment.to_rdf()
-
-            endpoint_url = f"{self.graph_crud_auth_endpoint}?graph-uri={target_graph_uri}"
-
-            headers = {
-                'Content-Type': 'application/rdf+xml',
-                'Content-Length': str(len(rdf_string)),
-                'Connection': 'close'
-            }
-
-            response = requests.put(
-                endpoint_url,
-                data=rdf_string,
-                headers=headers,
-                auth=HTTPDigestAuth(self.username, self.password)
-            )
-
-            if response.status_code not in [200, 201]:
-                response.raise_for_status()
 
         return True
 
@@ -568,6 +777,7 @@ class VirtuosoGraphService(VitalGraphService):
                 )
 
                 return response
+
             except (ChunkedEncodingError, ProtocolError, ConnectionError) as e:
                 logging.warning(f"Retry attempt {attempt + 1} failed with error: {e}")
                 if attempt < max_retries - 1:
@@ -579,10 +789,19 @@ class VirtuosoGraphService(VitalGraphService):
                 logging.error(f"Unhandled error: {e}")
                 return None
 
-    def create_graph(self, graph_uri: str, *, safety_check: bool = True) -> bool:
+    def create_graph(self, graph_id: str, *,
+                     global_graph: bool = False,
+                     account_id: str | None = None,
+                     safety_check: bool = True) -> bool:
 
         base_uri = self.base_uri
         namespace = self.namespace
+
+        graph_uri = self.get_graph_uri(
+            graph_id=graph_id,
+            account_id=account_id,
+            is_global=global_graph
+        )
 
         sparql = SPARQLWrapper(self.sparql_auth_endpoint)
         sparql.setCredentials(self.username, self.password)
@@ -605,7 +824,16 @@ class VirtuosoGraphService(VitalGraphService):
 
         vital_segment = VitalSegment()
         vital_segment.URI = URIGenerator.generate_uri()
-        vital_segment.segmentID = graph_uri
+
+        vital_segment.name = graph_id
+        vital_segment.segmentNamespace = namespace
+        vital_segment.segmentID = graph_id
+        vital_segment.segmentTenantID = account_id
+
+        vital_segment.segmentGlobal = global_graph
+
+        vital_segment.segmentGraphURI = graph_uri
+
         rdf_string = vital_segment.to_rdf()
 
         endpoint_url = f"{self.graph_crud_auth_endpoint}?graph-uri={graph_uri}"
@@ -621,7 +849,7 @@ class VirtuosoGraphService(VitalGraphService):
             url=endpoint_url,
             data=rdf_string,
             headers=headers,
-            auth= CustomHTTPDigestAuth(self.username, self.password), # HTTPDigestAuth(self.username, self.password),
+            auth= CustomHTTPDigestAuth(self.username, self.password),
             timeout=(10, 30),
             max_retries=3
         )
@@ -632,46 +860,24 @@ class VirtuosoGraphService(VitalGraphService):
         else:
             logging.info("Request failed after retries.")
 
-
-        if namespace:
-
-            target_graph_uri = f"{VitalGraphServiceConstants.SERVICE_GRAPH_URI}_{namespace}"
-
-            vital_segment = VitalSegment()
-            vital_segment.URI = URIGenerator.generate_uri()
-            vital_segment.segmentID = graph_uri
-
-            rdf_string = vital_segment.to_rdf()
-
-            query = f"""
-                        INSERT DATA {{
-                            GRAPH <{target_graph_uri}> {{
-                                {rdf_string}
-                            }}
-                        }}
-                    """
-
-            # sparql = SPARQLWrapper(self.sparql_auth_endpoint)
-            # sparql.setCredentials(self.username, self.password)
-            # sparql.setHTTPAuth(DIGEST)
-
-            sparql.setQuery(query)
-            sparql.setMethod(POST)
-
-            try:
-                logging.info(f"inserting into service graph {target_graph_uri} graph: {graph_uri}")
-                sparql.query()
-            except Exception as e:
-                logging.error(f"exception inserting into service graph: {e}")
         return True
 
     # delete graph
-    # delete graph itself plus record in vital service graph
+    # delete graph itself plus segment record
 
-    def delete_graph(self, graph_uri: str, *, safety_check: bool = True) -> bool:
+    def delete_graph(self, graph_id: str, *,
+                     global_graph: bool = False,
+                     account_id: str | None = None,
+                     safety_check: bool = True) -> bool:
 
         base_uri = self.base_uri
         namespace = self.namespace
+
+        graph_uri = self.get_graph_uri(
+            graph_id=graph_id,
+            account_id=account_id,
+            is_global=global_graph
+        )
 
         query = f"""
                 ASK WHERE {{
@@ -702,41 +908,23 @@ class VirtuosoGraphService(VitalGraphService):
         if response.status_code not in [200, 204]:
             response.raise_for_status()
 
-        if namespace:
-
-            target_graph_uri = f"{VitalGraphServiceConstants.SERVICE_GRAPH_URI}_{namespace}"
-
-            delete_query = f"""
-                            DELETE WHERE {{
-                                GRAPH <{target_graph_uri}> {{
-                                    ?s <http://vital.ai/ontology/vital-core#hasSegmentID> "{graph_uri}"^^xsd:string .
-                                    ?s ?p ?o .
-                                }}
-                            }}
-                            """
-
-            sparql = SPARQLWrapper(self.sparql_auth_endpoint)
-            sparql.setCredentials(self.username, self.password)
-            sparql.setHTTPAuth(DIGEST)
-
-            sparql.setQuery(delete_query)
-            sparql.setMethod(POST)
-
-            try:
-                logging.info(f"deleting from service graph {target_graph_uri} graph: {graph_uri}")
-                sparql.query()
-            except Exception as e:
-                logging.error(f"exception when deleting graph reference {graph_uri} from service graph {target_graph_uri}: {e}")
-
         return True
-
 
     # purge graph (delete all but name graph)
 
-    def purge_graph(self, graph_uri: str, *, safety_check: bool = True) -> bool:
+    def purge_graph(self, graph_id: str, *,
+                    global_graph: bool = False,
+                    account_id: str | None = None,
+                    safety_check: bool = True) -> bool:
 
         base_uri = self.base_uri
         namespace = self.namespace
+
+        graph_uri = self.get_graph_uri(
+            graph_id=graph_id,
+            account_id=account_id,
+            is_global=global_graph
+        )
 
         vs = VitalSigns()
 
@@ -748,7 +936,7 @@ class VirtuosoGraphService(VitalGraphService):
         query_vital_segments = f"""
                 SELECT ?s ?p ?o WHERE {{
                     GRAPH <{graph_uri}> {{
-                        ?s <{RDF.type}> <{segment_type_uri}> .
+                        ?s <http://vital.ai/ontology/vital-core#vitaltype> <{segment_type_uri}> .
                         ?s ?p ?o .
                     }}
                 }}
@@ -797,6 +985,7 @@ class VirtuosoGraphService(VitalGraphService):
             'Connection': 'close'
         }
 
+        # put replaces graph with new data (thus deleting existing graph)
         response = requests.put(
             endpoint_url,
             data=rdf_string,
@@ -810,19 +999,29 @@ class VirtuosoGraphService(VitalGraphService):
             response.raise_for_status()
 
     def get_graph_all_objects(self,
-                              graph_uri: str, *,
+                              graph_id: str, *,
                               limit: int = 100,
                               offset: int = 0,
+                              global_graph: bool = False,
+                              account_id: str | None = None,
                               safety_check: bool = True) -> ResultList:
 
         base_uri = self.base_uri
         namespace = self.namespace
 
+        graph_uri = self.get_graph_uri(
+            graph_id=graph_id,
+            account_id=account_id,
+            is_global=global_graph
+        )
+
         vs = VitalSigns()
 
         # check if graph exists
         # throws exception if not exists
-        name_graph = self.get_graph(graph_uri)
+        name_graph = self.get_graph(graph_id,
+                                    account_id=account_id,
+                                    global_graph=global_graph)
 
         # include limit, offset
         # sort by subject uri
@@ -874,14 +1073,24 @@ class VirtuosoGraphService(VitalGraphService):
     # insert object into graph (scoped to vital service graph uri, which must exist)
     # insert object list into graph (scoped to vital service graph uri, which must exist)
 
-    def insert_object(self, graph_uri: str, graph_object: G, *,
+    def insert_object(self, graph_id: str, graph_object: G, *,
+                      global_graph: bool = False,
+                      account_id: str | None = None,
                       safety_check: bool = True) -> VitalGraphStatus:
 
-        base_uri = super().base_uri
-        namespace = super().namespace
+        base_uri = self.base_uri
+        namespace = self.namespace
+
+        graph_uri = self.get_graph_uri(
+            graph_id=graph_id,
+            account_id=account_id,
+            is_global=global_graph
+        )
 
         # throws exception if not exists
-        name_graph = self.get_graph(graph_uri)
+        name_graph = self.get_graph(graph_id,
+                                    account_id=account_id,
+                                    global_graph=global_graph)
 
         object_uri = str(graph_object.URI)
 
@@ -913,14 +1122,24 @@ class VirtuosoGraphService(VitalGraphService):
         except Exception as e:
             return VitalGraphStatus(-1, f"Failed to insert graph object: {str(e)}")
 
-    def insert_object_list(self, graph_uri: str, graph_object_list: List[G], *,
+    def insert_object_list(self, graph_id: str, graph_object_list: List[G], *,
+                           global_graph: bool = False,
+                           account_id: str | None = None,
                            safety_check: bool = True) -> VitalGraphStatus:
 
         base_uri = self.base_uri
         namespace = self.namespace
 
+        graph_uri = self.get_graph_uri(
+            graph_id=graph_id,
+            account_id=account_id,
+            is_global=global_graph
+        )
+
         # throws exception if not exists
-        name_graph = self.get_graph(graph_uri)
+        name_graph = self.get_graph(graph_id,
+                                    account_id=account_id,
+                                    global_graph=global_graph)
 
         uri_list = []
 
@@ -965,18 +1184,27 @@ class VirtuosoGraphService(VitalGraphService):
     # delete old, replace with new
 
     def update_object(self, graph_object: G, *,
-                      graph_uri: str = None,
+                      graph_id: str = None,
                       upsert: bool = False,
+                      global_graph: bool = False,
+                      account_id: str | None = None,
                       safety_check: bool = True) -> VitalGraphStatus:
 
         base_uri = self.base_uri
         namespace = self.namespace
 
+        graph_uri = self.get_graph_uri(
+            graph_id=graph_id,
+            account_id=account_id,
+            is_global=global_graph
+        )
         if graph_uri is None:
             return VitalGraphStatus(-1, "Error: graph_uri is not set.")
 
         # exception if graph doesn't exist
-        name_graph = self.get_graph(graph_uri)
+        name_graph = self.get_graph(graph_id,
+                                    account_id=account_id,
+                                    global_graph=global_graph)
 
         object_uri = str(graph_object.URI)
 
@@ -1022,18 +1250,29 @@ class VirtuosoGraphService(VitalGraphService):
             return VitalGraphStatus(-1, f"Error inserting updated object: {str(e)}")
 
     def update_object_list(self, graph_object_list: List[G], *,
-                           graph_uri: str = None,
+                           graph_id: str = None,
                            upsert: bool = False,
+                           global_graph: bool = False,
+                           account_id: str | None = None,
                            safety_check: bool = True) -> VitalGraphStatus:
 
         base_uri = self.base_uri
         namespace = self.namespace
 
-        if graph_uri is None:
-            return VitalGraphStatus(-1, "Error: graph_uri is not set.")
+        if graph_id is None:
+            return VitalGraphStatus(-1, "Error: graph_id is not set.")
+
+        graph_uri = self.get_graph_uri(
+            graph_id=graph_id,
+            account_id=account_id,
+            is_global=global_graph
+        )
+
 
         # exception if graph doesn't exist
-        name_graph = self.get_graph(graph_uri)
+        name_graph = self.get_graph(graph_id,
+                                    account_id=account_id,
+                                    global_graph=global_graph)
 
         # todo check if objects exist
 
@@ -1100,7 +1339,9 @@ class VirtuosoGraphService(VitalGraphService):
     # get objects by uri list (scoped to specific graph, or graph list)
 
     def get_object(self, object_uri: str, *,
-                   graph_uri: str = None,
+                   graph_id: str = None,
+                   global_graph: bool = False,
+                   account_id: str | None = None,
                    safety_check: bool = True) -> G:
 
         base_uri = self.base_uri
@@ -1108,11 +1349,19 @@ class VirtuosoGraphService(VitalGraphService):
 
         vs = VitalSigns()
 
-        if graph_uri is None:
+        if graph_id is None:
             raise ValueError("Error: graph_uri is not set.")
 
+        graph_uri = self.get_graph_uri(
+            graph_id=graph_id,
+            account_id=account_id,
+            is_global=global_graph
+        )
+
         # exception if graph doesn't exist
-        name_graph = self.get_graph(graph_uri)
+        name_graph = self.get_graph(graph_id,
+                                    account_id=account_id,
+                                    global_graph=global_graph)
 
         target_graph = None
 
@@ -1155,7 +1404,9 @@ class VirtuosoGraphService(VitalGraphService):
             raise ValueError(f"Error retrieving object {object_uri}: {str(e)}")
 
     def get_object_list(self, object_uri_list: List[str], *,
-                        graph_uri: str = None,
+                        graph_id: str = None,
+                        global_graph: bool = False,
+                        account_id: str | None = None,
                         safety_check: bool = True) -> ResultList:
 
         base_uri = self.base_uri
@@ -1165,11 +1416,19 @@ class VirtuosoGraphService(VitalGraphService):
 
         vs = VitalSigns()
 
-        if graph_uri is None:
+        if graph_id is None:
             raise ValueError("Error: graph_uri is not set.")
 
+        graph_uri = self.get_graph_uri(
+            graph_id=graph_id,
+            account_id=account_id,
+            is_global=global_graph
+        )
+
         # exception if graph doesn't exist
-        name_graph = self.get_graph(graph_uri)
+        name_graph = self.get_graph(graph_id,
+                                    account_id=account_id,
+                                    global_graph=global_graph)
 
         object_graph_map = {}
 
@@ -1224,7 +1483,9 @@ class VirtuosoGraphService(VitalGraphService):
         return result_list
 
     def get_object_list_bulk(self, object_uri_list: List[str], *,
-                             graph_uri: str = None,
+                             graph_id: str = None,
+                             global_graph: bool = False,
+                             account_id: str | None = None,
                              safety_check: bool = True) -> ResultList:
 
         base_uri = self.base_uri
@@ -1232,11 +1493,19 @@ class VirtuosoGraphService(VitalGraphService):
 
         vs = VitalSigns()
 
-        if graph_uri is None:
+        if graph_id is None:
             raise ValueError("Error: graph_uri is not set.")
 
+        graph_uri = self.get_graph_uri(
+            graph_id=graph_id,
+            account_id=account_id,
+            is_global=global_graph
+        )
+
         # exception if graph doesn't exist
-        name_graph = self.get_graph(graph_uri)
+        name_graph = self.get_graph(graph_id,
+                                    account_id=account_id,
+                                    global_graph=global_graph)
 
         values_clause = " ".join(f"<{uri}>" for uri in object_uri_list)
 
@@ -1296,17 +1565,27 @@ class VirtuosoGraphService(VitalGraphService):
     # delete uri list (scoped to graph or graph list)
 
     def delete_object(self, object_uri: str, *,
-                      graph_uri: str = None,
+                      graph_id: str = None,
+                      global_graph: bool = False,
+                      account_id: str | None = None,
                       safety_check: bool = True) -> VitalGraphStatus:
 
         base_uri = self.base_uri
         namespace = self.namespace
 
-        if graph_uri is None:
+        if graph_id is None:
             return VitalGraphStatus(-1, "Error: graph_uri is not set.")
 
+        graph_uri = self.get_graph_uri(
+            graph_id=graph_id,
+            account_id=account_id,
+            is_global=global_graph
+        )
+
         # exception if graph doesn't exist
-        name_graph = self.get_graph(graph_uri)
+        name_graph = self.get_graph(graph_id,
+                                    account_id=account_id,
+                                    global_graph=global_graph)
 
         target_graph = None
 
@@ -1338,18 +1617,30 @@ class VirtuosoGraphService(VitalGraphService):
         except Exception as e:
             return VitalGraphStatus(-1, f"Error deleting object {object_uri}: {str(e)}")
 
-    def delete_object_list(self, object_uri_list: List[str], *, graph_uri: str = None, safety_check: bool = True) -> VitalGraphStatus:
+    def delete_object_list(self, object_uri_list: List[str], *,
+                           graph_id: str = None,
+                           global_graph: bool = False,
+                           account_id: str | None = None,
+                           safety_check: bool = True) -> VitalGraphStatus:
 
         base_uri = self.base_uri
         namespace = self.namespace
 
         # todo do in bulk
 
-        if graph_uri is None:
+        if graph_id is None:
             return VitalGraphStatus(-1, "Error: graph_uri is not set.")
 
+        graph_uri = self.get_graph_uri(
+            graph_id=graph_id,
+            account_id=account_id,
+            is_global=global_graph
+        )
+
         # exception if graph doesn't exist
-        name_graph = self.get_graph(graph_uri)
+        name_graph = self.get_graph(graph_id,
+                                    account_id=account_id,
+                                    global_graph=global_graph)
 
         object_graph_map = {}
 
@@ -1395,20 +1686,31 @@ class VirtuosoGraphService(VitalGraphService):
     # by a URI value associated with objects
     # the query must bind to the subject of the matching objects
 
-    def filter_query(self, graph_uri: str, sparql_query: str,  uri_binding='uri', *,
+    def filter_query(self, graph_id: str, sparql_query: str,  uri_binding='uri', *,
                      limit=100,
                      offset=0,
                      resolve_objects=True,
+                     global_graph: bool = False,
+                     account_id: str | None = None,
                      safety_check: bool = True) -> ResultList | VitalGraphStatus:
 
         base_uri = self.base_uri
         namespace = self.namespace
 
-        if graph_uri is None:
+        if graph_id is None:
             return VitalGraphStatus(-1, "Error: graph_uri is not set.")
 
+        graph_uri = self.get_graph_uri(
+            graph_id=graph_id,
+            account_id=account_id,
+            is_global=global_graph
+        )
+
+
         # exception if graph doesn't exist
-        name_graph = self.get_graph(graph_uri)
+        name_graph = self.get_graph(graph_id,
+                                    account_id=account_id,
+                                    global_graph=global_graph)
 
         query = f"""
                 SELECT DISTINCT ?{uri_binding} WHERE {{
@@ -1435,7 +1737,7 @@ class VirtuosoGraphService(VitalGraphService):
             return ResultList()
 
         if resolve_objects:
-            return self.get_object_list(object_uri_list, graph_uri=graph_uri)
+            return self.get_object_list(object_uri_list, graph_id=graph_id)
         else:
             result_list = ResultList()
 
@@ -1481,20 +1783,29 @@ class VirtuosoGraphService(VitalGraphService):
     # take parameter for namespaces
     # default can be derived from loaded ontologies
 
-    def query(self, graph_uri: str, sparql_query: str, uri_binding='uri', *,
+    def query(self, graph_id: str, sparql_query: str, uri_binding='uri', *,
               limit=100,
               offset=0,
               resolve_objects=True,
+              global_graph: bool = False,
+              account_id: str | None = None,
               safety_check: bool = True) -> ResultList | VitalGraphStatus:
 
         base_uri = self.base_uri
         namespace = self.namespace
 
-        if graph_uri is None:
+        if graph_id is None:
             return VitalGraphStatus(-1, "Error: graph_uri is not set.")
 
+        graph_uri = self.get_graph_uri(
+            graph_id=graph_id,
+            account_id=account_id,
+            is_global=global_graph
+        )
         # exception if graph doesn't exist
-        name_graph = self.get_graph(graph_uri)
+        name_graph = self.get_graph(graph_id,
+                                    account_id=account_id,
+                                    global_graph=global_graph)
 
         query = f"""
                 PREFIX vital-core: <http://vital.ai/ontology/vital-core#>
@@ -1531,7 +1842,7 @@ class VirtuosoGraphService(VitalGraphService):
 
         # todo make resolve list efficient
         if resolve_objects:
-            return self.get_object_list(object_uri_list, graph_uri=graph_uri, vital_managed=vital_managed)
+            return self.get_object_list(object_uri_list, graph_id=graph_id)
         else:
             result_list = ResultList()
 
@@ -1558,24 +1869,34 @@ class VirtuosoGraphService(VitalGraphService):
     # constructed statements returned in RdfStatement object result list
 
     def query_construct(self,
-                        graph_uri: str,
+                        graph_id: str,
                         sparql_query: str,
                         namespace_list: List[Ontology],
                         binding_list: List[Binding], *,
                         limit=100, offset=0,
+                        global_graph: bool = False,
+                        account_id: str | None = None,
                         safety_check: bool = True) -> ResultList:
 
         base_uri = self.base_uri
         namespace = self.namespace
 
-        if graph_uri is None:
+        if graph_id is None:
             result_list = ResultList()
             result_list.set_status(-1)
             result_list.set_message("Error: graph_uri is not set.")
             return result_list
 
+        graph_uri = self.get_graph_uri(
+            graph_id=graph_id,
+            account_id=account_id,
+            is_global=global_graph
+        )
+
         # exception if graph doesn't exist
-        name_graph = self.get_graph(graph_uri)
+        name_graph = self.get_graph(graph_id,
+                                    account_id=account_id,
+                                    global_graph=global_graph)
 
         prefix_section = "\n".join([f"PREFIX {ns.prefix}: <{ns.ontology_iri}>" for ns in namespace_list])
 
@@ -1612,7 +1933,9 @@ LIMIT {limit}
 OFFSET {offset}
 """
 
-        print(query)
+        print(f"SPARQL Query:\n{query}\n")
+
+        logging.info(query)
 
         sparql = SPARQLWrapper(self.sparql_auth_endpoint)
         sparql.setCredentials(self.username, self.password)
@@ -1654,18 +1977,26 @@ OFFSET {offset}
         return result_list
 
     def query_construct_solution(self,
-                                 graph_uri: str,
+                                 graph_id: str,
                                  sparql_query: str,
                                  namespace_list: List[Ontology],
                                  binding_list: List[Binding],
                                  root_binding: str | None = None, *,
                                  limit=100,
                                  offset=0,
+                                 global_graph: bool = False,
+                                 account_id: str | None = None,
                                  resolve_objects: bool = True,
                                  safety_check: bool = True) -> SolutionList:
 
         base_uri = self.base_uri
         namespace = self.namespace
+
+        graph_uri = self.get_graph_uri(
+            graph_id=graph_id,
+            account_id=account_id,
+            is_global=global_graph
+        )
 
         # object cache to use during query
         # added bulk retrieval of objects
@@ -1674,10 +2005,12 @@ OFFSET {offset}
         graph_map: dict = {}
 
         result_list = self.query_construct(
-            graph_uri,
+            graph_id,
             sparql_query,
             namespace_list,
             binding_list,
+            global_graph=global_graph,
+            account_id=account_id,
             limit=limit, offset=offset)
 
         graph = Graph()
@@ -1728,7 +2061,10 @@ OFFSET {offset}
 
             # print(f"Bulk Retrieving URIs Chunk length: {len(chunk)}")
 
-            result_list = self.get_object_list_bulk(chunk, graph_uri=graph_uri)
+            result_list = self.get_object_list_bulk(chunk,
+                                                    graph_id=graph_id,
+                                                    account_id=account_id,
+                                                    global_graph=global_graph)
 
             for re in result_list:
                 graph_object = re.graph_object
@@ -1793,7 +2129,7 @@ OFFSET {offset}
 
                             # print(f"Retrieving cache miss: {str(o)}")
 
-                            binding_obj = self.get_object(str(o), graph_uri=graph_uri)
+                            binding_obj = self.get_object(str(o), graph_id=graph_id)
                             # graph_collection.add(binding_obj)
                             graph_map[str(o)] = binding_obj
 
@@ -1820,9 +2156,7 @@ OFFSET {offset}
 
     def metaql_select_query(self, *,
                             select_query: MetaQLSelectQuery,
-                            namespace_list: List[Ontology]) -> MetaQLResult:
-
-        # namespace = "VITALTEST"
+                            namespace_list: List[Ontology] = None) -> MetaQLResult:
 
         base_uri = self.base_uri
         namespace = self.namespace
@@ -1908,12 +2242,26 @@ OFFSET {offset}
 
         logging.info(query_str)
 
+        # TODO handle global graph case
+
+        graph_uri = graph_uri_list[0]
+
+        name_graph = self.get_name_graph(graph_uri)
+
+        graph_id = name_graph.get_graph_id()
+
+        account_id = name_graph.get_account_id()
+
+        is_global = name_graph.is_global()
+
         solutions = self.query_construct_solution(
-            graph_uri_list[0],
+            graph_id,
             query_str,
             namespace_list,
             binding_list,
             root_binding,
+            account_id=account_id,
+            global_graph=is_global,
             limit=limit, offset=offset)
 
         # logging.info(f"Solution Count: {len(solutions.solution_list)}")
@@ -1940,7 +2288,7 @@ OFFSET {offset}
 
     def metaql_graph_query(self, *,
                            graph_query: MetaQLGraphQuery,
-                           namespace_list: List[Ontology]) -> MetaQLResult:
+                           namespace_list: List[Ontology] = None) -> MetaQLResult:
 
         base_uri = self.base_uri
         namespace = self.namespace
@@ -1954,6 +2302,14 @@ OFFSET {offset}
         offset = sparql_impl.get_offset()
 
         graph_uri = sparql_impl.get_graph_uri_list()[0]
+
+        name_graph = self.get_name_graph(graph_uri)
+
+        graph_id = name_graph.get_graph_id()
+
+        account_id = name_graph.get_account_id()
+
+        is_global = name_graph.is_global()
 
         resolve_objects = sparql_impl.get_resolve_objects()
 
@@ -1979,11 +2335,13 @@ OFFSET {offset}
         """
 
         solutions = self.query_construct_solution(
-            graph_uri,
+            graph_id,
             query_string,
             namespace_list,
             binding_list,
             root_binding,
+            account_id=account_id,
+            global_graph=is_global,
             limit=limit, offset=offset)
 
         logging.info(f"Solution Count: {len(solutions.solution_list)}")
@@ -2036,3 +2394,142 @@ OFFSET {offset}
         )
 
         return metaql_result
+
+    def trigger_bulk_import(self, graph_uri, file_name):
+        """
+        Trigger a bulk import in Virtuoso.
+
+        :param graph_uri: The target graph URI for the import.
+        :param file_name: The name of the file in the upload directory.
+        """
+
+        # TODO get config
+        endpoint = "localhost"
+        user = "dba"
+        password = "dba"
+
+        # delete from DB.DBA.load_list;
+        # select * from DB.DBA.load_list;
+        # ld_dir ( '/Users/hadfield/Desktop/IMDBData', '*.nt', 'http://vital.ai/graph/imdb-movie-graph-1');
+        # rdf_loader_run();
+        # DB.DBA.VT_INC_INDEX_DB_DBA_RDF_OBJ();
+
+        connection = pyodbc.connect(
+            f'DRIVER=/Library/ODBC/OpenLink Virtuoso ODBC Driver (Unicode).bundle/Contents/MacOS/virtodbcu_r.so;wideAsUTF16=Y;HOST={endpoint};UID={user};PWD={password}')
+
+        file_dir = "/Users/hadfield/Desktop/"
+
+        file_path = f"/Users/hadfield/Desktop/{file_name}"
+
+        try:
+            cursor = connection.cursor()
+
+            # query = f"""
+            #        INSERT INTO DB.DBA.LOAD_LIST (ll_file, ll_graph, ll_state)
+            #        VALUES ('{file_path}', '{graph_uri}', 0)
+            #"""
+
+            query = "delete from DB.DBA.load_list"
+            cursor.execute(query)
+            connection.commit()
+
+            query = f"ld_dir ( '{file_dir}', '{file_name}', '{graph_uri}')"
+            cursor.execute(query)
+            connection.commit()
+
+            query = "rdf_loader_run()"
+            cursor.execute(query)
+            connection.commit()
+
+            query = "DB.DBA.VT_INC_INDEX_DB_DBA_RDF_OBJ()"
+            cursor.execute(query)
+            connection.commit()
+
+            print(f"File '{file_name}' imported into graph '{graph_uri}'.")
+            return True
+        except Exception as e:
+            print(f"Error during bulk import: {e}")
+            return False
+
+    def check_import_status_for_file(self, file_name):
+        """
+        Check the status of a specific file being imported in Virtuoso.
+
+        :param file_name: The name of the file to check.
+        :return: A dictionary containing the status of the specified file or None if not found.
+        """
+
+        # TODO get config
+
+        endpoint = "localhost"
+        user = "dba"
+        password = "dba"
+
+        connection = pyodbc.connect(
+            f'DRIVER=/Library/ODBC/OpenLink Virtuoso ODBC Driver (Unicode).bundle/Contents/MacOS/virtodbcu_r.so;wideAsUTF16=Y;HOST={endpoint};UID={user};PWD={password}')
+
+        file_path = f"/Users/hadfield/Desktop//{file_name}"
+
+        try:
+            cursor = connection.cursor()
+
+            query = f"""SELECT ll_file, ll_graph, ll_state, ll_error
+                        FROM DB.DBA.LOAD_LIST
+                        WHERE ll_file = '{file_path}'
+                    """
+
+            print(query)
+
+            # Query the LOAD_LIST table for the file
+            cursor.execute(query)
+
+            results = []
+            for row in cursor.fetchall():
+                print(row)
+                results.append({
+                    "file": row.ll_file,
+                    "graph": row.ll_graph,
+                    "state": row.ll_state,
+                    "error": row.ll_error
+                })
+
+            print(results)
+
+            return results
+        except Exception as e:
+            print(f"Error checking import status: {e}")
+            return []
+
+    #################################################
+    # Import Functions
+
+    def import_graph_batch(self, graph_id: str, object_generator: GraphObjectGenerator,
+                           *,
+                           global_graph: bool = False,
+                           account_id: str | None = None,
+                           purge_first: bool = True, batch_size: int = 10_000):
+        pass
+
+    def import_graph_batch_file(self, graph_id: str, file_path: str,
+                                *,
+                                global_graph: bool = False,
+                                account_id: str | None = None,
+                                purge_first: bool = True, batch_size: int = 10_000):
+        pass
+
+    def import_multi_graph_batch(self, object_generator: GraphObjectGenerator,
+                                 *,
+                                 purge_first: bool = True,
+                                 use_account_id: bool = True,
+                                 batch_size: int = 10_000):
+        pass
+
+    def import_multi_graph_batch_file(self, file_path: str,
+                                     *,
+                                     purge_first: bool = True,
+                                     use_account_id: bool = True,
+                                     batch_size: int = 10_000):
+        pass
+
+
+

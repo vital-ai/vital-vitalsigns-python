@@ -257,6 +257,14 @@ The value of the annotation may only be set to an xsd or vital supported propert
     
 
 
+    <!-- http://vital.ai/ontology/vital-core#hasCollectionClassURI -->
+
+    <owl:ObjectProperty rdf:about="http://vital.ai/ontology/vital-core#hasCollectionClassURI">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-core#VitalCollection"/>
+    </owl:ObjectProperty>
+    
+
+
     <!-- http://vital.ai/ontology/vital-core#hasEdgeDestination -->
 
     <owl:ObjectProperty rdf:about="http://vital.ai/ontology/vital-core#hasEdgeDestination">
@@ -466,6 +474,69 @@ The value of the annotation may only be set to an xsd or vital supported propert
                 </owl:unionOf>
             </owl:Class>
         </rdfs:domain>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-core#hasCollectionClassName -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-core#hasCollectionClassName">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-core#VitalCollection"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-core#hasCollectionID -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-core#hasCollectionID">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-core#VitalCollection"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-core#hasCollectionNamespace -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-core#hasCollectionNamespace">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-core#VitalCollection"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-core#hasCollectionSchemaName -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-core#hasCollectionSchemaName">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-core#VitalCollection"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-core#hasCollectionSchemaType -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-core#hasCollectionSchemaType">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-core#VitalCollection"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-core#hasCollectionSchemaVersion -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-core#hasCollectionSchemaVersion">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-core#VitalCollection"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-core#hasCollectionSchemaYAML -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-core#hasCollectionSchemaYAML">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-core#VitalCollection"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
     </owl:DatatypeProperty>
     
@@ -838,6 +909,15 @@ HiveSQL</rdfs:comment>
     
 
 
+    <!-- http://vital.ai/ontology/vital-core#hasSegmentNamespace -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-core#hasSegmentNamespace">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-core#VitalSegment"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
     <!-- http://vital.ai/ontology/vital-core#hasSegmentStateJSON -->
 
     <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-core#hasSegmentStateJSON">
@@ -1103,6 +1183,24 @@ FAILED (failed on the server side)</rdfs:comment>
                 </owl:unionOf>
             </owl:Class>
         </rdfs:domain>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-core#isCollectionMultiTenant -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-core#isCollectionMultiTenant">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-core#VitalCollection"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-core#isIncludesSubclasses -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-core#isIncludesSubclasses">
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-core#VitalCollection"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
     </owl:DatatypeProperty>
     
@@ -1549,6 +1647,14 @@ FAILED (failed on the server side)</rdfs:comment>
     <!-- http://vital.ai/ontology/vital-core#VitalAuthKey -->
 
     <owl:Class rdf:about="http://vital.ai/ontology/vital-core#VitalAuthKey">
+        <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_Node"/>
+    </owl:Class>
+    
+
+
+    <!-- http://vital.ai/ontology/vital-core#VitalCollection -->
+
+    <owl:Class rdf:about="http://vital.ai/ontology/vital-core#VitalCollection">
         <rdfs:subClassOf rdf:resource="http://vital.ai/ontology/vital-core#VITAL_Node"/>
     </owl:Class>
     

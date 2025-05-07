@@ -26,12 +26,12 @@ class IProperty:
     def get_rdf_datatype(cls, value):
         if isinstance(value, datetime):
             datatype = rdflib.XSD.dateTime
+        elif isinstance(value, bool):
+            datatype = rdflib.XSD.boolean
         elif isinstance(value, int):
             datatype = rdflib.XSD.integer
         elif isinstance(value, float):
             datatype = rdflib.XSD.float
-        elif isinstance(value, bool):
-            datatype = rdflib.XSD.boolean
         else:
             datatype = rdflib.XSD.string
         return datatype
@@ -40,15 +40,15 @@ class IProperty:
         if isinstance(self.value, datetime):
             value = self.value.isoformat()
             datatype = rdflib.XSD.dateTime
+        elif isinstance(self.value, bool):
+            value = str(self.value)
+            datatype = rdflib.XSD.boolean
         elif isinstance(self.value, int):
             value = str(self.value)
             datatype = rdflib.XSD.integer
         elif isinstance(self.value, float):
             value = str(self.value)
             datatype = rdflib.XSD.float
-        elif isinstance(self.value, bool):
-            value = str(self.value)
-            datatype = rdflib.XSD.boolean
         else:
             value = str(self.value)
             datatype = rdflib.XSD.string

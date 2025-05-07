@@ -42,10 +42,21 @@ class VitalServiceManager:
                     password = vitalservice_graph_db.password
                     endpoint = vitalservice_graph_db.endpoint
 
+                    server_name = vitalservice_graph_db.server_name
+                    server_user = vitalservice_graph_db.server_user
+
+                    server_dataset_dir = vitalservice_graph_db.server_dataset_dir
+                    pem_path = vitalservice_graph_db.pem_path
+
+
                     graph_service = VirtuosoGraphService(
                         username=username,
                         password=password,
                         endpoint=endpoint,
+                        server_name=server_name,
+                        server_user=server_user,
+                        server_dataset_dir=server_dataset_dir,
+                        pem_path=pem_path,
                         base_uri=vitalservice_base_uri,
                         namespace=vitalservice_namespace
                     )
@@ -58,7 +69,20 @@ class VitalServiceManager:
                     api_key = vitalservice_vector_db.api_key
                     schema_list = vitalservice_vector_db.vector_database_schema_list
 
-                    vector_service = WeaviateVectorService()
+                    collections = vitalservice_vector_db.collections
+                    embedding_models = vitalservice_vector_db.embedding_models
+
+                    vector_service = WeaviateVectorService(
+                        endpoint=endpoint,
+                        grpc_endpoint=grpc_endpoint,
+                        vector_endpoint=vector_endpoint,
+                        api_key=api_key,
+                        schema_list=schema_list,
+                        collections=collections,
+                        embedding_models=embedding_models,
+                        base_uri=vitalservice_base_uri,
+                        namespace=vitalservice_namespace,
+                    )
 
                 vital_service = VitalService(
                     vitalservice_name=vitalservice_name,

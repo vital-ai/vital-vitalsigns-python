@@ -1,6 +1,5 @@
 import json
 from typing import List
-from utils.config_utils import ConfigUtils
 from vital_ai_vitalsigns.metaql.metaql_builder import MetaQLBuilder
 from vital_ai_vitalsigns.metaql.metaql_parser import MetaQLParser
 from vital_ai_vitalsigns.metaql.metaql_status import OK_STATUS_TYPE
@@ -29,9 +28,17 @@ def main():
 
     print("VitalSigns Initialized")
 
+    vital_home = vs.get_vitalhome()
+
+    print(f"VitalHome: {vital_home}")
+
+    vs_config = vs.get_config()
+
+    print(vs_config)
+
     sq = (
         QueryBuilder.select_query()
-        .graph_uri("urn:123")
+        .graph_uri("http://vital.ai/KGRAPH/account1/account1")
         .constraint_list(
             AndConstraintList()
             .node_constraint(
@@ -77,19 +84,34 @@ def main():
 
     print(f"Select Query SPARQL:\n{sparql_string}")
 
-    config = ConfigUtils.load_config()
+    vitalservice_manager = vs.get_vitalservice_manager()
 
-    virtuoso_username = config['graph_database']['virtuoso_username']
-    virtuoso_password = config['graph_database']['virtuoso_password']
-    virtuoso_endpoint = config['graph_database']['virtuoso_endpoint']
+    vitalservice_name_list = vitalservice_manager.get_vitalservice_list()
+
+    for vitalservice_name in vitalservice_name_list:
+        vitalservice = vitalservice_manager.get_vitalservice(vitalservice_name)
+        print(f"VitalService Name: {vitalservice.get_vitalservice_name()}")
+
+    vitalservice = vitalservice_manager.get_vitalservice("local_kgraph")
+
+    graph_list = vitalservice.list_graphs(account_id="account1")
+
+    for g in graph_list:
+        print(f"Graph URI: {g.get_namespace()}")
+
+    virtuoso_username = vitalservice.graph_service.username
+    virtuoso_password = vitalservice.graph_service.password
+    virtuoso_endpoint = vitalservice.graph_service.endpoint
 
     virtuoso_graph_service = VirtuosoGraphService(
+        base_uri="http://vital.ai",
+        namespace="KGRAPH",
         username=virtuoso_username,
         password=virtuoso_password,
         endpoint=virtuoso_endpoint
     )
 
-    graph_list = virtuoso_graph_service.list_graphs()
+    graph_list = virtuoso_graph_service.list_graphs(account_id="account1")
 
     for g in graph_list:
         print(f"Graph URI: {g.get_graph_uri()}")

@@ -2,12 +2,17 @@
 vitalservice:
   - name: example_service_1
     namespace: example_namespace_1
+    base_uri: "http://vital.ai"
     graph_database:
       username: "user1"
       password: "pass1"
       endpoint: "http://example.com/graphdb"
       database_type: "virtuoso"
       connection_type: "rest"
+      server_name: "server_name"
+      server_user: "server_user"
+      server_dataset_dir: "server_dataset_dir"
+      pem_path: "pem_path"
     vector_database:
       endpoint: "http://example.com/vectordb"
       vector_endpoint: ""

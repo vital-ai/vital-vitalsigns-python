@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import logging
 import sys
 from abc import ABC, abstractmethod
 import json
@@ -19,6 +21,7 @@ from functools import wraps
 from functools import lru_cache
 from rdflib.term import _is_valid_uri
 from vital_ai_vitalsigns.model.utils.class_utils import ClassUtils
+from collections import defaultdict
 
 
 def cacheable_method(method):
@@ -644,6 +647,7 @@ class GraphObject(metaclass=GraphObjectMeta):
             elif rdf_data["datatype"] == URIRef:
                 g.add((subject, URIRef(prop_uri), URIRef(rdf_data["value"])))
             else:
+                # logging.info(f"Setting {prop_uri}: {rdf_data['value']} : {rdf_data['datatype']}")
                 g.add((subject, URIRef(prop_uri), Literal(rdf_data["value"], datatype=rdf_data["datatype"])))
 
         if isinstance(self, VITAL_GraphContainerObject):
@@ -965,7 +969,7 @@ class GraphObject(metaclass=GraphObjectMeta):
         return graph_object
 
     @classmethod
-    def from_triples(cls, triples: Generator[Tuple, None, None], *, modified=False) -> 'G':
+    def from_triples(cls, triples: Generator[Tuple, None, None], *, modified=False) -> G:
 
         from vital_ai_vitalsigns.vitalsigns import VitalSigns
 
@@ -1021,6 +1025,8 @@ class GraphObject(metaclass=GraphObjectMeta):
             if predicate == VitalConstants.uri_prop_uri:
                 continue
 
+            value = None
+
             if isinstance(obj_value, Literal):
                 value = obj_value.toPython()
             elif isinstance(obj_value, URIRef):
@@ -1032,6 +1038,87 @@ class GraphObject(metaclass=GraphObjectMeta):
             graph_object.mark_serialized()
 
         return graph_object
+
+    @classmethod
+    def from_triples_list(cls, triples_list: Generator[Tuple, None, None], *, modified=False) -> List[G]:
+
+        from vital_ai_vitalsigns.vitalsigns import VitalSigns
+
+        vs = VitalSigns()
+
+        # TODO enforce vitaltype_class_uri
+        registry = vs.get_registry()
+
+        graph_object_list = []
+
+        generated_triples = []
+
+        grouped_triples = defaultdict(list)
+
+        for subject, predicate, obj in triples_list:
+            generated_triples.append((subject, predicate, obj))
+            grouped_triples[subject].append((predicate, obj))
+
+        for subject, triples in grouped_triples.items():
+
+            type_uri = None
+            vitaltype_class_uri = None
+            subject_uri = str(subject)
+
+            for predicate, obj in triples:
+
+                if predicate == RDF.type:
+                    type_uri = str(obj)
+                    break
+
+            if not type_uri:
+                logging.info(f"subject: {subject}")
+                logging.info(f"triples: {triples}")
+                raise ValueError("Type URI not found in RDF data.")
+
+            if not subject_uri:
+                logging.info(f"subject: {subject}")
+                logging.info(f"triples: {triples}")
+                raise ValueError("Subject URI not found in RDF data.")
+
+            # TODO switch to: vitaltype_class_uri
+            # graph_object_cls = registry.get_vitalsigns_class(vitaltype_class_uri)
+
+            graph_object_cls = registry.get_vitalsigns_class(type_uri)
+
+            graph_object = graph_object_cls(modified=modified)
+
+            graph_object.URI = subject_uri
+
+            for predicate, obj_value in triples:
+
+                if predicate == RDF.type:
+                    continue
+
+                predicate = str(predicate)
+
+                # skip
+                if predicate == VitalConstants.vitaltype_uri:
+                    continue
+
+                if predicate == VitalConstants.uri_prop_uri:
+                    continue
+
+                value = None
+
+                if isinstance(obj_value, Literal):
+                    value = obj_value.toPython()
+                elif isinstance(obj_value, URIRef):
+                    value = str(obj_value)
+
+                setattr(graph_object, predicate, value)
+
+            if modified is False:
+                graph_object.mark_serialized()
+
+            graph_object_list.append(graph_object)
+
+        return graph_object_list
 
     @classmethod
     def from_rdf_list(cls, rdf_string: str, *, modified=False) -> List[G]:

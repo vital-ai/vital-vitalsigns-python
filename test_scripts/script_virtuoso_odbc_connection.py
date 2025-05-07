@@ -1,13 +1,17 @@
-from utils.config_utils import ConfigUtils
 import pyodbc
 
-
 def main():
+
     print('Test Virtuoso ODBC Connection')
 
-    config = ConfigUtils.load_config()
+    host = "localhost"
+    port = "1111"
+    user = "dba"
+    pwd = "dba"
 
-    connection = pyodbc.connect('DRIVER=/Library/ODBC/OpenLink Virtuoso ODBC Driver (Unicode).bundle/Contents/MacOS/virtodbcu_r.so;wideAsUTF16=Y;HOST=localhost:1111;UID=dba;PWD=dba')
+    driver = "/Library/ODBC/OpenLink Virtuoso ODBC Driver (Unicode).bundle/Contents/MacOS/virtodbcu_r.so"
+
+    connection = pyodbc.connect(f"DRIVER={driver};wideAsUTF16=Y;HOST={host}:{port};UID={user};PWD={pwd}")
 
     cursor = connection.cursor()
 

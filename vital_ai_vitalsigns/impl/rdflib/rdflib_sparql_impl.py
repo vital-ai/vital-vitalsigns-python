@@ -14,9 +14,16 @@ from vital_ai_vitalsigns.utils.uri_generator import URIGenerator
 from vital_ai_vitalsigns_core.model.RDFStatement import RDFStatement
 from vital_ai_vitalsigns_core.model.VitalSegment import VitalSegment
 
-
 G = TypeVar('G', bound='GraphObject')
 
+# TODO switch to using graph_id in place of graph_uri
+# to match service definition?
+
+# handle case when graph_id (and account, etc) are None
+# to use the global (default) graph
+
+# Note: RDF collection makes direct calls to the graph
+# to update the global graph which we may or may not want to continue
 
 class RDFlibSparqlImpl:
 
@@ -37,10 +44,11 @@ class RDFlibSparqlImpl:
 
         # only handle multigraph case
         if self._multigraph:
-            for c in self.graph.graphs():
-                graph_uri = str(c.identifier)
-                name_graph = VitalNameGraph(graph_uri)
-                name_graph_list.append(name_graph)
+            if isinstance(self.graph, Dataset):
+                for c in self.graph.graphs():
+                    graph_uri = str(c.identifier)
+                    name_graph = VitalNameGraph(graph_uri)
+                    name_graph_list.append(name_graph)
         else:
             # uni-graph case
             return []
@@ -51,11 +59,12 @@ class RDFlibSparqlImpl:
 
         # only handle multigraph case
         if self._multigraph:
-            for c in self.graph.graphs():
-                context_graph_uri = str(c.identifier)
-                if context_graph_uri == graph_uri:
-                    name_graph = VitalNameGraph(graph_uri)
-                    return name_graph
+            if isinstance(self.graph, Dataset):
+                for c in self.graph.graphs():
+                    context_graph_uri = str(c.identifier)
+                    if context_graph_uri == graph_uri:
+                        name_graph = VitalNameGraph(graph_uri)
+                        return name_graph
         else:
             # uni-graph case
             return None
@@ -122,43 +131,46 @@ class RDFlibSparqlImpl:
 
         if not enforce_segment:
             # TODO should this leave the graph but just erase all triples?
-            self.graph.remove_graph(URIRef(graph_uri))
-            return True
+
+            if isinstance(self.graph, Dataset):
+                self.graph.remove_graph(URIRef(graph_uri))
+                return True
 
         try:
-            service_graph = self.graph.get_graph(URIRef(VitalGraphServiceConstants.SERVICE_GRAPH_URI))
+            if isinstance(self.graph, Dataset):
+                service_graph = self.graph.get_graph(URIRef(VitalGraphServiceConstants.SERVICE_GRAPH_URI))
 
-            # for triple in service_graph.triples((None, None, None)):
-            #    print(triple)
+                # for triple in service_graph.triples((None, None, None)):
+                #    print(triple)
 
-            # print(f"Deleting Graph URI: {graph_uri}")
+                # print(f"Deleting Graph URI: {graph_uri}")
 
-            query = f"""
-               SELECT ?subject
-               WHERE {{
-                 ?subject <http://vital.ai/ontology/vital-core#hasSegmentID> "{graph_uri}"^^<http://www.w3.org/2001/XMLSchema#string> .
-               }}
-               """
+                query = f"""
+                   SELECT ?subject
+                   WHERE {{
+                     ?subject <http://vital.ai/ontology/vital-core#hasSegmentID> "{graph_uri}"^^<http://www.w3.org/2001/XMLSchema#string> .
+                   }}
+                   """
 
-            # print(query)
+                # print(query)
 
-            result = service_graph.query(query)
+                result = service_graph.query(query)
 
-            subject_to_remove = None
+                subject_to_remove = None
 
-            for row in result:
-                # print(row)
-                subject_to_remove = row.subject
+                for row in result:
+                    # print(row)
+                    subject_to_remove = row.subject
 
-            # print(f"Subject to Remove: {subject_to_remove}")
+                # print(f"Subject to Remove: {subject_to_remove}")
 
-            if subject_to_remove:
-                triples_to_remove = list(service_graph.triples((subject_to_remove, None, None)))
-                for triple in triples_to_remove:
-                    print(f"deleting: {triple}")
-                    service_graph.remove(triple)
+                if subject_to_remove:
+                    triples_to_remove = list(service_graph.triples((subject_to_remove, None, None)))
+                    for triple in triples_to_remove:
+                        print(f"deleting: {triple}")
+                        service_graph.remove(triple)
 
-            self.graph.remove_graph(URIRef(graph_uri))
+                self.graph.remove_graph(URIRef(graph_uri))
 
         except Exception as e:
             # log exception
@@ -178,41 +190,44 @@ class RDFlibSparqlImpl:
             return True
 
         if not enforce_segment:
-            self.graph.remove_graph(URIRef(graph_uri))
-            return True
+            if isinstance(self.graph, Dataset):
+                self.graph.remove_graph(URIRef(graph_uri))
+                return True
 
         try:
 
-            service_graph = self.graph.get_graph(URIRef(VitalGraphServiceConstants.SERVICE_GRAPH_URI))
+            if isinstance(self.graph, Dataset):
 
-            query = f"""
-            SELECT ?subject
-                WHERE {{
-                    ?subject <http://vital.ai/ontology/vital-core#hasSegmentID> "{graph_uri}"^^<http://www.w3.org/2001/XMLSchema#string> .
-                }}
-            """
+                service_graph = self.graph.get_graph(URIRef(VitalGraphServiceConstants.SERVICE_GRAPH_URI))
 
-            result = service_graph.query(query)
+                query = f"""
+                SELECT ?subject
+                    WHERE {{
+                        ?subject <http://vital.ai/ontology/vital-core#hasSegmentID> "{graph_uri}"^^<http://www.w3.org/2001/XMLSchema#string> .
+                    }}
+                """
 
-            subject = None
+                result = service_graph.query(query)
 
-            for row in result:
-                # print(row)
-                subject = row.subject
+                subject = None
 
-            if subject:
-                # get the segment node from the service graph
-                triples_gen = service_graph.triples((subject, None, None))
-                segment = vs.from_triples(triples_gen)
-                segment_rdf_data = segment.to_rdf()
+                for row in result:
+                    # print(row)
+                    subject = row.subject
 
-                # delete the graph
-                self.graph.remove_graph(URIRef(graph_uri))
+                if subject:
+                    # get the segment node from the service graph
+                    triples_gen = service_graph.triples((subject, None, None))
+                    segment = vs.from_triples(triples_gen)
+                    segment_rdf_data = segment.to_rdf()
 
-                # recreate the graph and add the segment node
-                new_graph = Graph(identifier=URIRef(graph_uri))
-                new_graph.parse(data=segment_rdf_data, format="nt")
-                self.graph.add_graph(new_graph)
+                    # delete the graph
+                    self.graph.remove_graph(URIRef(graph_uri))
+
+                    # recreate the graph and add the segment node
+                    new_graph = Graph(identifier=URIRef(graph_uri))
+                    new_graph.parse(data=segment_rdf_data, format="nt")
+                    self.graph.add_graph(new_graph)
 
         except Exception as e:
             # log exception
@@ -229,6 +244,8 @@ class RDFlibSparqlImpl:
         # include limit, offset
         # sort by subject uri
         # count total unique subjects and throw exception if over some number?
+
+        # TODO this should be "not" ?
 
         if self._multigraph:
             graph = self.graph
@@ -302,6 +319,8 @@ class RDFlibSparqlImpl:
 
     def _insert_object_impl(self, *, graph_object: G, graph_uri: str, enforce_segment: bool = True, safety_check: bool = True) -> VitalGraphStatus:
 
+        # TODO this should be "not" ?
+
         if self._multigraph:
             graph = self.graph
         else:
@@ -349,8 +368,10 @@ class RDFlibSparqlImpl:
                 graph_object.add_to_graph(insert_graph)
 
             with self.lock:
-                graph = self.graph.get_graph(URIRef(graph_uri))
-                graph += insert_graph
+
+                if isinstance(self.graph, Dataset):
+                    graph = self.graph.get_graph(URIRef(graph_uri))
+                    graph += insert_graph
 
             status = VitalGraphStatus()
             return status
@@ -358,13 +379,15 @@ class RDFlibSparqlImpl:
     def _update_object_impl(self, *, graph_object: G, graph_uri: str = None, upsert: bool = False, safety_check: bool = True) -> VitalGraphStatus:
 
         if self._multigraph:
-            graph = self.graph.get_graph(URIRef(graph_uri))
+            if isinstance(self.graph, Dataset):
+                graph = self.graph.get_graph(URIRef(graph_uri))
         else:
             graph = self.graph
 
         object_uri = str(graph_object.URI)
 
-        service_graph_object = self.get_object(object_uri, graph_uri)
+        # TODO is this right?
+        service_graph_object = self._get_object_impl(object_uri=object_uri, graph_uri=graph_uri)
 
         if service_graph_object is None:
             if upsert is False:
@@ -382,7 +405,8 @@ class RDFlibSparqlImpl:
                                  safety_check: bool = True) -> VitalGraphStatus:
 
         if self._multigraph:
-            graph = self.graph.get_graph(URIRef(graph_uri))
+            if isinstance(self.graph, Dataset):
+                graph = self.graph.get_graph(URIRef(graph_uri))
         else:
             graph = self.graph
 
@@ -413,8 +437,11 @@ class RDFlibSparqlImpl:
 
         vs = VitalSigns()
 
+        graph = None
+
         if self._multigraph:
-            graph = self.graph.get_graph(URIRef(graph_uri))
+            if isinstance(self.graph, Dataset):
+                graph = self.graph.get_graph(URIRef(graph_uri))
         else:
             graph = self.graph
 
@@ -449,8 +476,11 @@ class RDFlibSparqlImpl:
 
         vs = VitalSigns()
 
+        graph = None
+
         if self._multigraph:
-            graph = self.graph.get_graph(URIRef(graph_uri))
+            if isinstance(self.graph, Dataset):
+                graph = self.graph.get_graph(URIRef(graph_uri))
         else:
             graph = self.graph
 
@@ -467,8 +497,11 @@ class RDFlibSparqlImpl:
 
     def _delete_object_impl(self, *, object_uri: str, graph_uri: str = None, safety_check: bool = True) -> VitalGraphStatus:
 
+        graph = None
+
         if self._multigraph:
-            graph = self.graph.get_graph(URIRef(graph_uri))
+            if isinstance(self.graph, Dataset):
+                graph = self.graph.get_graph(URIRef(graph_uri))
         else:
             graph = self.graph
 
@@ -487,8 +520,11 @@ class RDFlibSparqlImpl:
 
     def _delete_object_list_impl(self, *, object_uri_list: List[str], graph_uri: str = None, safety_check: bool = True) -> VitalGraphStatus:
 
+        graph = None
+
         if self._multigraph:
-            graph = self.graph.get_graph(URIRef(graph_uri))
+            if isinstance(self.graph, Dataset):
+                graph = self.graph.get_graph(URIRef(graph_uri))
         else:
             graph = self.graph
 
@@ -505,8 +541,11 @@ class RDFlibSparqlImpl:
     def _filter_query_impl(self, *, graph_uri: str, sparql_query: str, uri_binding='uri', limit: int = 100, offset: int = 0,
                            resolve_objects: bool = True, safety_check: bool = True) -> ResultList:
 
+        graph = None
+
         if self._multigraph:
-            graph = self.graph.get_graph(URIRef(graph_uri))
+            if isinstance(self.graph, Dataset):
+                graph = self.graph.get_graph(URIRef(graph_uri))
         else:
             graph = self.graph
 
@@ -518,9 +557,13 @@ class RDFlibSparqlImpl:
     def _query_impl(self, graph_uri: str, sparql_query: str, uri_binding='uri', *, limit=100, offset=0, resolve_objects=True,
                     safety_check: bool = True) -> ResultList:
 
+        name_graph = None
+        graph = None
+
         if self._multigraph:
-            name_graph = self.get_graph(graph_uri)
-            graph = self.graph.get_graph(URIRef(graph_uri))
+            if isinstance(self.graph, Dataset):
+                name_graph = self.get_graph(graph_uri)
+                graph = self.graph.get_graph(URIRef(graph_uri))
         else:
             graph = self.graph
             # TODO
@@ -584,10 +627,13 @@ class RDFlibSparqlImpl:
                               binding_list: List[Binding], limit=100, offset=0, safety_check: bool = True,
                               ) -> ResultList:
 
+        graph = None
+
         if self._multigraph:
-            graph = self.graph.get_graph(URIRef(graph_uri))
-            # exception if graph doesn't exist
-            name_graph = self.get_graph(graph_uri)
+            if isinstance(self.graph, Dataset):
+                graph = self.graph.get_graph(URIRef(graph_uri))
+                # exception if graph doesn't exist
+                name_graph = self._get_graph_impl(graph_uri=graph_uri)
         else:
             graph = self.graph
 
@@ -683,8 +729,11 @@ class RDFlibSparqlImpl:
 
         from vital_ai_vitalsigns.collection.graph_collection import GraphCollection
 
+        graph = None
+
         if self._multigraph:
-            graph = self.graph.get_graph(URIRef(graph_uri))
+            if isinstance(self.graph, Dataset):
+                graph = self.graph.get_graph(URIRef(graph_uri))
         else:
             # TODO handle uni-graph case
             graph = self.graph
@@ -776,12 +825,23 @@ class RDFlibSparqlImpl:
                               enforce_segment=True,
                               overwrite=True) -> bool:
 
+        # TODO MemoryGraphService not switched to use multi-graph yet
+        # so triples end up in the global graph and not the per segment graph
+
+
+        # TODO temp override for testing
+        enforce_segment = False
+
+        print(f"Exporting: graph_uri {graph_uri}")
+        print(f"Exporting: enforce_segment {enforce_segment}")
+        print(f"Exporting: overwrite {overwrite}")
+
+        print(f"Exporting: into {file_path}")
+
         if os.path.exists(file_path):
             if overwrite is False:
                 print(f"Exporting canceled. File path exists and overwrite is false.")
                 return False
-
-        print(f"Exporting: into {file_path}")
 
         if enforce_segment:
 
@@ -790,9 +850,18 @@ class RDFlibSparqlImpl:
                 return False
 
             try:
+
+                # TODO do this without copying graph
                 # Exclude triples from the segment
 
                 graph = self.graph.get_graph(URIRef(graph_uri))
+
+                source_graph_triple_count = len(graph)
+
+                print(f"Exporting: source_graph_triple_count {source_graph_triple_count}")
+
+                # for s, p, o in graph:
+                #    print(f"Exporting: s {s} p {p} o {o}")
 
                 query = f"""
                         SELECT ?subject
@@ -805,6 +874,8 @@ class RDFlibSparqlImpl:
 
                 subject = None
 
+                # should be exactly one
+
                 for row in result:
                     # print(row)
                     subject = row.subject
@@ -813,14 +884,36 @@ class RDFlibSparqlImpl:
                         print(f"Exporting: failed.  Segment not found in source graph.")
                         return False
 
-                    new_graph = Graph()
+                    original_triples = graph.triples
 
-                    for s, p, o in graph:
-                        if s != subject:
-                            new_graph.add((s, p, o))
+                    # temp patch to skip the segment triples
+                    def filtered_triples(pattern=None):
+                        # If no pattern is provided, use the default (None, None, None).
+                        if pattern is None:
+                            pattern = (None, None, None)
+                        # Iterate over all triples using the original method.
+                        for triple in original_triples(pattern):
+                            # If the subject matches the one to ignore, skip this triple.
+                            if triple[0] == subject:
+                                continue
+                            yield triple
+
+                    graph.triples = filtered_triples
+
+                    # new_graph = Graph()
+                    # for s, p, o in graph:
+                    #    if s != subject:
+                    #        new_graph.add((s, p, o))
+
+                    triple_count = len(graph)
+
+                    print(f"Exporting: triple_count {triple_count}")
 
                     with open(file_path, 'wb') as f:
-                        new_graph.serialize(destination=f, format='nt', encoding='utf-8')
+                        graph.serialize(destination=f, format='nt', encoding='utf-8')
+
+                    graph.triples = original_triples
+
                     return True
 
             except Exception as e:
@@ -830,12 +923,22 @@ class RDFlibSparqlImpl:
 
             if self._multigraph:
                 if graph_uri is not None:
-                    graph = self.graph.get_graph(URIRef(graph_uri))
+                    if isinstance(self.graph, Dataset):
+                        graph = self.graph.get_graph(URIRef(graph_uri))
                 else:
                     print(f"Export canceled. Multigraph but graph_uri is not set.")
                     return False
             else:
                 graph = self.graph
+
+
+            # TODO temp override for test
+
+            graph = self.graph
+
+            triple_count = len(graph)
+
+            print(f"Exporting: triple_count {triple_count}")
 
             with open(file_path, 'wb') as f:
                 graph.serialize(destination=f, format='nt', encoding='utf-8')
@@ -848,6 +951,8 @@ class RDFlibSparqlImpl:
     def _import_ntriples_impl(self, file_path: str, *,
                               graph_uri=None,
                               enforce_segment=True) -> bool:
+
+        graph = None
 
         if enforce_segment:
 
@@ -863,7 +968,8 @@ class RDFlibSparqlImpl:
 
             print(f"Importing: {graph_uri} from file: {file_path}")
 
-            graph = self.graph.get_graph(URIRef(graph_uri))
+            if isinstance(self.graph, Dataset):
+                graph = self.graph.get_graph(URIRef(graph_uri))
 
             try:
                 graph.parse(source=file_path, format='nt')
@@ -874,7 +980,8 @@ class RDFlibSparqlImpl:
         else:
             if self._multigraph:
                 if graph_uri is not None:
-                    graph = self.graph.get_graph(URIRef(graph_uri))
+                    if isinstance(self.graph, Dataset):
+                        graph = self.graph.get_graph(URIRef(graph_uri))
                 else:
                     print(f"Importing canceled. Multigraph but graph_uri is not set.")
                     return False

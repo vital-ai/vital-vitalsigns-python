@@ -3,6 +3,16 @@ from typing import Optional, List
 import yaml
 from dataclasses import dataclass
 
+# TODO use and enforce types
+# potentially different types have different property sets
+
+class GraphDatabaseType:
+    VIRTUOSO = "virtuoso"
+    FUSEKI = "fuseki"
+
+class VectorDatabaseType:
+    WEAVIATE = "weaviate"
+    VITAL_VECTORDB = "vital_vectordb"
 
 @dataclass
 class EmbeddingModelConfig:
@@ -34,6 +44,10 @@ class GraphDatabaseConfig:
     database_type: str
     endpoint: str
     connection_type: Optional[str] = None
+    server_name: Optional[str] = None
+    server_user: Optional[str] = None
+    server_dataset_dir: Optional[str] = None
+    pem_path: Optional[str] = None
     username: Optional[str] = None
     password: Optional[str] = None
     apikey: Optional[str] = None
@@ -77,7 +91,7 @@ class VitalSignsConfigLoader:
 
             return VitalSignsConfigLoader._parse_config(config_content)
         except Exception as e:
-            print(e)
+            print(f"exception: {e}")
             return VitalSignsConfig()
 
     @staticmethod
@@ -108,6 +122,9 @@ class VitalSignsConfigLoader:
                     ]
                 vector_database = VectorDatabaseConfig(
                     endpoint=vector_db_data['endpoint'],
+                    vector_endpoint=vector_db_data['vector_endpoint'],
+                    grpc_endpoint=vector_db_data['grpc_endpoint'],
+
                     api_key=vector_db_data['api_key'],
                     vector_database_type=vector_db_data['vector_database_type'],
                     vector_database_schema_list=vector_db_data['vector_database_schema_list'],

@@ -1,29 +1,49 @@
 import weaviate
 from weaviate.connect import ConnectionParams
 from weaviate.classes.init import AdditionalConfig, Timeout
-import os
 import weaviate.classes.config as wvcc
-from utils.config_utils import ConfigUtils
+from vital_ai_vitalsigns.vitalsigns import VitalSigns
 
 
 def main():
+
     print('Test Weaviate Client')
 
-    config = ConfigUtils.load_config()
+    vs = VitalSigns()
 
-    # weaviate_username = config['vector_database']['weaviate_user']
-    # weaviate_api_key = config['vector_database']['weaviate_api_key']
-    weaviate_endpoint = config['vector_database']['weaviate_endpoint']
-    weaviate_grpc_endpoint = config['vector_database']['weaviate_grpc_endpoint']
-    weaviate_vector_endpoint = config['vector_database']['weaviate_vector_endpoint']
+    print("VitalSigns Initialized")
+
+    vital_home = vs.get_vitalhome()
+
+    print(f"VitalHome: {vital_home}")
+
+    vs_config = vs.get_config()
+
+    print(vs_config)
+
+    vitalservice_manager = vs.get_vitalservice_manager()
+
+    vitalservice_name_list = vitalservice_manager.get_vitalservice_list()
+
+    for vitalservice_name in vitalservice_name_list:
+        vitalservice = vitalservice_manager.get_vitalservice(vitalservice_name)
+        print(f"VitalService Name: {vitalservice.get_vitalservice_name()}")
+
+    vitalservice = vitalservice_manager.get_vitalservice("local_service")
+
+    # assumes weaviate vector service type
+
+    weaviate_endpoint = vitalservice.vector_service.endpoint
+    weaviate_grpc_endpoint = vitalservice.vector_service.grpc_endpoint
+    weaviate_vector_endpoint = vitalservice.vector_service.vector_endpoint
 
     client = weaviate.WeaviateClient(
         connection_params=ConnectionParams.from_params(
             http_host=weaviate_endpoint,
-            http_port="8080",
+            http_port=8080,
             http_secure=False,
             grpc_host=weaviate_grpc_endpoint,
-            grpc_port="50051",
+            grpc_port=50051,
             grpc_secure=False,
         ),
 
@@ -33,25 +53,36 @@ def main():
 
         # Values in seconds
         additional_config=AdditionalConfig(
-            timeout=Timeout(init=2, query=45, insert=120),
+            timeout=Timeout(init=30, query=45, insert=120),
         ),
     )
 
-    client.connect()
 
-    meta_info = client.get_meta()
+    try:
 
-    print(meta_info)
+        client.connect()
 
-    collections = client.collections.list_all()
+        meta_info = client.get_meta()
 
-    for c_name in collections:
-        print(f"{c_name}")
-        c = client.collections.get(c_name)
-        print(c.config.get())
+        print(meta_info)
+
+        collections = client.collections.list_all()
+
+        for c_name in collections:
+            print(f"{c_name}")
+            c = client.collections.get(c_name)
+            print(c.config.get())
+
+
+    except Exception as e:
+        print(e)
+
+    finally:
+        client.close()
 
     # client.close()
-    # exit(0)
+
+    exit(0)
 
     try:
 

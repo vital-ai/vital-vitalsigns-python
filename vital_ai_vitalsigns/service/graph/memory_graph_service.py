@@ -10,7 +10,9 @@ from vital_ai_vitalsigns.query.result_list import ResultList
 from vital_ai_vitalsigns.query.solution import Solution
 from vital_ai_vitalsigns.query.solution_list import SolutionList
 from vital_ai_vitalsigns.service.graph.binding import Binding, BindingValueType
+from vital_ai_vitalsigns.service.graph.graph_object_generator import GraphObjectGenerator
 from vital_ai_vitalsigns.service.graph.graph_service import VitalGraphService, G
+from vital_ai_vitalsigns.service.graph.graph_service_status import GraphServiceStatus, GraphServiceStatusType
 from vital_ai_vitalsigns.service.graph.name_graph import VitalNameGraph
 from vital_ai_vitalsigns.service.graph.vital_graph_status import VitalGraphStatus
 from vital_ai_vitalsigns.service.graph.graph_service_constants import VitalGraphServiceConstants
@@ -55,6 +57,20 @@ class MemoryGraphService(VitalGraphService, RDFlibSparqlImpl):
 
         self.graph.add_graph(ontology_graph)
 
+    def service_status(self) -> GraphServiceStatus:
+
+        status_type = GraphServiceStatusType.READY
+
+        status = GraphServiceStatus(status_type)
+
+        return status
+
+    def service_info(self) -> dict:
+
+        service_info = {}
+
+        return service_info
+
     def start(self):
         pass
 
@@ -86,69 +102,131 @@ class MemoryGraphService(VitalGraphService, RDFlibSparqlImpl):
     def destroy_service(self) -> bool:
         return True
 
-    def list_graphs(self, *, safety_check: bool = True) -> List[VitalNameGraph]:
+    def list_graphs(self, *,
+                    account_id: str | None = None,
+                    include_global: bool = True,
+                    include_private: bool = True,
+                    safety_check: bool = True) -> List[VitalNameGraph]:
 
         return self._list_graphs_impl()
 
-    def get_graph(self, graph_uri: str, *, safety_check: bool = True) -> VitalNameGraph:
+    def get_graph(self, graph_uri: str, *,
+                  account_id: str | None = None,
+                  include_global: bool = True,
+                  include_private: bool = True,
+                  safety_check: bool = True) -> VitalNameGraph:
 
         return self._get_graph_impl(graph_uri=graph_uri)
 
-    def check_create_graph(self, graph_uri: str, *, safety_check: bool = True) -> bool:
+    def check_create_graph(self, graph_uri: str, *,
+                           account_id: str | None = None,
+                           include_global: bool = True,
+                           include_private: bool = True,
+                           safety_check: bool = True) -> bool:
 
         return self._check_create_graph_impl(graph_uri=graph_uri)
 
-    def create_graph(self, graph_uri: str, *, safety_check: bool = True) -> bool:
+    def create_graph(self, graph_uri: str, *, global_graph: bool = False,
+                     account_id: str|None = None, safety_check: bool = True) -> bool:
 
         return self._create_graph_impl(graph_uri=graph_uri)
 
-    def delete_graph(self, graph_uri: str, *, safety_check: bool = True) -> bool:
+    def delete_graph(self, graph_uri: str, *,
+                     account_id: str | None = None,
+                     include_global: bool = True,
+                     include_private: bool = True,
+                     safety_check: bool = True) -> bool:
 
         return self._delete_graph_impl(graph_uri=graph_uri)
 
-    def purge_graph(self, graph_uri: str, *, safety_check: bool = True) -> bool:
+    def purge_graph(self, graph_uri: str, *,
+                    account_id: str | None = None,
+                    global_graph: bool = False,
+                    include_private: bool = True,
+                    safety_check: bool = True) -> bool:
 
         return self._purge_graph_impl(graph_uri=graph_uri)
 
-    def get_graph_all_objects(self, graph_uri: str, *, limit=100, offset=0, safety_check: bool = True) -> ResultList:
+    def get_graph_all_objects(self, graph_uri: str, *,
+                              account_id: str | None = None,
+                              global_graph: bool = False,
+                              include_private: bool = True,
+                              limit=100, offset=0, safety_check: bool = True) -> ResultList:
 
         return self._get_graph_all_objects_impl(graph_uri=graph_uri, limit=limit, offset=offset, safety_check=safety_check)
 
-    def insert_object(self, graph_uri: str, graph_object: G, *, safety_check: bool = True) -> VitalGraphStatus:
+    def insert_object(self, graph_uri: str, graph_object: G, *,
+                      account_id: str | None = None,
+                      include_global: bool = True,
+                      include_private: bool = True,
+                      safety_check: bool = True) -> VitalGraphStatus:
 
         return self._insert_object_impl(graph_uri=graph_uri, graph_object=graph_object, safety_check=safety_check)
 
-    def insert_object_list(self, graph_uri: str, graph_object_list: List[G], *, safety_check: bool = True) -> VitalGraphStatus:
+    def insert_object_list(self, graph_uri: str, graph_object_list: List[G], *,
+                           account_id: str | None = None,
+                           include_global: bool = True,
+                           include_private: bool = True,
+                           safety_check: bool = True) -> VitalGraphStatus:
 
         return self._insert_object_list_impl(graph_uri=graph_uri, graph_object_list=graph_object_list, safety_check=safety_check)
 
-    def update_object(self, graph_object: G, *, graph_uri: str = None, upsert: bool = False, safety_check: bool = True) -> VitalGraphStatus:
+    def update_object(self, graph_object: G, *,
+                      graph_id: str = None, upsert: bool = False,
+                      account_id: str | None = None,
+                      global_graph: bool = False,
+                      include_private: bool = True,
+                      safety_check: bool = True) -> VitalGraphStatus:
 
-        return self._update_object_impl(graph_object=graph_object, graph_uri=graph_uri, upsert=upsert, safety_check=safety_check)
+        return self._update_object_impl(graph_object=graph_object, graph_uri=graph_id, upsert=upsert, safety_check=safety_check)
 
-    def update_object_list(self, graph_object_list: List[G], *, graph_uri: str = None, upsert: bool = False,
+    def update_object_list(self, graph_object_list: List[G], *,
+                           graph_id: str = None, upsert: bool = False,
+                           account_id: str | None = None,
+                           global_graph: bool = False,
+                           include_private: bool = True,
                            safety_check: bool = True) -> VitalGraphStatus:
 
-        return self._update_object_list_impl(graph_object_list=graph_object_list, graph_uri=graph_uri, upsert=upsert, safety_check=safety_check)
+        return self._update_object_list_impl(graph_object_list=graph_object_list, graph_uri=graph_id, upsert=upsert, safety_check=safety_check)
 
-    def get_object(self, object_uri: str, *, graph_uri: str = None, safety_check: bool = True) -> G:
+    def get_object(self, object_uri: str, *, graph_uri: str = None,
+                   account_id: str | None = None,
+                   include_global: bool = True,
+                   include_private: bool = True,
+                   safety_check: bool = True) -> G:
 
         return self._get_object_impl(object_uri=object_uri, graph_uri=graph_uri, safety_check=safety_check)
 
-    def get_object_list(self, object_uri_list: List[str], *, graph_uri: str = None, safety_check: bool = True) -> ResultList:
+    def get_object_list(self, object_uri_list: List[str], *,
+                        account_id: str | None = None,
+                        include_global: bool = True,
+                        include_private: bool = True,
+                        graph_uri: str = None, safety_check: bool = True) -> ResultList:
 
         return self._get_object_list_impl(object_uri_list=object_uri_list, graph_uri=graph_uri, safety_check=safety_check)
 
-    def delete_object(self, object_uri: str, *, graph_uri: str = None, safety_check: bool = True) -> VitalGraphStatus:
+    def delete_object(self, object_uri: str, *, graph_uri: str = None,
+                      account_id: str | None = None,
+                      include_global: bool = True,
+                      include_private: bool = True,
+                      safety_check: bool = True) -> VitalGraphStatus:
 
         return self._delete_object_impl(object_uri=object_uri, graph_uri=graph_uri, safety_check=safety_check)
 
-    def delete_object_list(self, object_uri_list: List[str], *, graph_uri: str = None, safety_check: bool = True) -> VitalGraphStatus:
+    def delete_object_list(self, object_uri_list: List[str], *, graph_uri: str = None,
+                           account_id: str | None = None,
+                           include_global: bool = True,
+                           include_private: bool = True,
+                           safety_check: bool = True) -> VitalGraphStatus:
 
         return self._delete_object_list_impl(object_uri_list=object_uri_list, graph_uri=graph_uri, safety_check=safety_check)
 
     def filter_query(self, graph_uri: str, sparql_query: str, uri_binding='uri', *, limit: int = 100, offset: int = 0,
-                     resolve_objects: bool = True, safety_check: bool = True) -> ResultList:
+                     resolve_objects: bool = True,
+                     account_id: str | None = None,
+                     include_global: bool = True,
+                     include_private: bool = True,
+                     safety_check: bool = True) -> ResultList:
 
         return self._filter_query_impl(
             graph_uri=graph_uri,
@@ -159,7 +237,11 @@ class MemoryGraphService(VitalGraphService, RDFlibSparqlImpl):
             resolve_objects=resolve_objects,
             safety_check=safety_check)
 
-    def query(self, graph_uri: str, sparql_query: str, uri_binding='uri', *, limit=100, offset=0, resolve_objects=True,
+    def query(self, graph_uri: str, sparql_query: str, uri_binding='uri', *,
+              account_id: str | None = None,
+              include_global: bool = True,
+              include_private: bool = True,
+              limit=100, offset=0, resolve_objects=True,
               safety_check: bool = True) -> ResultList:
 
         return self._query_impl(
@@ -172,7 +254,11 @@ class MemoryGraphService(VitalGraphService, RDFlibSparqlImpl):
             safety_check=safety_check)
 
     def query_construct(self, graph_uri: str, sparql_query: str, namespace_list: List[Ontology],
-                        binding_list: List[Binding], *, limit=100, offset=0, safety_check: bool = True) -> ResultList:
+                        binding_list: List[Binding], *,
+                        account_id: str | None = None,
+                        include_global: bool = True,
+                        include_private: bool = True,
+                        limit=100, offset=0, safety_check: bool = True) -> ResultList:
 
         return self._query_construct_impl(
             graph_uri=graph_uri,
@@ -184,7 +270,11 @@ class MemoryGraphService(VitalGraphService, RDFlibSparqlImpl):
             safety_check=safety_check)
 
     def query_construct_solution(self, graph_uri: str, sparql_query: str, namespace_list: List[Ontology],
-                                 binding_list: List[Binding], root_binding: str | None = None, *, limit=100, offset=0,
+                                 binding_list: List[Binding], root_binding: str | None = None, *,
+                                 account_id: str | None = None,
+                                 include_global: bool = True,
+                                 include_private: bool = True,
+                                 limit=100, offset=0,
                                  resolve_objects: bool = True,
                                  safety_check: bool = True) -> SolutionList:
 
@@ -206,3 +296,37 @@ class MemoryGraphService(VitalGraphService, RDFlibSparqlImpl):
     def metaql_graph_query(self, *, namespace: str = None, graph_query: MetaQLGraphQuery,
                            namespace_list: List[Ontology]) -> MetaQLResult:
         pass
+
+    def is_graph_global(self, graph_id: str, *,
+                        account_id: str | None = None) -> bool:
+
+        pass
+
+    def import_graph_batch(self, graph_id: str, object_generator: GraphObjectGenerator,
+                           *,
+                           global_graph: bool = False,
+                           account_id: str | None = None,
+                           purge_first: bool = True, batch_size: int = 10_000):
+        pass
+
+    def import_graph_batch_file(self, graph_id: str, file_path: str,
+                                *,
+                                global_graph: bool = False,
+                                account_id: str | None = None,
+                                purge_first: bool = True, batch_size: int = 10_000):
+        pass
+
+    def import_multi_graph_batch(self, object_generator: GraphObjectGenerator,
+                                 *,
+                                 purge_first: bool = True,
+                                 use_account_id: bool = True,
+                                 batch_size: int = 10_000):
+        pass
+
+    def import_multi_graph_batch_file(self, file_path: str,
+                                     *,
+                                     purge_first: bool = True,
+                                     use_account_id: bool = True,
+                                     batch_size: int = 10_000):
+        pass
+

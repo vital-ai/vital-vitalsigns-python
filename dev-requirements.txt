@@ -1,0 +1,2 @@
+vital-ai-haley-kg>=0.1.22
+vital-ai-wordnet>=0.1.5

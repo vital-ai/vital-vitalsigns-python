@@ -1,4 +1,4 @@
-from test.query.vital_query import VitalQuery
+from test_scripts.query.vital_query import VitalQuery
 
 
 class VitalGraphQuery(VitalQuery):

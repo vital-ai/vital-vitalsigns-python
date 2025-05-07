@@ -13,6 +13,9 @@ from vital_ai_vitalsigns.metaql.metaql_query import GraphQuery as MetaQLGraphQue
 G = TypeVar('G', bound='GraphObject')
 
 
+# TODO switch to using graph id in place of graph_uri to
+# match service definition?
+
 class RdfCollectionImpl(RDFlibSparqlImpl):
     def __init__(self, *, multigraph=False):
         super().__init__(multigraph=multigraph)

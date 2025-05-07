@@ -1,4 +1,4 @@
 
 
-class VectorCollection:
+class VitalVectorCollection:
     pass

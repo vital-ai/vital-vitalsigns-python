@@ -1,7 +1,6 @@
 import json
 from typing import List
 
-from utils.config_utils import ConfigUtils
 from vital_ai_vitalsigns.metaql.metaql_builder import MetaQLBuilder
 from vital_ai_vitalsigns.metaql.metaql_parser import MetaQLParser
 from vital_ai_vitalsigns.metaql.metaql_status import OK_STATUS_TYPE
@@ -11,8 +10,11 @@ from vital_ai_vitalsigns.metaql.query.query_builder import QueryBuilder, Arc, An
 from vital_ai_vitalsigns.model.VITAL_Edge import VITAL_Edge
 from vital_ai_vitalsigns.model.VITAL_Node import VITAL_Node
 from vital_ai_vitalsigns.ontology.ontology import Ontology
+from vital_ai_vitalsigns.service.graph.binding import Binding
 from vital_ai_vitalsigns.service.graph.virtuoso.virtuoso_metaql_impl import VirtuosoMetaQLImpl
 from vital_ai_vitalsigns.service.graph.virtuoso_service import VirtuosoGraphService
+from vital_ai_vitalsigns.service.metaql.metaql_sparql_builder import MetaQLSparqlBuilder
+from vital_ai_vitalsigns.service.metaql.metaql_sparql_impl import MetaQLSparqlImpl
 from vital_ai_vitalsigns.vitalsigns import VitalSigns
 from vital_ai_vitalsigns_core.model.properties.Property_hasName import Property_hasName
 
@@ -32,6 +34,17 @@ def main():
 
     print("VitalSigns Initialized")
 
+    vital_home = vs.get_vitalhome()
+
+    print(f"VitalHome: {vital_home}")
+
+    vs_config = vs.get_config()
+
+    print(vs_config)
+
+    # bindings were added to this to avoid an error for the missing bindings
+    # this is query for fictional data
+
     gq = (
         QueryBuilder.graph_query(
             limit=100,
@@ -41,6 +54,10 @@ def main():
         .graph_uri("urn:123")
         .arc(
             Arc()
+            .node_bind(NodeBind(name="node1"))
+            .edge_bind(EdgeBind(name="edge1"))
+            .path_bind(PathBind(name="path1"))
+            .solution_bind(SolutionBind(name="solution1"))
             .constraint_list(
                 OrConstraintList()
                 .node_constraint(
@@ -56,12 +73,12 @@ def main():
                     )
                 )
             )
-            .node_bind(NodeBind(name="node1"))
-            .edge_bind(EdgeBind(name="edge1"))
-            .path_bind(PathBind(name="path1"))
-            .solution_bind(SolutionBind(name="solution1"))
+
             .arc(
                 Arc()
+                .node_bind(NodeBind(name="node2"))
+                .edge_bind(EdgeBind(name="edge2"))
+                .path_bind(PathBind(name="path2"))
                 .constraint_list(
                     AndConstraintList()
                     .node_constraint(
@@ -135,6 +152,9 @@ def main():
                 )
                 .arc(
                     Arc()
+                    .node_bind(NodeBind(name="node2"))
+                    .edge_bind(EdgeBind(name="edge2"))
+                    .path_bind(PathBind(name="path2"))
                     .constraint_list(
                         AndConstraintList()
                         .node_constraint(
@@ -150,6 +170,7 @@ def main():
                             )
                         )
                     )
+
                 )
             )
         )
@@ -172,40 +193,110 @@ def main():
 
     print(graph_query_json)
 
-    return
+    # exit(0)
 
-    namespace = "VITALTEST"
+    # namespace = "VITALTEST"
 
     ontology_list: List[Ontology] = []
 
+    namespace_list = [
+        Ontology("owl", "http://www.w3.org/2002/07/owl#"),
+        Ontology("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#"),
+        Ontology("rdfs", "http://www.w3.org/2000/01/rdf-schema#"),
+    ]
+
+    iri_list = vs.get_ontology_manager().get_ontology_iri_list()
+
+    ont_prefix_map = {}
+
+    for iri in iri_list:
+
+        if iri.startswith("http://vital.ai/ontology/"):
+            prefix = iri[len("http://vital.ai/ontology/"):]
+
+            prefix = prefix.removesuffix("#")
+
+            # print(f"Vital Prefix: {prefix} IRI: {iri}")
+
+            ont_prefix_map[prefix] = iri
+
+    for k in ont_prefix_map.keys():
+        # print(f"Ont Prefix: {k} IRI: {ont_prefix_map[k]}")
+        ont = Ontology(k, ont_prefix_map[k])
+        namespace_list.append(ont)
+
+
     # add resolving graph objects true/false into query
 
-    sparql_string = VirtuosoMetaQLImpl.generate_graph_query_sparql(
-        namespace=namespace,
-        graph_query=metaql_graph_query,
-        namespace_list=ontology_list
+    # sparql_string = VirtuosoMetaQLImpl.generate_graph_query_sparql(
+    #    namespace=namespace,
+    #    graph_query=metaql_graph_query,
+    #    namespace_list=ontology_list
+    #)
+
+    # print(f"Graph Query SPARQL:\n{sparql_string}")
+
+    sparql_builder = MetaQLSparqlBuilder()
+
+    sparql_impl: MetaQLSparqlImpl = sparql_builder.build_sparql(metaql_graph_query)
+
+    print(sparql_impl)
+
+
+    # exit(0)
+
+    limit = sparql_impl.get_limit()
+
+    offset = sparql_impl.get_offset()
+
+    graph_uri = sparql_impl.get_graph_uri_list()[0]
+
+    resolve_objects = sparql_impl.get_resolve_objects()
+
+    binding_list = []
+
+    for binding in sparql_impl.get_binding_list():
+        b = Binding(f"?{binding}", f"urn:{binding}")
+        binding_list.append(b)
+
+    root_binding = f"?{sparql_impl.get_root_binding()}"
+
+    term_list = "\n".join(sparql_impl.get_arc_constraint_list())
+
+    bind_constraint_list = "\n".join(sparql_impl.get_bind_constraint_list())
+
+    query_string = f"""
+    {term_list}
+
+    {bind_constraint_list}
+    """
+
+    print(query_string)
+
+    # exit(0)
+
+    vitalservice_manager = vs.get_vitalservice_manager()
+
+    vitalservice_list = vitalservice_manager.get_vitalservice_list()
+
+    for vitalservice in vitalservice_list:
+        print(f"vitalservice: {vitalservice}")
+
+    vitalservice = vitalservice_manager.get_vitalservice("local_kgraph")
+
+    virtuoso_graph_service = vitalservice.graph_service
+
+    graph_list = virtuoso_graph_service.list_graphs(
+        account_id="account1"
     )
-
-    # compare sparql with groovy implementation
-
-    print(f"Graph Query SPARQL:\n{sparql_string}")
-
-    config = ConfigUtils.load_config()
-
-    virtuoso_username = config['graph_database']['virtuoso_username']
-    virtuoso_password = config['graph_database']['virtuoso_password']
-    virtuoso_endpoint = config['graph_database']['virtuoso_endpoint']
-
-    virtuoso_graph_service = VirtuosoGraphService(
-        username=virtuoso_username,
-        password=virtuoso_password,
-        endpoint=virtuoso_endpoint
-    )
-
-    graph_list = virtuoso_graph_service.list_graphs()
 
     for g in graph_list:
         print(f"Graph URI: {g.get_graph_uri()}")
+
+
+
+    exit(0)
+
 
     metaql_result = virtuoso_graph_service.metaql_graph_query(
         graph_query=metaql_graph_query,

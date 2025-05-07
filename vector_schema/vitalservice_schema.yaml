@@ -1,0 +1,18 @@
+# Vitalservice Schema
+# Track namespaces used within he vector database
+
+name: VitalserviceSchema
+type: Weaviate
+namespace: Vitalservice
+version: 1.0
+
+collections:
+  - name: VitalserviceNamespace
+    description: "Vitalservice Namespace Collection"
+    properties:
+      - name: uri
+        type: string
+        description: "Unique identifier for the namespace"
+      - name: name
+        type: string
+        description: "Name of the namespace"

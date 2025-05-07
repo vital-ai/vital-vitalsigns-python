@@ -1,5 +1,5 @@
 
 
-class VectorCollectionDefinition:
+class VitalVectorCollectionDefinition:
     pass
 

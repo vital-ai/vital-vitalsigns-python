@@ -1,0 +1,4 @@
+
+class VitalVectorResultElement:
+    pass
+

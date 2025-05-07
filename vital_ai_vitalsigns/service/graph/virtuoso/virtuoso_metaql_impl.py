@@ -1,5 +1,4 @@
 from typing import List
-
 from vital_ai_vitalsigns.metaql.metaql_query import SelectQuery as MetaQLSelectQuery
 from vital_ai_vitalsigns.metaql.metaql_query import GraphQuery as MetaQLGraphQuery
 from vital_ai_vitalsigns.ontology.ontology import Ontology
@@ -9,7 +8,6 @@ class VirtuosoMetaQLImpl:
 
     @classmethod
     def generate_select_query_sparql(cls, *,
-                                     namespace: str = None,
                                      select_query: MetaQLSelectQuery,
                                      namespace_list: List[Ontology]
                                      ) -> str:

@@ -176,6 +176,8 @@ class MetaQLBuilder:
     @classmethod
     def build_node_binding(cls, *, name: str):
 
+        # print(f"build_node_binding {name}")
+
         node_binding = NodeArcBinding(
             metaql_class="NodeArcBinding",
             binding=name
@@ -275,6 +277,8 @@ class MetaQLBuilder:
         if constraint_list_list is None or len(constraint_list_list) == 0:
             # exception
             pass
+
+        # print(f"build_arc node_binding: {node_binding}")
 
         arc = Arc(
             metaql_class="Arc",

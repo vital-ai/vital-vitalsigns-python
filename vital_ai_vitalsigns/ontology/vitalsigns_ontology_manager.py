@@ -363,7 +363,7 @@ class VitalSignsOntologyManager:
             label = str(row['label']) if row['label'] else subclass_uri.split('#')[-1]
             parent_uri = str(row['parent']) if row['parent'] else None
 
-            print(f"Subclass URI: {subclass_uri}, Label: {label}, Parent URI: {parent_uri}")
+            # print(f"Subclass URI: {subclass_uri}, Label: {label}, Parent URI: {parent_uri}")
 
             subclass_list.append(subclass_uri)
 

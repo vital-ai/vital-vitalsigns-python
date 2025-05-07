@@ -1,5 +1,5 @@
 
 
-class VectorNamespace:
+class VitalVectorNamespace:
     pass
 

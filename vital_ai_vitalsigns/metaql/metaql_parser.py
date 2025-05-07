@@ -66,7 +66,7 @@ class MetaQLParser:
 
         metaql_class = metaql_dict.get('metaql_class', None)
 
-        print(f"metaql_class: {metaql_class}")
+        # print(f"metaql_class: {metaql_class}")
 
         if metaql_class is None:
             return None
@@ -168,7 +168,21 @@ class MetaQLParser:
 
             params_dict = {}
 
-            params_dict['name'] = parse_dict.get('name', None)
+            # print(f"parse_metaql_dict: NodeArcBinding: {parse_dict}")
+
+
+            # this path seems to just be used by the arc root base
+            # and node arc binding has a "binding" value here
+            # whereas in the non-root cases it's a pass-thru?
+            # NodeBind uses "name" whereas node arc binding uses "binding"
+
+            # params_dict['name'] = parse_dict.get('name', None)
+
+            # in arc list it seems the value from the source parse is used directly
+            # and not by parsing the components recursively
+            params_dict['name'] = parse_dict.get('binding', None)
+
+            # print(f"parse_metaql_dict: NodeArcBinding Params Dict: {params_dict}")
 
             node_binding = MetaQLBuilder.build_node_binding(**params_dict)
 
@@ -225,6 +239,7 @@ class MetaQLParser:
             else:
                 params_dict['arclist_list'] = parse_dict.get('arclist_list', None)
 
+            # print(f"ArcRoot Node Binding: {parse_dict.get('node_binding', None)}")
 
             params_dict['constraint_list_list'] = parse_dict.get('constraint_list_list', None)
 
@@ -284,6 +299,15 @@ class MetaQLParser:
             arc_list_list = metaql_dict.get('arc_list', None)
 
             arclist_list = metaql_dict.get('arclist_list', None)
+
+            # print(f"arc_list_list: {arc_list_list}")
+
+            # print(f"arclist_list: {arclist_list}")
+
+            # TODO in this path we seems to be using the entire arc list or arc list list as it is
+            # and not getting and recursively parsing the individual elements
+            # which means some things like NodeBinding are used from the source json and not from parsing
+            # which may cause validation errors as the components didn't go through validation.
 
             arc_list = MetaQLBuilder.build_arc_list(
                 arc_list_type=arc_list_type,

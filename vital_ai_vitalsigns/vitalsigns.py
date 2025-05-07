@@ -179,6 +179,10 @@ class VitalSigns(metaclass=VitalSignsMeta):
     def from_triples(self, triples: Generator[Tuple, None, None], *, modified=False) -> G:
         return GraphObject.from_triples(triples, modified=modified)
 
+    def from_triples_list(self, triples: Generator[Tuple, None, None], *, modified=False) -> List[G]:
+        return GraphObject.from_triples_list(triples, modified=modified)
+
+
     def to_json(self, graph_object_list: List[G]) -> str:
         json_list = []
 

@@ -1,7 +1,15 @@
+from enum import Enum
+
+
+class VitalServiceStatusType(Enum):
+    OK = "VitalServiceStatusType_OK"
+    ERROR = "VitalServiceStatusType_ERROR"
+    UNINITIALIZED = "VitalServiceStatusType_UNINTIALIZED"
+
 
 class VitalServiceStatus:
 
-    def __init__(self, status: int = 0, message: str = 'Ok'):
+    def __init__(self, status: VitalServiceStatusType = VitalServiceStatusType.OK, message: str = 'Ok'):
         self.status = status
         self.message = message
         self.deleted_objects = 0

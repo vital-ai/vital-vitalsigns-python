@@ -21,6 +21,8 @@ vital_home_test/domain-python/vital-aimp-python/com_vitalai_aimp_domain/*
 
 **/*.pem
 
+test_data/
+
 authentication/
 
 .vscode/

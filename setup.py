@@ -9,7 +9,7 @@ setup(
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
     url='https://github.com/vital-ai/vital-vitalsigns-python',
-    packages=find_packages(exclude=["test", "utils", "config", "generate", "vital_home_test"]),
+    packages=find_packages(exclude=["test_scripts", "test_generate", "test_kg", "test_data", "test", "utils", "config", "generate", "vital_home_test"]),
     entry_points={
         'vitalsigns_packages': [
             'vital_ai_vitalsigns = vital_ai_vitalsigns',
@@ -35,6 +35,7 @@ setup(
     },
     license='Apache License 2.0',
     install_requires=[
+        'packaging>=23.0',
         'python-dotenv>=1.0.1',
         'rdflib>=7.0.0',
         'PyYAML>=6.0.1',
@@ -42,7 +43,7 @@ setup(
         'hnswlib>=0.8.0',
         'owlready2==0.46',
         'owlrl==6.0.2',
-        'weaviate-client==4.8.1',
+        'weaviate-client>=4.14.1',
         'SPARQLWrapper==2.0.0',
         'pyshacl==0.25.0',
         'requests>=2.31.0',
@@ -58,7 +59,8 @@ setup(
         'urllib3',
         'paramiko==3.5.0',
         'scp==0.15.0',
-        'vital-graph>=0.0.1'
+        'vital-graph>=0.0.1',
+        'datasketch>=1.6.5'
     ],
     extras_require={
         # for embedding model, which uses onnx runtime
@@ -70,10 +72,17 @@ setup(
             'numpy'
         ],
         'dev': [
+            'nltk',
+            'matplotlib',
+            'networkx',
             'torch>=2.3.0',
             'sentence_transformers==3.3.1',
+            'transformers',
             'wheel>=0.43.0',
-            'pytest'
+            'dill',
+            'pytest',
+            'scikit-learn>=1.6.1',
+            'scipy>=1.15.2'
         ],
     },
     classifiers=[

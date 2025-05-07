@@ -1,6 +1,6 @@
 
 
-class VectorMultiQuery:
+class VitalVectorMultiQuery:
     pass
 
 # case of querying collection that has two or more vectors
