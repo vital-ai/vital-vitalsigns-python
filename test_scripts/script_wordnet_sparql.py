@@ -1,5 +1,5 @@
 import time
-from vital_ai_vitalsigns.service.graph.virtuoso_service import VirtuosoGraphService
+from vital_ai_vitalsigns.service.graph.virtuoso.virtuoso_service import VirtuosoGraphService
 from vital_ai_vitalsigns.vitalsigns import VitalSigns
 
 def time_function(func):
@@ -45,7 +45,7 @@ def main():
     graph_list = vitalservice.list_graphs(account_id="account1")
 
     for g in graph_list:
-        print(f"Graph URI: {g.get_namespace()}")
+        print(f"Graph URI: {g.get_graph_uri()}")
 
     virtuoso_username = vitalservice.graph_service.username
     virtuoso_password = vitalservice.graph_service.password

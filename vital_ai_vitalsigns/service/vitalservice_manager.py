@@ -17,7 +17,7 @@ class VitalServiceManager:
 
     def _initialize(self):
 
-        from vital_ai_vitalsigns.service.graph.virtuoso_service import VirtuosoGraphService
+        from vital_ai_vitalsigns.service.graph.virtuoso.virtuoso_service import VirtuosoGraphService
         from vital_ai_vitalsigns.service.vector.weaviate.weaviate_service import WeaviateVectorService
 
         self.initialized = False

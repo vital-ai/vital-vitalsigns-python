@@ -67,6 +67,7 @@ class MetaQLBuilder:
     def build_metaql_query(cls, *,
                            metaql_query_type: METAQL_QUERY_TYPE = METAQL_SELECT_QUERY,
                            graph_uri_list: List[str] | None = None,
+                           graph_id_list: List[str] | None = None,
                            root_arc: Arc | None = None,
                            offset: int = 0,
                            limit: int = 100,
@@ -75,6 +76,9 @@ class MetaQLBuilder:
 
         if not graph_uri_list:
             graph_uri_list = []
+
+        if not graph_id_list:
+            graph_id_list = []
 
         if not root_arc:
             # exception
@@ -92,6 +96,7 @@ class MetaQLBuilder:
                 metaql_class="SelectQuery",
                 query_type=METAQL_SELECT_QUERY,
                 graph_uri_list=graph_uri_list,
+                graph_id_list=graph_id_list,
                 offset=offset,
                 limit=limit,
                 arc=root_arc
@@ -107,6 +112,7 @@ class MetaQLBuilder:
                 metaql_class="GraphQuery",
                 query_type=METAQL_GRAPH_QUERY,
                 graph_uri_list=graph_uri_list,
+                graph_id_list=graph_id_list,
                 resolve_objects=resolve_objects,
                 offset=offset,
                 limit=limit,
@@ -123,6 +129,7 @@ class MetaQLBuilder:
                 metaql_class="AggregateSelectQuery",
                 query_type=METAQL_AGGREGATE_SELECT_QUERY,
                 graph_uri_list=graph_uri_list,
+                graph_id_list=graph_id_list,
                 offset=0,
                 limit=1,
                 arc=root_arc,
@@ -139,6 +146,7 @@ class MetaQLBuilder:
                 metaql_class="AggregateGraphQuery",
                 query_type=METAQL_AGGREGATE_GRAPH_QUERY,
                 graph_uri_list=graph_uri_list,
+                graph_id_list=graph_id_list,
                 resolve_objects=False,
                 offset=0,
                 limit=1,

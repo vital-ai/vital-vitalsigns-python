@@ -7,7 +7,7 @@ from vital_ai_vitalsigns.query.result_list import ResultList
 from vital_ai_vitalsigns.query.solution import Solution
 from vital_ai_vitalsigns.query.solution_list import SolutionList
 from vital_ai_vitalsigns.service.graph.binding import Binding, BindingValueType
-from vital_ai_vitalsigns.service.graph.name_graph import VitalNameGraph
+from vital_ai_vitalsigns.service.vital_name_graph import VitalNameGraph
 from vital_ai_vitalsigns.service.graph.vital_graph_status import VitalGraphStatus
 from vital_ai_vitalsigns.service.graph.graph_service_constants import VitalGraphServiceConstants
 from vital_ai_vitalsigns.utils.uri_generator import URIGenerator

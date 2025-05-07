@@ -1,22 +1,20 @@
 import logging
 from typing import List, TypeVar, Dict, Optional
 
-from vital_ai_vitalsigns.metaql.metaql_result_list import MetaQLResultList
 from vital_ai_vitalsigns.ontology.ontology import Ontology
 from vital_ai_vitalsigns.query.metaql_result import MetaQLResult
 from vital_ai_vitalsigns.query.result_list import ResultList
-from vital_ai_vitalsigns.query.solution_list import SolutionList
 from vital_ai_vitalsigns.service.base_service import BaseService
 from vital_ai_vitalsigns.service.graph.graph_object_generator import GraphObjectGenerator
 from vital_ai_vitalsigns.service.graph.graph_service import VitalGraphService
 from vital_ai_vitalsigns.service.graph.graph_service_status import GraphServiceStatusType
+from vital_ai_vitalsigns.service.vital_name_graph import VitalNameGraph
 from vital_ai_vitalsigns.service.vector.vector_collection import VitalVectorCollection
 from vital_ai_vitalsigns.service.vector.vector_query import VitalVectorQuery
 from vital_ai_vitalsigns.service.vector.vector_result import VitalVectorResult
 from vital_ai_vitalsigns.service.vector.vector_result_list import VitalVectorResultList
 from vital_ai_vitalsigns.service.vector.vector_service import VitalVectorService
 from vital_ai_vitalsigns.service.vector.vector_status import VitalVectorStatus
-from vital_ai_vitalsigns.service.vital_namespace import VitalNamespace
 from vital_ai_vitalsigns.service.vital_service_status import VitalServiceStatus, VitalServiceStatusType
 from vital_ai_vitalsigns.metaql.metaql_query import SelectQuery as MetaQLSelectQuery
 from vital_ai_vitalsigns.metaql.metaql_query import GraphQuery as MetaQLGraphQuery
@@ -205,21 +203,19 @@ class VitalService(BaseService):
 
     def get_graph(self, graph_id: str, *,
                   global_graph: bool = False,
-                  account_id: str|None = None) -> VitalNamespace:
+                  account_id: str|None = None) -> VitalNameGraph:
 
         name_graph = self.graph_service.get_graph(graph_id,
                                                   global_graph=global_graph,
                                                   account_id=account_id)
 
-        namespace = VitalNamespace(name_graph.get_graph_uri())
-
-        return namespace
+        return name_graph
 
     def list_graphs(self, *,
                     account_id: str | None = None,
                     include_global: bool = True,
                     include_private: bool = True
-                    ) -> List[VitalNamespace]:
+                    ) -> List[VitalNameGraph]:
 
         name_graph_list = self.graph_service.list_graphs(
             account_id=account_id,
@@ -227,14 +223,7 @@ class VitalService(BaseService):
             include_private=include_private
         )
 
-        namespace_list = []
-
-        for name_graph in name_graph_list:
-            graph_uri = name_graph.get_graph_uri()
-            namespace = VitalNamespace(graph_uri)
-            namespace_list.append(namespace)
-
-        return namespace_list
+        return name_graph_list
 
     # create graph
     # store name graph in vital service graph and in the graph itself

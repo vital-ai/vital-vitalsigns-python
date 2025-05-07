@@ -30,6 +30,7 @@ class MetaQLQuery(TypedDict):
 
     query_type: METAQL_QUERY_TYPE
     graph_uri_list: Optional[List[str]]
+    graph_id_list: Optional[List[str]]
 
     arc: Union[Arc,ArcRoot]
 

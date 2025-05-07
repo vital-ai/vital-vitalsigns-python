@@ -61,7 +61,8 @@ class MetaQLSparqlBuilder:
     # KGSlot uses sub-classes so will need to include those
     # if constraining on the type
 
-    def build_sparql(self, metaql_query: MetaQLQuery) -> MetaQLSparqlImpl | None:
+    def build_sparql(self, metaql_query: MetaQLQuery, *,
+                     base_uri: str|None = None, namespace: str|None = None, account_id: str|None = None, is_global: bool = False) -> MetaQLSparqlImpl | None:
 
         # print(metaql_query)
 
@@ -86,9 +87,23 @@ class MetaQLSparqlBuilder:
             limit = sparql_impl_out.get_limit()
             offset = sparql_impl_out.get_offset()
             resolve_objects = sparql_impl_out.get_resolve_objects()
+
             graph_uri_list = sparql_impl_out.get_graph_uri_list()
 
-            graph_uri = graph_uri_list[0]
+            graph_id_list = sparql_impl_out.get_graph_id_list()
+
+
+            # graph_uri = graph_uri_list[0]
+
+            graph_id = graph_id_list[0]
+
+            # TODO add account_id
+
+            if is_global:
+                graph_uri = f"{base_uri}/{namespace}/GLOBAL/{graph_id}"
+            else:
+                graph_uri = f"{base_uri}/{namespace}/{graph_id}"
+
 
             # print("Binding List:")
             # for binding in sparql_impl_out.get_binding_list():
@@ -146,11 +161,14 @@ OFFSET {offset}
         offset = graph_query.get('offset', None)
         resolve_objects = graph_query.get('resolve_objects', None)
         graph_uri_list = graph_query.get('graph_uri_list', None)
+        graph_id_list = graph_query.get('graph_id_list', None)
 
         sparql_impl.set_limit(limit)
         sparql_impl.set_offset(offset)
         sparql_impl.set_resolve_objects(resolve_objects)
         sparql_impl.set_graph_uri_list(graph_uri_list)
+        sparql_impl.set_graph_id_list(graph_id_list)
+
 
         arc: Arc | ArcRoot | None = graph_query.get('arc', None)
 

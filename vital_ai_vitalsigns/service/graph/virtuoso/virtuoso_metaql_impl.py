@@ -16,7 +16,13 @@ class VirtuosoMetaQLImpl:
 
         graph_uri_list = select_query.get('graph_uri_list', [])
 
+        graph_id_list = select_query.get('graph_id_list', [])
+
+
         print(graph_uri_list)
+
+        print(graph_id_list)
+
 
         return ""
 
@@ -31,6 +37,9 @@ class VirtuosoMetaQLImpl:
         # print(graph_query)
 
         graph_uri_list = graph_query.get('graph_uri_list', [])
+
+        graph_id_list = graph_query.get('graph_id_list', [])
+
 
         return ""
 

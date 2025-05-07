@@ -1,5 +1,5 @@
 from typing import TypeVar
-from vital_ai_vitalsigns.service.graph.fuseki_service import FusekiService
+from vital_ai_vitalsigns.service.graph.fuseki.fuseki_service import FusekiService
 
 G = TypeVar('G', bound='GraphObject')
 

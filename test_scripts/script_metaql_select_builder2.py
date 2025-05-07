@@ -7,12 +7,10 @@ from test_scripts.construct_query import ConstructQuery
 from vital_ai_vitalsigns.metaql.metaql_parser import MetaQLParser
 from vital_ai_vitalsigns.metaql.query.query_builder import QueryBuilder, AndConstraintList, PropertyConstraint, \
     ConstraintType, ClassConstraint
-from vital_ai_vitalsigns.model.VITAL_Node import VITAL_Node
 from vital_ai_vitalsigns.ontology.ontology import Ontology
-from vital_ai_vitalsigns.query.result_list import ResultList
 from vital_ai_vitalsigns.service.graph.binding import Binding
 from vital_ai_vitalsigns.service.graph.virtuoso.virtuoso_metaql_impl import VirtuosoMetaQLImpl
-from vital_ai_vitalsigns.service.graph.virtuoso_service import VirtuosoGraphService
+from vital_ai_vitalsigns.service.graph.virtuoso.virtuoso_service import VirtuosoGraphService
 from vital_ai_vitalsigns.vitalsigns import VitalSigns
 from vital_ai_vitalsigns_core.model.properties.Property_hasName import Property_hasName
 
@@ -87,7 +85,7 @@ def main():
     graph_list = vitalservice.list_graphs(account_id="account1")
 
     for g in graph_list:
-        print(f"Graph URI: {g.get_namespace()}")
+        print(f"Graph URI: {g.get_graph_uri()}")
 
     virtuoso_username = vitalservice.graph_service.username
     virtuoso_password = vitalservice.graph_service.password
@@ -103,7 +101,7 @@ def main():
         endpoint=virtuoso_endpoint
     )
 
-    wordnet_graph_uri = 'http://vital.ai/graph/wordnet-frames-graph-1'
+    # wordnet_graph_uri = 'http://vital.ai/graph/wordnet-frames-graph-1'
 
     wordnet_graph_id = 'wordnet-frames-graph-1'
 
@@ -112,7 +110,7 @@ def main():
         QueryBuilder.select_query(
             limit=10, offset=0
         )
-        .graph_uri(wordnet_graph_uri)
+        .graph_id(wordnet_graph_id)
         .constraint_list(
             AndConstraintList()
             .node_constraint(

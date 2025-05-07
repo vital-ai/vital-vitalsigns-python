@@ -1,13 +1,12 @@
 import argparse
 import os
-import sys
 import time
 
 import paramiko
 from paramiko.client import SSHClient
 from scp import SCPClient
 
-from vital_ai_vitalsigns.service.graph.virtuoso_service import VirtuosoGraphService
+from vital_ai_vitalsigns.service.graph.virtuoso.virtuoso_service import VirtuosoGraphService
 from vital_ai_vitalsigns.vitalsigns import VitalSigns
 
 

@@ -8,7 +8,7 @@ from vital_ai_vitalsigns.metaql.query.query_builder import QueryBuilder, AndCons
 from vital_ai_vitalsigns.model.VITAL_Node import VITAL_Node
 from vital_ai_vitalsigns.ontology.ontology import Ontology
 from vital_ai_vitalsigns.service.graph.virtuoso.virtuoso_metaql_impl import VirtuosoMetaQLImpl
-from vital_ai_vitalsigns.service.graph.virtuoso_service import VirtuosoGraphService
+from vital_ai_vitalsigns.service.graph.virtuoso.virtuoso_service import VirtuosoGraphService
 from vital_ai_vitalsigns.vitalsigns import VitalSigns
 from vital_ai_vitalsigns_core.model.properties.Property_hasName import Property_hasName
 
@@ -36,9 +36,13 @@ def main():
 
     print(vs_config)
 
+    graph_id = "account1"
+
+
     sq = (
         QueryBuilder.select_query()
-        .graph_uri("http://vital.ai/KGRAPH/account1/account1")
+        # .graph_uri("http://vital.ai/KGRAPH/account1/account1")
+        .graph_id(graph_id)
         .constraint_list(
             AndConstraintList()
             .node_constraint(
@@ -97,7 +101,7 @@ def main():
     graph_list = vitalservice.list_graphs(account_id="account1")
 
     for g in graph_list:
-        print(f"Graph URI: {g.get_namespace()}")
+        print(f"Graph URI: {g.get_graph_uri()}")
 
     virtuoso_username = vitalservice.graph_service.username
     virtuoso_password = vitalservice.graph_service.password
@@ -118,7 +122,8 @@ def main():
 
     metaql_result = virtuoso_graph_service.metaql_select_query(
         select_query=metaql_select_query,
-        namespace_list=ontology_list
+        namespace_list=ontology_list,
+        account_id="account1"
     )
 
     print(metaql_result)

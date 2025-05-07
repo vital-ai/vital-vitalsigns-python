@@ -4,12 +4,9 @@ from ai_haley_kg_domain.model.KGFrame import KGFrame
 from ai_haley_kg_domain.model.KGInteraction import KGInteraction
 from ai_haley_kg_domain.model.KGTextSlot import KGTextSlot
 from vital_ai_vitalsigns.ontology.ontology import Ontology
-from vital_ai_vitalsigns.service.graph.virtuoso_service import VirtuosoGraphService
+from vital_ai_vitalsigns.service.graph.virtuoso.virtuoso_service import VirtuosoGraphService
 from vital_ai_vitalsigns.utils.uri_generator import URIGenerator
 from vital_ai_vitalsigns.vitalsigns import VitalSigns
-import gzip
-from rdflib import Graph
-from SPARQLWrapper import SPARQLWrapper, POST, DIGEST
 from vital_ai_vitalsigns.service.graph.binding import Binding
 
 
@@ -78,7 +75,7 @@ def main():
     graph_list = vitalservice.list_graphs(account_id="account1")
 
     for g in graph_list:
-        print(f"Graph URI: {g.get_namespace()}")
+        print(f"Graph URI: {g.get_graph_uri()}")
 
     virtuoso_username = vitalservice.graph_service.username
     virtuoso_password = vitalservice.graph_service.password

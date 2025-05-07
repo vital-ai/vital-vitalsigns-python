@@ -13,6 +13,7 @@ class MetaQLSparqlImpl:
         self._offset: int = 0
         self._resolve_objects: bool = False
         self._graph_uri_list: List[str] = []
+        self._graph_id_list: List[str] = []
         self._root_binding: str | None = None
 
     def set_resolve_objects(self, resolve_objects: bool):
@@ -44,6 +45,12 @@ class MetaQLSparqlImpl:
 
     def get_graph_uri_list(self):
         return self._graph_uri_list
+
+    def set_graph_id_list(self, graph_id_list: List[str]):
+        self._graph_id_list = graph_id_list
+
+    def get_graph_id_list(self):
+        return self._graph_id_list
 
     def add_filter(self, filter_term: str):
         self._filter_list.append(filter_term)

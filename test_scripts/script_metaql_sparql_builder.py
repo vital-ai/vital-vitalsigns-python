@@ -1,24 +1,18 @@
 import json
-from typing import List
 from ai_haley_kg_domain.model.KGEntity import KGEntity
 from ai_haley_kg_domain.model.KGFrame import KGFrame
 from ai_haley_kg_domain.model.KGSlot import KGSlot
 from ai_haley_kg_domain.model.properties.Property_hasEntitySlotValue import Property_hasEntitySlotValue
 from ai_haley_kg_domain.model.properties.Property_hasKGSlotType import Property_hasKGSlotType
 from ai_haley_kg_domain.model.properties.Property_hasKGraphDescription import Property_hasKGraphDescription
-from vital_ai_vitalsigns.metaql.arc.metaql_arc import ARC_TRAVERSE_TYPE_PROPERTY, ARC_DIRECTION_TYPE_FORWARD, \
-    ARC_DIRECTION_TYPE_REVERSE
+from vital_ai_vitalsigns.metaql.arc.metaql_arc import ARC_TRAVERSE_TYPE_PROPERTY
 from vital_ai_vitalsigns.metaql.metaql_parser import MetaQLParser
 from vital_ai_vitalsigns.metaql.query.query_builder import QueryBuilder, AndConstraintList, PropertyConstraint, \
     ConstraintType, ClassConstraint, Arc, OrConstraintList, NodeBind, EdgeBind, PathBind, PropertyPathList, \
     MetaQLPropertyPath, AndArcList, OrArcList, SolutionBind
-from vital_ai_vitalsigns.model.VITAL_Edge import VITAL_Edge
-from vital_ai_vitalsigns.model.VITAL_Node import VITAL_Node
 from vital_ai_vitalsigns.ontology.ontology import Ontology
-from vital_ai_vitalsigns.query.result_list import ResultList
 from vital_ai_vitalsigns.service.graph.binding import Binding
-from vital_ai_vitalsigns.service.graph.virtuoso.virtuoso_metaql_impl import VirtuosoMetaQLImpl
-from vital_ai_vitalsigns.service.graph.virtuoso_service import VirtuosoGraphService
+from vital_ai_vitalsigns.service.graph.virtuoso.virtuoso_service import VirtuosoGraphService
 from vital_ai_vitalsigns.service.metaql.metaql_sparql_builder import MetaQLSparqlBuilder
 from vital_ai_vitalsigns.service.metaql.metaql_sparql_impl import MetaQLSparqlImpl
 from vital_ai_vitalsigns.vitalsigns import VitalSigns
@@ -44,12 +38,10 @@ def main():
 
     # wordnet_graph_uri = 'http://vital.ai/graph/wordnet-frames-graph-1'
 
-    # this is switching to account + graph_id
-    # base uri and namespace are prepended to this
-    # wordnet_graph_uri = "account1/graph-1"
-    # TODO
-    wordnet_graph_uri = "wordnet-frames-graph-1"
+    base_uri = "http://vital.ai"
+    namespace = "graph"
 
+    wordnet_graph_uri = "wordnet-frames-graph-1"
 
     gq = (
         QueryBuilder.graph_query(
@@ -57,7 +49,7 @@ def main():
             limit=10,
             resolve_objects=True
         )
-        .graph_uri(wordnet_graph_uri)
+        .graph_id(wordnet_graph_uri)
         .arc(
             Arc()
             .node_bind(NodeBind(name="frame"))
@@ -338,7 +330,7 @@ def main():
     sparql_builder = MetaQLSparqlBuilder()
 
     # parsed query
-    sparql_impl: MetaQLSparqlImpl = sparql_builder.build_sparql(metaql_query)
+    sparql_impl: MetaQLSparqlImpl = sparql_builder.build_sparql(metaql_query, base_uri=base_uri, namespace=namespace)
 
     # original built query
     # sparql_impl: MetaQLSparqlImpl = sparql_builder.build_sparql(gq)
@@ -347,7 +339,9 @@ def main():
 
     offset = sparql_impl.get_offset()
 
-    graph_uri = sparql_impl.get_graph_uri_list()[0]
+    graph_id = sparql_impl.get_graph_id_list()[0]
+
+    print(f"SPARQL: Graph ID: {graph_id}")
 
     resolve_objects = sparql_impl.get_resolve_objects()
 
@@ -383,7 +377,7 @@ def main():
 
     for g in graph_list:
         print(g)
-        print(f"Graph URI: {g.get_namespace()}")
+        print(f"Graph URI: {g.get_graph_uri()}")
 
     virtuoso_username = vitalservice.graph_service.username
     virtuoso_password = vitalservice.graph_service.password
@@ -392,8 +386,8 @@ def main():
     print(f"Virtuoso Endpoint: {virtuoso_endpoint}")
 
     virtuoso_graph_service = VirtuosoGraphService(
-        base_uri="http://vital.ai",
-        namespace="graph",
+        base_uri=base_uri,
+        namespace=namespace,
         username=virtuoso_username,
         password=virtuoso_password,
         endpoint=virtuoso_endpoint
@@ -402,7 +396,7 @@ def main():
     # print(f"Query string:\n---------\n{query_string}\n---------")
 
     solutions = virtuoso_graph_service.query_construct_solution(
-        graph_uri,
+        graph_id,
         query_string,
         namespace_list,
         binding_list,

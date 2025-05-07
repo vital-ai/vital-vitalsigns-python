@@ -4,7 +4,6 @@ import os
 import sys
 from vital_ai_vitalsigns.ntriples.ntriples_reader import NTriplesReader
 from vital_ai_vitalsigns.service.graph.graph_object_generator import ListGraphObjectGenerator
-from vital_ai_vitalsigns.service.graph.virtuoso_service import VirtuosoGraphService
 from vital_ai_vitalsigns.service.vital_service import VitalService
 from vital_ai_vitalsigns.vitalsigns import VitalSigns
 

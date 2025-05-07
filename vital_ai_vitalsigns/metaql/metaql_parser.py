@@ -99,6 +99,8 @@ class MetaQLParser:
 
             params_dict['metaql_query_type'] = parse_dict.get('query_type', None)
             params_dict['graph_uri_list'] = parse_dict.get('graph_uri_list', None)
+            params_dict['graph_id_list'] = parse_dict.get('graph_id_list', None)
+
             params_dict['root_arc'] = parse_dict.get('arc', None)
             params_dict['offset'] = parse_dict.get('offset', 0)
             params_dict['limit'] = parse_dict.get('limit', 10)
@@ -111,6 +113,8 @@ class MetaQLParser:
 
             params_dict['metaql_query_type'] = parse_dict.get('query_type', None)
             params_dict['graph_uri_list'] = parse_dict.get('graph_uri_list', None)
+            params_dict['graph_id_list'] = parse_dict.get('graph_id_list', None)
+
             params_dict['root_arc'] = parse_dict.get('arc', None)
             params_dict['offset'] = parse_dict.get('offset', 0)
             params_dict['limit'] = parse_dict.get('limit', 10)
@@ -127,6 +131,8 @@ class MetaQLParser:
 
             params_dict['metaql_query_type'] = parse_dict.get('query_type', None)
             params_dict['graph_uri_list'] = parse_dict.get('graph_uri_list', None)
+            params_dict['graph_id_list'] = parse_dict.get('graph_id_list', None)
+
             params_dict['root_arc'] = parse_dict.get('arc', None)
             params_dict['offset'] = parse_dict.get('offset', 0)
             params_dict['limit'] = parse_dict.get('limit', 1)
@@ -141,6 +147,8 @@ class MetaQLParser:
 
             params_dict['metaql_query_type'] = parse_dict.get('query_type', None)
             params_dict['graph_uri_list'] = parse_dict.get('graph_uri_list', None)
+            params_dict['graph_id_list'] = parse_dict.get('graph_id_list', None)
+
             params_dict['root_arc'] = parse_dict.get('arc', None)
             params_dict['offset'] = parse_dict.get('offset', 0)
             params_dict['limit'] = parse_dict.get('limit', 1)

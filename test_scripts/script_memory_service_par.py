@@ -2,19 +2,17 @@ import threading
 from concurrent.futures import as_completed, ThreadPoolExecutor
 
 import dill
-import multiprocessing as mp
 
 # mp.set_start_method('spawn', force=True)
 
 from datetime import datetime
 from rdflib import URIRef, Graph
-from vital_ai_vitalsigns.service.graph.memory_graph_service import MemoryGraphService
+from vital_ai_vitalsigns.service.graph.memory.memory_graph_service import MemoryGraphService
 from vital_ai_vitalsigns.vitalsigns import VitalSigns
 from vital_ai_vitalsigns.service.graph.graph_service_constants import VitalGraphServiceConstants
 from vital_ai_vitalsigns.block.vital_block_file import VitalBlockFile
 from vital_ai_vitalsigns.block.vital_block_reader import VitalBlockReader
 from multiprocessing import Pool
-import gc
 import traceback
 
 

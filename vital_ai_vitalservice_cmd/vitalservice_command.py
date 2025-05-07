@@ -213,7 +213,7 @@ class VitalServiceCommand:
             print(f"VitalService {name} Graph Count: {graph_count}")
 
             for graph in graph_list:
-                print(f"Graph URI: {graph.get_namespace()}")
+                print(f"Graph URI: {graph.get_graph_uri()}")
         else:
             print(f"VitalService not found in config: {name}")
 
@@ -316,7 +316,7 @@ class VitalServiceCommand:
             graph_list = service.list_graphs()
 
             for graph in graph_list:
-                print(f"Graph URI: {graph.get_namespace()}")
+                print(f"Graph URI: {graph.get_graph_uri()}")
         else:
             print(f"VitalService not found in config: {name}")
 

@@ -37,7 +37,7 @@ def main():
     graph_list = vitalservice.list_graphs(account_id = "account1")
 
     for g in graph_list:
-        print(f"Graph URI: {g.get_namespace()}")
+        print(f"Graph URI: {g.get_graph_uri()}")
 
     exit(0)
 

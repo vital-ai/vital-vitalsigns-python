@@ -6,7 +6,7 @@ from vital_ai_vitalsigns.query.metaql_result import MetaQLResult
 from vital_ai_vitalsigns.query.result_list import ResultList
 from vital_ai_vitalsigns.query.solution_list import SolutionList
 from vital_ai_vitalsigns.service.graph.binding import Binding
-from vital_ai_vitalsigns.service.graph.name_graph import VitalNameGraph
+from vital_ai_vitalsigns.service.vital_name_graph import VitalNameGraph
 from vital_ai_vitalsigns.service.graph.vital_graph_status import VitalGraphStatus
 from vital_ai_vitalsigns.metaql.metaql_query import GraphQuery as MetaQLGraphQuery, SelectQuery as MetaQLSelectQuery
 

@@ -357,6 +357,7 @@ class SelectQuery(Query):
     def __init__(self, *, offset: int = 0, limit: int = 100,
                  container: "QueryContainer"):
         self._graph_uri_list = []
+        self._graph_id_list = []
         self._constraint_list_list = []
         self._offset = offset
         self._limit = limit
@@ -371,8 +372,12 @@ class SelectQuery(Query):
         self._graph_uri_list.append(graph_uri)
         return self
 
+    def graph_id(self, graph_id: str):
+        self._graph_id_list.append(graph_id)
+        return self
+
     def __repr__(self):
-        return f"SelectQuery(graph_uri_list={self._graph_uri_list}, constraint_list={self._constraint_list_list}, offset={self._offset}, limit={self._limit})"
+        return f"SelectQuery(graph_id_list={self._graph_id_list}, graph_uri_list={self._graph_uri_list}, constraint_list={self._constraint_list_list}, offset={self._offset}, limit={self._limit})"
 
     def build(self):
         return self._container.build()
@@ -385,6 +390,7 @@ class GraphQuery(Query):
                  resolve_objects: bool = False,
                  container: "QueryContainer"):
         self._graph_uri_list = []
+        self._graph_id_list = []
         self._root_arc = None
         self._resolve_objects = resolve_objects
         self._offset = offset
@@ -401,8 +407,12 @@ class GraphQuery(Query):
         self._graph_uri_list.append(graph_uri)
         return self
 
+    def graph_id(self, graph_id: str):
+        self._graph_id_list.append(graph_id)
+        return self
+
     def __repr__(self):
-        return f"GraphQuery(graph_uri_list={self._graph_uri_list}, arc={self._root_arc}, offset={self._offset}, limit={self._limit})"
+        return f"GraphQuery(graph_id_list={self._graph_id_list}, graph_uri_list={self._graph_uri_list}, arc={self._root_arc}, offset={self._offset}, limit={self._limit})"
 
     def build(self):
         return self._container.build()
@@ -412,6 +422,7 @@ class AggregateSelectQuery:
     def __init__(self, *, offset: int = 0, limit: int = 100,
                  container: "QueryContainer"):
         self._graph_uri_list = []
+        self._graph_id_list = []
         self._constraint_list_list = []
         self._offset = offset
         self._limit = limit
@@ -426,8 +437,12 @@ class AggregateSelectQuery:
         self._graph_uri_list.append(graph_uri)
         return self
 
+    def graph_id(self, graph_id: str):
+        self._graph_id_list.append(graph_id)
+        return self
+
     def __repr__(self):
-        return f"AggregateSelectQuery(graph_uri_list={self._graph_uri_list}, constraint_list={self._constraint_list_list}, offset={self._offset}, limit={self._limit})"
+        return f"AggregateSelectQuery(graph_id_list={self._graph_id_list}, graph_uri_list={self._graph_uri_list}, constraint_list={self._constraint_list_list}, offset={self._offset}, limit={self._limit})"
 
     def build(self):
         return self._container.build()
@@ -437,6 +452,7 @@ class AggregateGraphQuery:
     def __init__(self, *, offset: int = 0, limit: int = 100,
                  container: "QueryContainer"):
         self._graph_uri_list = []
+        self._graph_id_list = []
         self._root_arc = None
         self._offset = offset
         self._limit = limit
@@ -446,6 +462,10 @@ class AggregateGraphQuery:
         self._graph_uri_list.append(graph_uri)
         return self
 
+    def graph_id(self, graph_id: str):
+        self._graph_id_list.append(graph_id)
+        return self
+
     def arc(self, arc: Arc):
         arc.set_container(self._container)
         arc.set_is_root(True)
@@ -453,7 +473,7 @@ class AggregateGraphQuery:
         return self
 
     def __repr__(self):
-        return f"AggregateGraphQuery(graph_uri_list={self._graph_uri_list}, arc={self._root_arc}, offset={self._offset}, limit={self._limit})"
+        return f"AggregateGraphQuery(graph_id_list={self._graph_id_list}, graph_uri_list={self._graph_uri_list}, arc={self._root_arc}, offset={self._offset}, limit={self._limit})"
 
     def build(self):
         return self._container.build()
@@ -844,6 +864,7 @@ class QueryContainer:
             sq = MetaQLBuilder.build_metaql_query(
                 metaql_query_type=METAQL_SELECT_QUERY,
                 graph_uri_list=self.query._graph_uri_list,
+                graph_id_list=self.query._graph_id_list,
                 limit=self.query._limit,
                 offset=self.query._offset,
                 root_arc=root_arc
@@ -868,6 +889,7 @@ class QueryContainer:
             gq = MetaQLBuilder.build_metaql_query(
                 metaql_query_type=METAQL_GRAPH_QUERY,
                 graph_uri_list=self.query._graph_uri_list,
+                graph_id_list=self.query._graph_id_list,
                 resolve_objects=self.query._resolve_objects,
                 limit=self.query._limit,
                 offset=self.query._offset,
@@ -892,6 +914,7 @@ class QueryContainer:
             asq = MetaQLBuilder.build_metaql_query(
                 metaql_query_type=METAQL_AGGREGATE_SELECT_QUERY,
                 graph_uri_list=self.query._graph_uri_list,
+                graph_id_list=self.query._graph_id_list,
                 limit=self.query._limit,
                 offset=self.query._offset,
                 root_arc=root_arc
@@ -914,6 +937,7 @@ class QueryContainer:
             agq = MetaQLBuilder.build_metaql_query(
                 metaql_query_type=METAQL_AGGREGATE_GRAPH_QUERY,
                 graph_uri_list=self.query._graph_uri_list,
+                graph_id_list=self.query._graph_id_list,
                 limit=self.query._limit,
                 offset=self.query._offset,
                 root_arc=root_arc

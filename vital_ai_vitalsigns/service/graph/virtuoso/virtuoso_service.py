@@ -1,26 +1,20 @@
 import logging
 import time
-from typing import List, TypeVar, Tuple
+from typing import List, TypeVar
 import pyodbc
 import rdflib.plugins.sparql.aggregates
 import requests
 from SPARQLWrapper import SPARQLWrapper, DIGEST, JSON, POST
-from rdflib import Graph, URIRef, BNode, Literal, RDF
+from rdflib import Graph, URIRef, Literal
 from requests.adapters import HTTPAdapter
-from requests.auth import HTTPDigestAuth, HTTPBasicAuth
+from requests.auth import HTTPDigestAuth
 from requests.exceptions import ChunkedEncodingError
 from urllib3 import Retry
 from urllib3.exceptions import ProtocolError
-from vital_ai_vitalsigns.collection.graph_collection import GraphCollection
 from vital_ai_vitalsigns.metaql.arc.metaql_arc import ArcRoot
-from vital_ai_vitalsigns.metaql.metaql_builder import MetaQLBuilder
-from vital_ai_vitalsigns.metaql.query.query_builder import QueryBuilder, AndConstraintList, PropertyConstraint, \
-    ClassConstraint
-from vital_ai_vitalsigns.model.VITAL_Edge import VITAL_Edge
-from vital_ai_vitalsigns.model.VITAL_Node import VITAL_Node
+from vital_ai_vitalsigns.metaql.query.query_builder import QueryBuilder, AndConstraintList, ClassConstraint
 from vital_ai_vitalsigns.ontology.ontology import Ontology
 from vital_ai_vitalsigns.query.metaql_result import MetaQLResult
-from vital_ai_vitalsigns.query.result_element import ResultElement
 from vital_ai_vitalsigns.query.result_list import ResultList
 from vital_ai_vitalsigns.query.solution import Solution
 from vital_ai_vitalsigns.query.solution_list import SolutionList
@@ -29,10 +23,8 @@ from vital_ai_vitalsigns.service.graph.graph_object_generator import GraphObject
 from vital_ai_vitalsigns.service.graph.graph_service import VitalGraphService
 from vital_ai_vitalsigns.service.graph.graph_service_constants import VitalGraphServiceConstants
 from vital_ai_vitalsigns.service.graph.graph_service_status import GraphServiceStatus, GraphServiceStatusType
-from vital_ai_vitalsigns.service.graph.name_graph import VitalNameGraph
-from vital_ai_vitalsigns.model.GraphObject import GraphObject
+from vital_ai_vitalsigns.service.vital_name_graph import VitalNameGraph
 from vital_ai_vitalsigns.service.graph.utils.virtuoso_utils import VirtuosoUtils
-from vital_ai_vitalsigns.service.graph.virtuoso.virtuoso_metaql_impl import VirtuosoMetaQLImpl
 from vital_ai_vitalsigns.service.graph.vital_graph_status import VitalGraphStatus
 from vital_ai_vitalsigns.service.metaql.metaql_sparql_builder import MetaQLSparqlBuilder
 from vital_ai_vitalsigns.service.metaql.metaql_sparql_impl import MetaQLSparqlImpl
@@ -2156,7 +2148,8 @@ OFFSET {offset}
 
     def metaql_select_query(self, *,
                             select_query: MetaQLSelectQuery,
-                            namespace_list: List[Ontology] = None) -> MetaQLResult:
+                            namespace_list: List[Ontology] = None,
+                            account_id: str|None = None, is_global: bool = False) -> MetaQLResult:
 
         base_uri = self.base_uri
         namespace = self.namespace
@@ -2173,6 +2166,10 @@ OFFSET {offset}
         sparql_impl = MetaQLSparqlImpl()
 
         graph_uri_list = select_query.get('graph_uri_list', [])
+
+        graph_id_list = select_query.get('graph_id_list', [])
+
+
         offset = select_query.get('offset', 0)
         limit = select_query.get('limit', 10)
 
@@ -2242,17 +2239,19 @@ OFFSET {offset}
 
         logging.info(query_str)
 
-        # TODO handle global graph case
+        # graph_uri = graph_uri_list[0]
 
-        graph_uri = graph_uri_list[0]
+        # TODO handle list instead of single graph_id
 
-        name_graph = self.get_name_graph(graph_uri)
+        graph_id = graph_id_list[0]
 
-        graph_id = name_graph.get_graph_id()
+        # name_graph = self.get_name_graph(graph_uri)
 
-        account_id = name_graph.get_account_id()
+        # graph_id = name_graph.get_graph_id()
 
-        is_global = name_graph.is_global()
+        # account_id = name_graph.get_account_id()
+
+        # is_global = name_graph.is_global()
 
         solutions = self.query_construct_solution(
             graph_id,
@@ -2288,7 +2287,8 @@ OFFSET {offset}
 
     def metaql_graph_query(self, *,
                            graph_query: MetaQLGraphQuery,
-                           namespace_list: List[Ontology] = None) -> MetaQLResult:
+                           namespace_list: List[Ontology] = None,
+                           account_id: str|None = None, is_global: bool = False) -> MetaQLResult:
 
         base_uri = self.base_uri
         namespace = self.namespace
@@ -2301,15 +2301,20 @@ OFFSET {offset}
 
         offset = sparql_impl.get_offset()
 
-        graph_uri = sparql_impl.get_graph_uri_list()[0]
+        # graph_uri = sparql_impl.get_graph_uri_list()[0]
 
-        name_graph = self.get_name_graph(graph_uri)
+        # TODO handle list instead of single graph_id
 
-        graph_id = name_graph.get_graph_id()
+        graph_id = sparql_impl.get_graph_id_list()[0]
 
-        account_id = name_graph.get_account_id()
 
-        is_global = name_graph.is_global()
+        # name_graph = self.get_name_graph(graph_uri)
+
+        # graph_id = name_graph.get_graph_id()
+
+        # account_id = name_graph.get_account_id()
+
+        # is_global = name_graph.is_global()
 
         resolve_objects = sparql_impl.get_resolve_objects()
 

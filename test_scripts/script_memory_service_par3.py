@@ -8,17 +8,12 @@ from rdflib import URIRef, Graph, Dataset, Literal, Namespace
 from test_scripts.construct_query import ConstructQuery
 from vital_ai_vitalsigns.ontology.ontology import Ontology
 from vital_ai_vitalsigns.service.graph.binding import Binding, BindingValueType
-from vital_ai_vitalsigns.service.graph.memory_graph_service import MemoryGraphService
+from vital_ai_vitalsigns.service.graph.memory.memory_graph_service import MemoryGraphService
 from vital_ai_vitalsigns.vitalsigns import VitalSigns
-from vital_ai_vitalsigns.service.graph.graph_service_constants import VitalGraphServiceConstants
 from vital_ai_vitalsigns.block.vital_block_file import VitalBlockFile
 from vital_ai_vitalsigns.block.vital_block_reader import VitalBlockReader
-import traceback
 # from rdflib.plugins.stores.berkeleydb import has_bsddb
 
-import cProfile
-import pstats
-import io
 import requests
 from vital_ai_vitalsigns_core.model.RDFStatement import RDFStatement
 

@@ -1,22 +1,18 @@
 from abc import abstractmethod, ABC
-from typing import TypeVar, List, Tuple
+from typing import TypeVar, List
 
-from vital_ai_vitalsigns.metaql.metaql_query import MetaQLQuery
 from vital_ai_vitalsigns.metaql.metaql_query import SelectQuery as MetaQLSelectQuery
 from vital_ai_vitalsigns.metaql.metaql_query import GraphQuery as MetaQLGraphQuery
-from vital_ai_vitalsigns.metaql.metaql_result_list import MetaQLResultList
 
-from vital_ai_vitalsigns.model.GraphObject import GraphObject
 from vital_ai_vitalsigns.ontology.ontology import Ontology
 from vital_ai_vitalsigns.query.metaql_result import MetaQLResult
 from vital_ai_vitalsigns.query.result_list import ResultList
 from vital_ai_vitalsigns.query.solution_list import SolutionList
 from vital_ai_vitalsigns.service.graph.binding import Binding
 from vital_ai_vitalsigns.service.graph.graph_object_generator import GraphObjectGenerator
-from vital_ai_vitalsigns.service.graph.graph_service_status import GraphServiceStatus, GraphServiceStatusType
-from vital_ai_vitalsigns.service.graph.name_graph import VitalNameGraph
+from vital_ai_vitalsigns.service.graph.graph_service_status import GraphServiceStatus
+from vital_ai_vitalsigns.service.vital_name_graph import VitalNameGraph
 from vital_ai_vitalsigns.service.graph.vital_graph_status import VitalGraphStatus
-from urllib.parse import urlparse, unquote
 
 G = TypeVar('G', bound='GraphObject')
 
@@ -353,13 +349,15 @@ class VitalGraphService(ABC):
     @abstractmethod
     def metaql_select_query(self, *,
                             select_query: MetaQLSelectQuery,
-                            namespace_list: List[Ontology]) -> MetaQLResult:
+                            namespace_list: List[Ontology],
+                            account_id: str|None = None, is_global: bool = False) -> MetaQLResult:
         pass
 
     @abstractmethod
     def metaql_graph_query(self, *,
                            graph_query: MetaQLGraphQuery,
-                           namespace_list: List[Ontology]) -> MetaQLResult:
+                           namespace_list: List[Ontology],
+                           account_id: str|None = None, is_global: bool = False) -> MetaQLResult:
         pass
 
     #################################################

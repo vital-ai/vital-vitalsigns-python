@@ -14,7 +14,7 @@ def main():
 
     print("VitalSigns Initialized")
 
-    wordnet_graph_uri = 'http://vital.ai/graph/wordnet-frames-graph-1'
+    # wordnet_graph_uri = 'http://vital.ai/graph/wordnet-frames-graph-1'
 
     wordnet_graph_id = 'wordnet-frames-graph-1'
 
@@ -22,7 +22,7 @@ def main():
         QueryBuilder.select_query(
             limit=10, offset=0
         )
-        .graph_uri(wordnet_graph_id)
+        .graph_id(wordnet_graph_id)
         .constraint_list(
             AndConstraintList()
             .node_constraint(

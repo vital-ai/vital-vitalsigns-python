@@ -11,8 +11,6 @@ from vital_ai_vitalsigns.model.VITAL_Edge import VITAL_Edge
 from vital_ai_vitalsigns.model.VITAL_Node import VITAL_Node
 from vital_ai_vitalsigns.ontology.ontology import Ontology
 from vital_ai_vitalsigns.service.graph.binding import Binding
-from vital_ai_vitalsigns.service.graph.virtuoso.virtuoso_metaql_impl import VirtuosoMetaQLImpl
-from vital_ai_vitalsigns.service.graph.virtuoso_service import VirtuosoGraphService
 from vital_ai_vitalsigns.service.metaql.metaql_sparql_builder import MetaQLSparqlBuilder
 from vital_ai_vitalsigns.service.metaql.metaql_sparql_impl import MetaQLSparqlImpl
 from vital_ai_vitalsigns.vitalsigns import VitalSigns
@@ -51,7 +49,7 @@ def main():
             offset=0,
             resolve_objects=True
         )
-        .graph_uri("urn:123")
+        .graph_id("urn:123")
         .arc(
             Arc()
             .node_bind(NodeBind(name="node1"))
@@ -238,7 +236,9 @@ def main():
 
     sparql_builder = MetaQLSparqlBuilder()
 
-    sparql_impl: MetaQLSparqlImpl = sparql_builder.build_sparql(metaql_graph_query)
+    sparql_impl: MetaQLSparqlImpl = sparql_builder.build_sparql(metaql_graph_query,
+                                                                base_uri="http://vital.ai",
+                                                                namespace="graph")
 
     print(sparql_impl)
 
@@ -250,6 +250,9 @@ def main():
     offset = sparql_impl.get_offset()
 
     graph_uri = sparql_impl.get_graph_uri_list()[0]
+
+    # graph_id = sparql_impl.get_graph_id_list()[0]
+
 
     resolve_objects = sparql_impl.get_resolve_objects()
 

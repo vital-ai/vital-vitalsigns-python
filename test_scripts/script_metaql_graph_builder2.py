@@ -9,19 +9,14 @@ from ai_haley_kg_domain.model.properties.Property_hasKGSlotType import Property_
 from ai_haley_kg_domain.model.properties.Property_hasKGraphDescription import Property_hasKGraphDescription
 
 from test_scripts.construct_query import ConstructQuery
-from vital_ai_vitalsigns.metaql.arc.metaql_arc import ARC_TRAVERSE_TYPE_PROPERTY, ARC_DIRECTION_TYPE_FORWARD, \
-    ARC_DIRECTION_TYPE_REVERSE
+from vital_ai_vitalsigns.metaql.arc.metaql_arc import ARC_TRAVERSE_TYPE_PROPERTY, ARC_DIRECTION_TYPE_REVERSE
 from vital_ai_vitalsigns.metaql.metaql_parser import MetaQLParser
 from vital_ai_vitalsigns.metaql.query.query_builder import QueryBuilder, AndConstraintList, PropertyConstraint, \
-    ConstraintType, ClassConstraint, Arc, OrConstraintList, NodeBind, EdgeBind, PathBind, PropertyPathList, \
-    MetaQLPropertyPath, AndArcList, OrArcList
-from vital_ai_vitalsigns.model.VITAL_Edge import VITAL_Edge
-from vital_ai_vitalsigns.model.VITAL_Node import VITAL_Node
+    ConstraintType, ClassConstraint, Arc, OrConstraintList, NodeBind, PathBind, PropertyPathList, \
+    MetaQLPropertyPath, OrArcList
 from vital_ai_vitalsigns.ontology.ontology import Ontology
-from vital_ai_vitalsigns.query.result_list import ResultList
 from vital_ai_vitalsigns.service.graph.binding import Binding
-from vital_ai_vitalsigns.service.graph.virtuoso.virtuoso_metaql_impl import VirtuosoMetaQLImpl
-from vital_ai_vitalsigns.service.graph.virtuoso_service import VirtuosoGraphService
+from vital_ai_vitalsigns.service.graph.virtuoso.virtuoso_service import VirtuosoGraphService
 from vital_ai_vitalsigns.vitalsigns import VitalSigns
 from vital_ai_vitalsigns_core.model.properties.Property_hasName import Property_hasName
 
@@ -122,7 +117,7 @@ def main():
     graph_list = vitalservice.list_graphs(account_id="account1")
 
     for g in graph_list:
-        print(f"Graph URI: {g.get_namespace()}")
+        print(f"Graph URI: {g.get_graph_uri()}")
 
     virtuoso_username = vitalservice.graph_service.username
     virtuoso_password = vitalservice.graph_service.password
@@ -139,9 +134,9 @@ def main():
         namespace="graph"
     )
 
-    wordnet_graph_uri = 'http://vital.ai/graph/wordnet-frames-graph-1'
+    # wordnet_graph_uri = 'http://vital.ai/graph/wordnet-frames-graph-1'
 
-    wordnet_graph_uri = 'wordnet-frames-graph-1'
+    wordnet_graph_id = 'wordnet-frames-graph-1'
 
 
     gq = (
@@ -150,7 +145,7 @@ def main():
             limit=100,
             resolve_objects=True
         )
-        .graph_uri(wordnet_graph_uri)
+        .graph_id(wordnet_graph_id)
         .arc(
             Arc()
             .constraint_list(
@@ -420,7 +415,7 @@ def main():
     # return
 
     solutions = virtuoso_graph_service.query_construct_solution(
-        wordnet_graph_uri,
+        wordnet_graph_id,
         #"wordnet-frames-graph-1",
         construct_query.query,
         construct_query.namespace_list,

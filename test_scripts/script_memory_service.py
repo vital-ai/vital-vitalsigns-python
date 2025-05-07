@@ -1,5 +1,5 @@
 from rdflib import URIRef
-from vital_ai_vitalsigns.service.graph.memory_graph_service import MemoryGraphService
+from vital_ai_vitalsigns.service.graph.memory.memory_graph_service import MemoryGraphService
 from vital_ai_vitalsigns.vitalsigns import VitalSigns
 from vital_ai_vitalsigns.service.graph.graph_service_constants import VitalGraphServiceConstants
 

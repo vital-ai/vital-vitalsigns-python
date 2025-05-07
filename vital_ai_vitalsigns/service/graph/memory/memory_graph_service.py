@@ -1,24 +1,19 @@
-import os
 from typing import List
-from rdflib import Dataset, URIRef, Graph, Literal
-from vital_ai_vitalsigns.collection.graph_collection import GraphCollection
+from rdflib import URIRef, Graph
 from vital_ai_vitalsigns.impl.rdflib.rdflib_sparql_impl import RDFlibSparqlImpl
 from vital_ai_vitalsigns.metaql.metaql_query import GraphQuery as MetaQLGraphQuery, SelectQuery as MetaQLSelectQuery
 from vital_ai_vitalsigns.ontology.ontology import Ontology
 from vital_ai_vitalsigns.query.metaql_result import MetaQLResult
 from vital_ai_vitalsigns.query.result_list import ResultList
-from vital_ai_vitalsigns.query.solution import Solution
 from vital_ai_vitalsigns.query.solution_list import SolutionList
-from vital_ai_vitalsigns.service.graph.binding import Binding, BindingValueType
+from vital_ai_vitalsigns.service.graph.binding import Binding
 from vital_ai_vitalsigns.service.graph.graph_object_generator import GraphObjectGenerator
 from vital_ai_vitalsigns.service.graph.graph_service import VitalGraphService, G
 from vital_ai_vitalsigns.service.graph.graph_service_status import GraphServiceStatus, GraphServiceStatusType
-from vital_ai_vitalsigns.service.graph.name_graph import VitalNameGraph
+from vital_ai_vitalsigns.service.vital_name_graph import VitalNameGraph
 from vital_ai_vitalsigns.service.graph.vital_graph_status import VitalGraphStatus
 from vital_ai_vitalsigns.service.graph.graph_service_constants import VitalGraphServiceConstants
 from vital_ai_vitalsigns.utils.uri_generator import URIGenerator
-from vital_ai_vitalsigns.vitalsigns import VitalSigns
-from vital_ai_vitalsigns_core.model.RDFStatement import RDFStatement
 from vital_ai_vitalsigns_core.model.VitalSegment import VitalSegment
 
 
