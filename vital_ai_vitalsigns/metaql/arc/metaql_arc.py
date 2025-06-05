@@ -1,8 +1,16 @@
-from typing import List, Literal, Optional
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, List, Literal, Optional
 from typing_extensions import TypedDict
 from vital_ai_vitalsigns.metaql.constraint_list.metaql_constraint_list import MetaQLConstraintList
 
 # from vital_ai_vitalsigns.metaql.arc_list.metaql_arc_list import MetaQLArcList
+
+if TYPE_CHECKING:
+    # Only import the actual MetaQLArcList class for type‐checking; at runtime
+    # this block is ignored, which breaks the circular dependency.
+    from vital_ai_vitalsigns.metaql.arc_list.metaql_arc_list import MetaQLArcList
+
 
 ARC_TYPE_ARC_ROOT = "ARC_TYPE_ARC_ROOT"
 ARC_TYPE_ARC = "ARC_TYPE_ARC"
@@ -96,14 +104,18 @@ class MetaQLArc(TypedDict):
 # or within an arc list
 class Arc(MetaQLArc):
     # break circular dependency
-    arclist_list: Optional[List[TypedDict]] # List["MetaQLArcList"]
+    # arclist_list: Optional[List[TypedDict]] # List["MetaQLArcList"]
+    arclist_list: Optional[List[MetaQLArcList]]
+
     arc: Optional["Arc"]
 
 
 # use for top-level arc which may contain arc lists like AND_ARC
 class ArcRoot(MetaQLArc):
     # break circular dependency
-    arclist_list: Optional[List[TypedDict]] # List["MetaQLArcList"]
+    # arclist_list: Optional[List[TypedDict]] # List["MetaQLArcList"]
+    arclist_list: Optional[List["MetaQLArcList"]]
+
     arc: Optional[Arc]
 
 
