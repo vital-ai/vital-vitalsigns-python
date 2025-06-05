@@ -1,7 +1,4 @@
-import json
-
 from vital_ai_vitalsigns.model.GraphObject import GraphObject
-
 
 class VitalBlock:
     def __init__(self, objects, *, triples_only=False):

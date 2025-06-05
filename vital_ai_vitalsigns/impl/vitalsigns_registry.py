@@ -10,7 +10,6 @@ import importlib.resources as resources
 import concurrent.futures
 from typing import Type, Dict
 from importlib.metadata import entry_points
-
 from vital_ai_vitalsigns.model.GraphObject import GraphObject
 from vital_ai_vitalsigns.ontology.vitalsigns_ontology_manager import VitalSignsOntologyManager
 

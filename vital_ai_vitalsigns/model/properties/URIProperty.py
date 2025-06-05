@@ -1,9 +1,6 @@
 import traceback
-
-import rdflib
 from rdflib import URIRef
 from vital_ai_vitalsigns.model.properties.IProperty import IProperty
-
 
 class URIProperty(IProperty):
     def __init__(self, value: str):

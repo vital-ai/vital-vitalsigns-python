@@ -49,3 +49,11 @@ class VitalServiceStatus:
         for key, value in changes.items():
             if key in allowed_keys:
                 setattr(self, key, value)
+
+    def __repr__(self):
+
+        status_str = f"status={self.status}"
+
+        # TODO add message, changes, etc.
+
+        return f"VitalServiceStatus({status_str})"

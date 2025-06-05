@@ -1,15 +1,16 @@
 from abc import abstractmethod
 from typing import List, TypeVar
+from vital_ai_vitalsigns.ontology.ontology import Ontology
 from vital_ai_vitalsigns.service.graph.graph_object_generator import GraphObjectGenerator
 from vital_ai_vitalsigns.service.vector.vector_collection import VitalVectorCollection
-from vital_ai_vitalsigns.service.vector.vector_query import VitalVectorQuery
 from vital_ai_vitalsigns.service.vector.vector_result import VitalVectorResult
 from vital_ai_vitalsigns.service.vector.vector_result_list import VitalVectorResultList
 from vital_ai_vitalsigns.service.vector.vector_status import VitalVectorStatus
+from vital_ai_vitalsigns.metaql.metaql_query import SelectQuery as MetaQLSelectQuery
+from vital_ai_vitalsigns.metaql.metaql_query import GraphQuery as MetaQLGraphQuery
 
 
 G = TypeVar('G', bound='GraphObject')
-
 
 class VitalVectorService:
     def __init__(self, **kwargs):
@@ -191,6 +192,11 @@ class VitalVectorService:
         pass
 
     @abstractmethod
-    def vector_query(self, vector_query: VitalVectorQuery) -> VitalVectorResultList:
+    def metaql_select_query(self, *, graph_query: MetaQLSelectQuery,
+                           namespace_list: List[Ontology] = None) -> VitalVectorResultList:
         pass
 
+    @abstractmethod
+    def metaql_graph_query(self, *, graph_query: MetaQLGraphQuery,
+                           namespace_list: List[Ontology] = None) -> VitalVectorResultList:
+        pass

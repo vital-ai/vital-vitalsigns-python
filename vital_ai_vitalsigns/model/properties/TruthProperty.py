@@ -1,7 +1,6 @@
 from vital_ai_vitalsigns.model.datatype.Truth import Truth
 from vital_ai_vitalsigns.model.properties.IProperty import IProperty
 
-
 # TODO add in implementation
 
 class TruthProperty(IProperty):

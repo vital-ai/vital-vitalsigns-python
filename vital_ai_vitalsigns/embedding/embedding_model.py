@@ -5,7 +5,6 @@ import logging
 import numpy as np
 import onnxruntime as ort
 from transformers import AutoTokenizer
-
 from importlib.resources import files  # Python 3.9+
 # from sentence_transformers import SentenceTransformer
 

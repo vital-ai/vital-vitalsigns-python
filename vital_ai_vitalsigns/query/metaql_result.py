@@ -1,5 +1,4 @@
 from typing import List
-
 from vital_ai_vitalsigns.model.GraphObject import GraphObject
 from vital_ai_vitalsigns.query.result_element import ResultElement
 

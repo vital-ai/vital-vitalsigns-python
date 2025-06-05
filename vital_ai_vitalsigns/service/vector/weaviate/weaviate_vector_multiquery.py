@@ -1,6 +1,6 @@
 
 
-class VitalVectorMultiQuery:
+class WeaviateVectorMultiQuery:
     pass
 
 # case of querying collection that has two or more vectors

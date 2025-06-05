@@ -1,7 +1,6 @@
 import bz2
 import os
 
-
 class VitalBlockIO:
     def __init__(self, file):
         self.file = file

@@ -1,8 +1,6 @@
 import json
 from vital_ai_vitalsigns.block.vital_block import VitalBlock
 from vital_ai_vitalsigns.block.vital_block_io import VitalBlockIO
-from vital_ai_vitalsigns.model.GraphObject import GraphObject
-
 
 class VitalBlockReader(VitalBlockIO):
     acceptable_versions = {'1.0.0'}

@@ -1,7 +1,5 @@
 from typing import Literal, List
-
 from typing_extensions import TypedDict
-
 from vital_ai_vitalsigns.metaql.constraint.metaql_constraint import MetaQLConstraint
 
 # initial implementation to support flat constraint list

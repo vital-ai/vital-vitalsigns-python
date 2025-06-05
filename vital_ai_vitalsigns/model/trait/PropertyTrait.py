@@ -1,7 +1,6 @@
 from abc import ABC
 from functools import lru_cache
 
-
 class PropertyTrait(ABC):
     namespace = "undef#"
     local_name = "undef"

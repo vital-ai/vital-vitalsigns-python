@@ -10,9 +10,7 @@ from vital_ai_vitalsigns.service.graph.graph_service import VitalGraphService
 from vital_ai_vitalsigns.service.graph.graph_service_status import GraphServiceStatusType
 from vital_ai_vitalsigns.service.vital_name_graph import VitalNameGraph
 from vital_ai_vitalsigns.service.vector.vector_collection import VitalVectorCollection
-from vital_ai_vitalsigns.service.vector.vector_query import VitalVectorQuery
 from vital_ai_vitalsigns.service.vector.vector_result import VitalVectorResult
-from vital_ai_vitalsigns.service.vector.vector_result_list import VitalVectorResultList
 from vital_ai_vitalsigns.service.vector.vector_service import VitalVectorService
 from vital_ai_vitalsigns.service.vector.vector_status import VitalVectorStatus
 from vital_ai_vitalsigns.service.vital_service_status import VitalServiceStatus, VitalServiceStatusType
@@ -48,6 +46,24 @@ class VitalService(BaseService):
             self.synchronize_service()
         if synchronize_task:
             self.start()
+
+
+    def is_combined_service(self) -> bool:
+        if self.graph_service is not None:
+            if self.vector_service is not None:
+                return True
+
+        return False
+
+    def is_graph_service(self) -> bool:
+        if self.graph_service is not None:
+            return True
+        return False
+
+    def is_vector_service(self) -> bool:
+        if self.vector_service is not None:
+            return True
+        return False
 
     def get_vitalservice_name(self) -> str:
         return self.vitalservice_name
@@ -145,6 +161,7 @@ class VitalService(BaseService):
 
                 return status
 
+
             status = VitalServiceStatus()
 
             return status
@@ -152,12 +169,19 @@ class VitalService(BaseService):
     def destroy_service(self) -> VitalServiceStatus:
 
         with self.graph_info_lock:
+
+            # TODO change to status object
             destroyed = self.graph_service.destroy_service()
 
             if not destroyed:
                 status = VitalServiceStatus(VitalServiceStatusType.ERROR)
 
                 return status
+
+            if self.vector_service is not None:
+                vector_status = self.vector_service.destroy_vital_vector_service()
+                # TODO check for error or ok
+
 
         status = VitalServiceStatus()
 
@@ -166,11 +190,12 @@ class VitalService(BaseService):
     def is_graph_global(self, graph_id: str, *, account_id: str|None = None) -> bool:
         return self.graph_service.is_graph_global(graph_id, account_id=account_id)
 
-    def initialize_service(self, delete_service=False, delete_index=False) -> VitalServiceStatus:
+    def initialize_service(self, delete_service:bool = False, delete_index: bool = False) -> VitalServiceStatus:
 
         # ensure access to graph info from background task
         with self.graph_info_lock:
 
+            # TODO change to status object
             initialized = self.graph_service.initialize_service()
 
             if not initialized:
@@ -178,6 +203,11 @@ class VitalService(BaseService):
                 status = VitalServiceStatus(VitalServiceStatusType.UNINITIALIZED)
 
                 return status
+
+            if self.vector_service is not None:
+                vector_status = self.vector_service.init_vital_vector_service()
+                # TODO check for error or ok
+
 
         status = VitalServiceStatus()
 
@@ -389,9 +419,6 @@ class VitalService(BaseService):
 
         return service_status
 
-    # filter graph
-    # def filter_query(self, graph_uri: str, sparql_query: str, uri_binding='uri', *, resolve_objects=True) -> ResultList:
-    #    return self.graph_service.filter_query(graph_uri, sparql_query, uri_binding, resolve_objects=resolve_objects)
 
     # query graph
 
@@ -406,6 +433,11 @@ class VitalService(BaseService):
 
     #################################################
     # Vector functions
+
+    # TODO check if indexed
+    def is_indexed(self) -> bool:
+
+        return False
 
     def init_vector_collections(self) -> VitalVectorStatus:
         return self.vector_service.init_vital_vector_collections()
@@ -439,9 +471,6 @@ class VitalService(BaseService):
     def index_vital_vector_all_collections(self, delete_indexes=False) -> VitalVectorStatus:
         pass
 
-    def query_vital_vector_service(self, vector_query: VitalVectorQuery) -> VitalVectorResultList:
-        pass
-
     #################################################
     # MetaQL Functions
 
@@ -450,7 +479,6 @@ class VitalService(BaseService):
                             namespace_list: List[Ontology]) -> MetaQLResult:
 
         # check query to decide to send to vector or graph store
-
 
         return self.graph_service.metaql_select_query(
             select_query=select_query,
@@ -496,7 +524,6 @@ class VitalService(BaseService):
                 namespace_list.append(ont)
 
         # check query to decide to send to vector or graph store
-
 
         return self.graph_service.metaql_graph_query(
             graph_query=graph_query,

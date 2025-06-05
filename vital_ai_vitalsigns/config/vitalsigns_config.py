@@ -14,12 +14,29 @@ class VectorDatabaseType:
     WEAVIATE = "weaviate"
     VITAL_VECTORDB = "vital_vectordb"
 
+class EmbeddingModelType:
+    OPENAI = "openai"
+    AZURE_OPENAI = "azure_openai"
+    TEXT2VEC_TRANSFORMERS = "text2vec-transformers"
+
+class EmbeddingModelOverflowPolicy:
+    DEFAULT = "DEFAULT"
+    TRUNCATE = "TRUNCATE"
+    SLIDING_MEAN = "SLIDING_MEAN"
+    SPLIT_MEAN = "SPLIT_MEAN"
+
+# if vector embedding service exposed in weaviate api, then
+# api key not need.  if vector is generated without using weaviate
+# then api key would be needed
+
 @dataclass
 class EmbeddingModelConfig:
     id: str
     endpoint: str
+    model_type: str
     api_key: Optional[str] = None
-
+    overflow_policy: Optional[str] = "DEFAULT"
+    max_tokens: Optional[int] = None
 
 @dataclass
 class CollectionConfig:

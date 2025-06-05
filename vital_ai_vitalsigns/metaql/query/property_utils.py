@@ -47,7 +47,7 @@ class PropertyUtils:
             prop_params["long_value"] = long_value
 
         if property_constraint_type == TRUTH_PROPERTY_DATA_CONSTRAINT_TYPE:
-            truth_value = str(value)  # set to Truth
+            truth_value = str(value)  # TODO set to Truth
             prop_params["truth_value"] = truth_value
 
         if property_constraint_type == URI_PROPERTY_DATA_CONSTRAINT_TYPE:

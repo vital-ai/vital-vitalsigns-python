@@ -1,7 +1,5 @@
 import traceback
-
 from vital_ai_vitalsigns.model.properties.IProperty import IProperty
-
 
 class FloatProperty(IProperty):
     def __init__(self, value: float):

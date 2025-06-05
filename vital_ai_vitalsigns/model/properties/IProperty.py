@@ -1,7 +1,6 @@
 from datetime import datetime
 import rdflib
 
-
 class IProperty:
     def __init__(self, value):
         self.value = value

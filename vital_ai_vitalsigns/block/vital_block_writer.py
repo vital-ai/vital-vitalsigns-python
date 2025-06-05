@@ -1,7 +1,5 @@
-import json
 from typing import List
 from vital_ai_vitalsigns.block.vital_block_io import VitalBlockIO
-
 
 class VitalBlockWriter(VitalBlockIO):
     def __init__(self, file, *, encoding="jsonl", version="1.0.0", ontologies: List[dict] = [], metadata: dict = {}):

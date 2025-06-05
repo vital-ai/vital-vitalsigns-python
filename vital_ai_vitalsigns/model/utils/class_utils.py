@@ -1,12 +1,11 @@
-import inspect
-
 
 class ClassUtils:
 
     @classmethod
     def get_class_hierarchy(cls, clz, top_level_class):
 
-        hierarchy = []
+        hierarchy: list[type] = []
+
         current_class = clz
 
         while current_class is not top_level_class:
@@ -18,4 +17,3 @@ class ClassUtils:
         hierarchy.append(top_level_class)
 
         return hierarchy
-

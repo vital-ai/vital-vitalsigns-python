@@ -424,7 +424,6 @@ class VirtuosoGraphService(VitalGraphService):
 
         logging.info(f"{rdf_string}")
 
-
         endpoint_url = f"{self.graph_crud_auth_endpoint}?graph-uri={target_graph_uri}"
 
         headers = {

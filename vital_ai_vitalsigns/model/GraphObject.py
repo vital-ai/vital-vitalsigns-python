@@ -6,16 +6,11 @@ from abc import ABC, abstractmethod
 import json
 from datetime import datetime
 from typing import TypeVar, List, Generator, Tuple, Optional, Set
-from urllib.parse import urlparse
 import rdflib
 from rdflib import Graph, Literal, URIRef, RDF, Dataset
 from vital_ai_vitalsigns.impl.vitalsigns_impl import VitalSignsImpl
 from vital_ai_vitalsigns.model.vital_constants import VitalConstants
 from vital_ai_vitalsigns.model.properties.IProperty import IProperty
-from vital_ai_vitalsigns.model.trait.PropertyTrait import PropertyTrait
-from vital_ai_vitalsigns.model.properties.BooleanProperty import BooleanProperty
-from vital_ai_vitalsigns.model.properties.LongProperty import LongProperty
-from vital_ai_vitalsigns.model.properties.StringProperty import StringProperty
 from vital_ai_vitalsigns.model.properties.URIProperty import URIProperty
 from functools import wraps
 from functools import lru_cache

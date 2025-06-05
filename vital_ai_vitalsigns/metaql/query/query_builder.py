@@ -947,7 +947,6 @@ class QueryContainer:
 
         return None
 
-
 class QueryBuilder:
 
     @classmethod

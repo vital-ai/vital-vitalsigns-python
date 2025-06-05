@@ -1,4 +1,4 @@
-from typing import MutableSequence, TypeVar, List, Optional, Iterator
+from typing import MutableSequence, TypeVar, List, Optional, Iterator, Any
 from vital_ai_vitalsigns.collection.graph_collection import GraphCollection
 from vital_ai_vitalsigns.model.GraphObject import GraphObject
 

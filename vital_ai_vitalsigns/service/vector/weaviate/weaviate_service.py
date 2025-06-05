@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import List
 import weaviate
@@ -7,16 +8,20 @@ from weaviate.collections.classes.config import ReferenceProperty, DataType, Pro
 from weaviate.config import AdditionalConfig, Timeout
 from weaviate.connect import ConnectionParams
 from weaviate.util import generate_uuid5
-
 from vital_ai_vitalsigns.config.vitalsigns_config import EmbeddingModelConfig, CollectionConfig
 from vital_ai_vitalsigns.model.GraphObject import GraphObject
+from vital_ai_vitalsigns.ontology.ontology import Ontology
 from vital_ai_vitalsigns.service.graph.graph_object_generator import GraphObjectGenerator
-from vital_ai_vitalsigns.service.vector.vector_query import VitalVectorQuery
 from vital_ai_vitalsigns.service.vector.vector_result import VitalVectorResult
 from vital_ai_vitalsigns.service.vector.vector_result_list import VitalVectorResultList
 from vital_ai_vitalsigns.service.vector.vector_service import VitalVectorService
 from vital_ai_vitalsigns.service.vector.vector_status import VitalVectorStatus, VitalVectorStatusType
+from vital_ai_vitalsigns.service.vector.weaviate.weaviate_result_list import WeaviateResultList
+from vital_ai_vitalsigns.service.vector.weaviate.weaviate_vector_query import WeaviateVectorQuery
 from vital_ai_vitalsigns.vitalsigns import VitalSigns
+from vital_ai_vitalsigns.metaql.metaql_query import SelectQuery as MetaQLSelectQuery
+from vital_ai_vitalsigns.metaql.metaql_query import GraphQuery as MetaQLGraphQuery
+import weaviate.classes.config as wvcc
 
 
 # Note: this will expose creating collections based on passed in schema
@@ -25,6 +30,10 @@ from vital_ai_vitalsigns.vitalsigns import VitalSigns
 
 # requests will need to check if tenant exists for a collection, and if
 # not, add it.  caching could help this
+
+# TODO add tenant cache, have exceptions when tenant doesnt exist
+# as tenants would infrequently get deleted
+
 
 class WeaviateVectorService(VitalVectorService):
 
@@ -248,6 +257,9 @@ class WeaviateVectorService(VitalVectorService):
 
         try:
 
+            print(f"Connecting to Endpoint: {self.endpoint}")
+            print(f"Connecting to grpc Endpoint: {self.grpc_endpoint}")
+
             client = weaviate.WeaviateClient(
                 connection_params=ConnectionParams.from_params(
                     http_host=self.endpoint,
@@ -259,11 +271,29 @@ class WeaviateVectorService(VitalVectorService):
                 ),
 
                 additional_config=AdditionalConfig(
-                    timeout=Timeout(init=2, query=45, insert=120),
+                    timeout=Timeout(init=30, query=45, insert=120),
                 ),
             )
 
+            print(f"Client Connecting...")
+
             client.connect()
+
+            meta_info = client.get_meta()
+
+            print(meta_info)
+
+            collections = client.collections.list_all()
+
+            collection_count = len(collections)
+
+            print(f"Collection Count: {collection_count}")
+
+            for c_name in collections:
+                print(f"{c_name}")
+                c = client.collections.get(c_name)
+                print(c.config.get())
+
 
             self._client = client
 
@@ -271,6 +301,8 @@ class WeaviateVectorService(VitalVectorService):
 
         except Exception as e:
             logging.info(e)
+
+        print(f"Failed to init client to: {self.endpoint}")
 
         # failure
         self._client = None
@@ -326,6 +358,7 @@ class WeaviateVectorService(VitalVectorService):
         pass
 
     # mainly use for testing
+    # move to internal function and remove from interface
     def init_vital_vector_collections(self):
 
         vs = VitalSigns()
@@ -384,11 +417,148 @@ class WeaviateVectorService(VitalVectorService):
                 vector_status = self._remove_collection(collection)
                 logging.info(f"Remove Status for Collection: {collection_name}: {vector_status.status}")
 
-    def init_vital_vector_service(self):
-        pass
+    def init_vital_vector_service(self) -> VitalVectorStatus:
 
-    def destroy_vital_vector_service(self):
-        pass
+        client = self.get_client()
+
+        service_graph_id = "SERVICE_GRAPH"
+
+        namespace = self.namespace
+
+        service_graph_collection_name = f"{namespace}_{service_graph_id}"
+
+        # check for service graph collection
+
+        # create service graph collection
+
+        print(f"Creating Collection: {service_graph_collection_name}")
+
+        logging.info(f"Creating Collection: {service_graph_collection_name}")
+
+        description = "SERVICE_GRAPH"
+
+        properties = [
+            {"name": "serviceGraphNamespace", "type": "string", "description": "Service Graph Namespace"},
+            {"name": "serviceGraphJSON", "type": "string", "description": "Service Graph JSON"}
+        ]
+
+
+        property_list = []
+
+        for prop in properties:
+            property_name = prop["name"]
+            property_type = prop["type"]
+            property_description = prop["description"]
+
+            data_type = None
+
+            if property_type == "string":
+                data_type = DataType.TEXT
+
+            if property_type == "integer":
+                data_type = DataType.INT
+
+            if property_type == "boolean":
+                data_type = DataType.BOOL
+
+            if property_type == "date":
+                data_type = DataType.DATE
+
+            if property_type == "float":
+                data_type = DataType.NUMBER
+
+            p = Property(
+                name=property_name,
+                data_type=data_type,
+                description=property_description
+            )
+
+            property_list.append(p)
+
+
+        print(property_list)
+
+        serviceGraph = {
+            "status": "ok"
+        }
+
+        serviceGraphJSON = json.dumps(serviceGraph, indent=4)
+
+        try:
+
+            service_graph_collection = client.collections.create(
+                name=service_graph_collection_name,
+                description=description,
+                multi_tenancy_config=Configure.multi_tenancy(False),
+                vectorizer_config=wvcc.Configure.Vectorizer.text2vec_transformers(),
+                properties=property_list,
+                references=[]
+            )
+
+
+            print(f"Created Collection: {service_graph_collection_name}")
+
+            # insert object
+
+            new_uuid = service_graph_collection.data.insert(
+                properties={
+                    "serviceGraphNamespace": namespace,
+                    "serviceGraphJSON": serviceGraphJSON
+                }
+            )
+
+            print(f"Created UUID: {new_uuid}")
+
+            vector_status = VitalVectorStatus()
+            vector_status.status = VitalVectorStatusType.OK
+            return vector_status
+
+        except Exception as e:
+            print(e)
+            logging.error(e)
+
+        vector_status = VitalVectorStatus()
+        vector_status.status = VitalVectorStatusType.ERROR
+        return vector_status
+
+
+
+    def destroy_vital_vector_service(self) -> VitalVectorStatus:
+
+        client = self.get_client()
+
+        service_graph_id = "SERVICE_GRAPH"
+
+        namespace = self.namespace
+
+        service_graph_collection_name = f"{namespace}_{service_graph_id}"
+
+        # check for service graph collection
+
+        # delete collections
+
+        # remove service graph collection
+
+        print(f"Destroying Collection: {service_graph_collection_name}")
+
+        try:
+            client.collections.delete(service_graph_collection_name)
+
+            print(f"Deleted Collection: {service_graph_collection_name}")
+
+            vector_status = VitalVectorStatus()
+            vector_status.status = VitalVectorStatusType.OK
+            return vector_status
+
+        except Exception as e:
+            logging.error(e)
+
+        print(f"Failed to destroy Collection: {service_graph_collection_name}")
+
+        vector_status = VitalVectorStatus()
+        vector_status.status = VitalVectorStatusType.ERROR
+        return vector_status
+
 
     def check_vital_collection(self, collection_class_id: str):
         pass
@@ -607,6 +777,13 @@ class WeaviateVectorService(VitalVectorService):
 
         pass
 
-    def vector_query(self, vector_query: VitalVectorQuery) -> VitalVectorResultList:
+    def vector_query(self, *, weaviate_query: WeaviateVectorQuery) -> WeaviateResultList:
         pass
 
+    def metaql_select_query(self, *, graph_query: MetaQLSelectQuery,
+                            namespace_list: List[Ontology] = None) -> VitalVectorResultList:
+        pass
+
+    def metaql_graph_query(self, *, graph_query: MetaQLGraphQuery,
+                           namespace_list: List[Ontology] = None) -> VitalVectorResultList:
+        pass
