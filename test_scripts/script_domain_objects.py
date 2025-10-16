@@ -1,3 +1,4 @@
+import json
 import logging
 from datetime import datetime
 from com_vitalai_aimp_domain.model.Payment import Payment
@@ -52,14 +53,23 @@ def main():
     vital_segment = VitalSegment()
     vital_segment.URI = URIGenerator.generate_uri()
 
-    # vital_segment.name = namespace
-    # vital_segment.segmentGraphURI = target_graph_uri
-    # vital_segment.segmentTenantID = namespace
+    base_uri = "http://vital.ai"
+    namespace = "graph"
+    account_id = "account123"
+    graph_id = "123"
+
+    graph_uri = "http://vital.ai/graph/GLOBAL/account123/123"
+
+    vital_segment.name = graph_id
+    vital_segment.segmentGraphURI = graph_uri
+    vital_segment.segmentTenantID = account_id
     vital_segment.segmentGlobal = True # False
-    # vital_segment.segmentID = target_graph_uri
+    vital_segment.segmentID = graph_id
+    vital_segment.segmentNamespace = namespace
+
 
     # add json for index state
-    # vital_segment.segmentStateJSON = "[]"
+    vital_segment.segmentStateJSON = "{\"status\":\"indexed\"}"
 
     rdf_string = vital_segment.to_rdf()
 
@@ -68,6 +78,18 @@ def main():
     json_string = vital_segment.to_json()
 
     print(f"{json_string}")
+
+    segment_state_json = str(vital_segment.segmentStateJSON)
+
+    print(f"{segment_state_json}")
+
+    segment_state = json.loads(segment_state_json)
+
+    print(f"{segment_state}")
+
+    status = segment_state["status"]
+
+    print(f"{status}")
 
 if __name__ == "__main__":
     main()

@@ -14,19 +14,30 @@ vitalservice:
       server_dataset_dir: "server_dataset_dir"
       pem_path: "pem_path"
     vector_database:
-      endpoint: "http://example.com/vectordb"
-      vector_endpoint: ""
-      grpc_endpoint: "localhost"
-      api_key: "apikey1"
+      rest_endpoint: "example.com"
+      rest_port: 80
+      rest_ssl: false
+      rest_api_key: "apikey1"
+      grpc_endpoint: null
+      grpc_port: 50051
+      vector_endpoint: null
+      vector_port: 8080
+      vector_api_key: null
       vector_database_type: "weaviate"
       vector_database_schema_list: [  ]
       embedding_models:
         - id: model_1
           endpoint: https://example.com/api/endpoint_1
+          model_type: model_type_1
           api_key: your_api_key_1
+          overflow_policy: DEFAULT
+          max_tokens: 123
         - id: model_2
           endpoint: https://example.com/api/endpoint_2
+          model_type: model_type_2
           api_key: your_api_key_2
+          overflow_policy: DEFAULT
+          max_tokens: 123
   - name: example_service_2
     namespace: example_namespace_2
     graph_database:
@@ -37,18 +48,31 @@ vitalservice:
   - name: example_service_3
     namespace: example_namespace_3
     vector_database:
-      endpoint: "http://example.com/othervectordb"
-      api_key: "apikey2"
+      rest_endpoint: "example.com"
+      rest_port: 80
+      rest_ssl: false
+      rest_api_key: "apikey2"
+      grpc_endpoint: null
+      grpc_port: 50051
+      vector_endpoint: null
+      vector_port: 8080
+      vector_api_key: null
       vector_database_type: "weaviate"
       namespace: "namespace"
       vector_database_schema_list: [  ]
       embedding_models:
         - id: model_1
           endpoint: https://example.com/api/endpoint_1
+          model_type: model_type_1
           api_key: your_api_key_1
+          overflow_policy: DEFAULT
+          max_tokens: 123
         - id: model_2
           endpoint: https://example.com/api/endpoint_2
+          model_type: model_type_2
           api_key: your_api_key_2
+          overflow_policy: DEFAULT
+          max_tokens: 123
       collections:
         - class_uri: urn:KGEntity
           embedding_models:
@@ -66,4 +90,21 @@ vitalservice:
           embedding_models:
             - value: model_2
             - type: model_3
+
+  implementation_mapping:
+    graph_databases:
+      virtuoso: "vital_ai_vitalsigns.service.graph.virtuoso.virtuoso_service.VirtuosoGraphService"
+      fuseki: "vitalservice_fuseki.service.FusekiGraphService"
+      fuseki_memory: "vital_ai_vitalsigns.service.graph.memory.MemoryGraphService"
+      vitalgraph: "vitalservice_vitalgraph.service.VitalGraphService"
+      neptune: "vitalservice_neptune.service.NeptuneGraphService"
+      arangodb: "vitalservice_arangodb.service.ArangoDBGraphService"
+      qlever: "vitalservice_qlever.service.QLeverGraphService"
+      rdflib_memory: "vital_ai_vitalsigns.service.graph.memory.RDFLibMemoryGraphService"
+      pyoxigraph_memory: "vital_ai_vitalsigns.service.graph.memory.PyOxigraphMemoryGraphService"
+    
+    vector_databases:
+      weaviate: "vital_ai_vitalsigns.service.vector.weaviate.weaviate_service.WeaviateVectorService"
+      vitalvectordb: "vitalservice_vitalvectordb.service.VitalVectorDBService"
+      qdrant_memory: "vital_ai_vitalsigns.service.vector.memory.MemoryVectorService"
 

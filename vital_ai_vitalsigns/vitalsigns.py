@@ -52,9 +52,8 @@ class VitalSigns(metaclass=VitalSignsMeta):
 
         self._vitalsigns_config = VitalSignsConfigLoader.vitalsigns_load_config(vital_home)
 
-        vitalservice_list = self._vitalsigns_config.vitalservice_list
-
-        self._vitalservice_manager = VitalServiceManager(config=vitalservice_list)
+        # Use the new VitalServiceManager constructor with full config
+        self._vitalservice_manager = VitalServiceManager(vitalsigns_config=self._vitalsigns_config)
 
         self._vitalservice_manager._initialize()
 

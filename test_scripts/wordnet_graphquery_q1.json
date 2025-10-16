@@ -1,8 +1,8 @@
 {
     "metaql_class": "GraphQuery",
     "query_type": "METAQL_GRAPH_QUERY",
-    "graph_uri_list": [
-        "http://vital.ai/graph/wordnet-frames-graph-1"
+    "graph_id_list": [
+        "wordnet-frames-graph-1"
     ],
     "resolve_objects": true,
     "offset": 0,

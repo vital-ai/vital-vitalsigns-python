@@ -1,6 +1,7 @@
 import time
 from vital_ai_vitalsigns.service.graph.virtuoso.virtuoso_service import VirtuosoGraphService
 from vital_ai_vitalsigns.vitalsigns import VitalSigns
+from vital_ai_vitalsigns.config.vitalsigns_config import GraphDatabaseConfig
 
 def time_function(func):
     def wrapper(*args, **kwargs):
@@ -53,10 +54,17 @@ def main():
 
     print(virtuoso_endpoint)
 
-    virtuoso_graph_service = VirtuosoGraphService(
+    # Create GraphDatabaseConfig object
+    graph_config = GraphDatabaseConfig(
+        database_type="virtuoso",
         username=virtuoso_username,
         password=virtuoso_password,
-        endpoint=virtuoso_endpoint,
+        endpoint=virtuoso_endpoint
+    )
+    
+    # Use new config + kwargs constructor pattern
+    virtuoso_graph_service = VirtuosoGraphService(
+        graph_config,
         base_uri="http://vital.ai",
         namespace="graph"
     )

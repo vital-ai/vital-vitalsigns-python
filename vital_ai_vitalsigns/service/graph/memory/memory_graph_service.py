@@ -15,13 +15,14 @@ from vital_ai_vitalsigns.service.graph.vital_graph_status import VitalGraphStatu
 from vital_ai_vitalsigns.service.graph.graph_service_constants import VitalGraphServiceConstants
 from vital_ai_vitalsigns.utils.uri_generator import URIGenerator
 from vital_ai_vitalsigns_core.model.VitalSegment import VitalSegment
+from vital_ai_vitalsigns.config.vitalsigns_config import GraphDatabaseConfig
 
 
 class MemoryGraphService(VitalGraphService, RDFlibSparqlImpl):
 
-    def __init__(self, **kwargs):
+    def __init__(self, config: GraphDatabaseConfig, **kwargs):
 
-        super().__init__(multigraph=True, **kwargs)
+        super().__init__(config, multigraph=True, **kwargs)
 
         # init service graph, domain ontology graph
 

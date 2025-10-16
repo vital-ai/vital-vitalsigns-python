@@ -1,0 +1,45 @@
+name: vital-vitalsigns-python
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.12
+  - pip
+  - setuptools
+  - wheel
+  - packaging>=23.0
+  - python-dotenv>=1.0.1
+  - pyyaml>=6.0.1
+  - numpy>=1.26.4
+  - requests>=2.31.0
+  - pytz>=2024.1
+  - python-dateutil>=2.9.0
+  - psutil>=6.0.0
+  - urllib3
+  - pip:
+    - rdflib>=7.0.0
+    - hnswlib>=0.8.0
+    - owlready2==0.46
+    - owlrl==6.0.2
+    - qdrant-client
+    - SPARQLWrapper==2.0.0
+    - pyshacl==0.25.0
+    - PyODBC>=5.1.0
+    - onnxruntime>=1.18.0
+    - onnx>=1.16.1
+    - tzdata>=2024.1
+    - transformers>=4.49.0
+    - vital-model-paraphrase-MiniLM-onnx>=0.2.1
+    - paramiko==3.5.0
+    - scp==0.15.0
+    - datasketch>=1.6.5
+    # Development dependencies
+    - nltk
+    - matplotlib
+    - networkx
+    - torch>=2.3.0
+    - sentence-transformers==3.3.1
+    - dill
+    - pytest
+    - scikit-learn>=1.6.1
+    - scipy>=1.15.2

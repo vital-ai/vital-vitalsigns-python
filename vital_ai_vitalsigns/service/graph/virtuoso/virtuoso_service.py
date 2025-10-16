@@ -29,6 +29,7 @@ from vital_ai_vitalsigns.service.graph.vital_graph_status import VitalGraphStatu
 from vital_ai_vitalsigns.service.metaql.metaql_sparql_builder import MetaQLSparqlBuilder
 from vital_ai_vitalsigns.service.metaql.metaql_sparql_impl import MetaQLSparqlImpl
 from vital_ai_vitalsigns.utils.uri_generator import URIGenerator
+from vital_ai_vitalsigns.config.vitalsigns_config import GraphDatabaseConfig
 from vital_ai_vitalsigns.vitalsigns import VitalSigns
 from vital_ai_vitalsigns_core.model.GraphMatch import GraphMatch
 from vital_ai_vitalsigns_core.model.RDFStatement import RDFStatement
@@ -67,28 +68,24 @@ class CustomHTTPAdapter(HTTPAdapter):
 
 class VirtuosoGraphService(VitalGraphService):
 
-    def __init__(self,
-                 username: str | None = None,
-                 password: str | None = None,
-                 endpoint: str | None = None,
-                 server_name: str | None = None,
-                 server_user: str | None = None,
-                 server_dataset_dir: str | None = None,
-                 pem_path: str | None = None,
-                 **kwargs):
-        self.username = username
-        self.password = password
-        self.endpoint = endpoint.rstrip('/')
+    def __init__(self, config: GraphDatabaseConfig, **kwargs):
+        # Extract configuration values from the database config
+        self.username = config.username
+        self.password = config.password
+        self.endpoint = config.endpoint.rstrip('/') if config.endpoint else None
+        self.server_name = config.server_name
+        self.server_user = config.server_user
+        self.server_dataset_dir = config.server_dataset_dir
+        self.pem_path = config.pem_path
 
-        self.server_name = server_name
-        self.server_user = server_user
-
-        self.server_dataset_dir = server_dataset_dir
-        self.pem_path = pem_path
-
-        self.sparql_auth_endpoint = f"{self.endpoint}/sparql-auth"
-        self.graph_crud_auth_endpoint = f"{self.endpoint}/sparql-graph-crud-auth"
-        super().__init__(**kwargs)
+        if self.endpoint:
+            self.sparql_auth_endpoint = f"{self.endpoint}/sparql-auth"
+            self.graph_crud_auth_endpoint = f"{self.endpoint}/sparql-graph-crud-auth"
+        else:
+            self.sparql_auth_endpoint = None
+            self.graph_crud_auth_endpoint = None
+            
+        super().__init__(config, **kwargs)
 
     # keep cache of graphs/namespaces
     # which gets managed by background thread?

@@ -1,2 +1,0 @@
-
-# vital-vectordb impl

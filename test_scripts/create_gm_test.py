@@ -1,3 +1,4 @@
+import logging
 from vital_ai_vitalsigns.model.VITAL_Edge import VITAL_Edge
 from vital_ai_vitalsigns.model.VITAL_Node import VITAL_Node
 from vital_ai_vitalsigns.vitalsigns import VitalSigns
@@ -6,6 +7,8 @@ from vital_ai_vitalsigns_core.model.VitalApp import VitalApp
 
 
 def main():
+
+    # logging.basicConfig(level=logging.DEBUG)
 
     print("Test GraphMatch/GCO")
 

@@ -9,10 +9,19 @@ from dataclasses import dataclass
 class GraphDatabaseType:
     VIRTUOSO = "virtuoso"
     FUSEKI = "fuseki"
-
+    VITALGRAPH = "vitalgraph"
+    NEPTUNE = "neptune"
+    ARANGODB = "arangodb"
+    FUSEKI = "fuseki"
+    QLEVER = "qlever"
+    FUSEKI_MEMORY = "fuseki_memory"
+    RDFLIB_MEMORY = "rdflib_memory"
+    PYOXIGRAPH_MEMORY = "pyoxigraph_memory"
+       
 class VectorDatabaseType:
     WEAVIATE = "weaviate"
-    VITAL_VECTORDB = "vital_vectordb"
+    VITALVECTORDB = "vitalvectordb"
+    QDRANT_MEMORY = "qdrant_memory"
 
 class EmbeddingModelType:
     OPENAI = "openai"
@@ -47,11 +56,16 @@ class CollectionConfig:
 @dataclass
 class VectorDatabaseConfig:
     vector_database_type: str
-    endpoint: str
     vector_database_schema_list: Optional[list[str]]
-    vector_endpoint: Optional[str] = None
+    rest_endpoint: Optional[str] = None
+    rest_port: Optional[int] = None
+    rest_ssl: Optional[bool] = True
+    rest_api_key: Optional[str] = None
     grpc_endpoint: Optional[str] = None
-    api_key: Optional[str] = None
+    grpc_port: Optional[int] = 50051
+    vector_endpoint: Optional[str] = None
+    vector_port: Optional[int] = 8080
+    vector_api_key: Optional[str] = None
     embedding_models: Optional[List[EmbeddingModelConfig]] = None
     collections: Optional[List[CollectionConfig]] = None
 
@@ -80,8 +94,30 @@ class VitalServiceConfig:
 
 
 @dataclass
+class ImplementationMappingConfig:
+    graph_databases: Optional[dict[str, str]] = None
+    vector_databases: Optional[dict[str, str]] = None
+
+
+@dataclass
+class VitalServiceSection:
+    services: Optional[List[VitalServiceConfig]] = None
+    implementation_mapping: Optional[ImplementationMappingConfig] = None
+
+
+@dataclass
 class VitalSignsConfig:
-    vitalservice_list: Optional[List[VitalServiceConfig]] = None
+    vitalservice: Optional[VitalServiceSection] = None
+    
+    # Legacy property for backward compatibility
+    @property
+    def vitalservice_list(self) -> Optional[List[VitalServiceConfig]]:
+        return self.vitalservice.services if self.vitalservice else None
+    
+    # Legacy property for backward compatibility  
+    @property
+    def database_implementations(self) -> Optional[ImplementationMappingConfig]:
+        return self.vitalservice.implementation_mapping if self.vitalservice else None
 
 
 # VitalSigns Config Path Components
@@ -118,45 +154,77 @@ class VitalSignsConfigLoader:
 
     @staticmethod
     def _parse_config(config_data: dict) -> VitalSignsConfig:
-        services = []
-        for service_data in config_data['vitalservice']:
-            graph_database = None
-            vector_database = None
+        vitalservice_section = None
+        
+        if 'vitalservice' in config_data:
+            vitalservice_data = config_data['vitalservice']
+            
+            # Parse services list
+            services = []
+            if 'services' in vitalservice_data:
+                for service_data in vitalservice_data['services']:
+                    graph_database = None
+                    vector_database = None
 
-            if 'graph_database' in service_data:
-                graph_database = GraphDatabaseConfig(**service_data['graph_database'])
+                    if 'graph_database' in service_data:
+                        graph_database = GraphDatabaseConfig(**service_data['graph_database'])
 
-            if 'vector_database' in service_data:
-                vector_db_data = service_data['vector_database']
-                embedding_models = [EmbeddingModelConfig(**model) for model in vector_db_data['embedding_models']]
-                collections = None
-                if 'collections' in vector_db_data:
-                    collections = [
-                        CollectionConfig(
-                            class_uri=collection['class_uri'],
-                            embedding_models=collection['embedding_models']
-                        ) for collection in vector_db_data['collections']
-                    ]
-                vector_database = VectorDatabaseConfig(
-                    endpoint=vector_db_data['endpoint'],
-                    vector_endpoint=vector_db_data['vector_endpoint'],
-                    grpc_endpoint=vector_db_data['grpc_endpoint'],
+                    if 'vector_database' in service_data:
+                        vector_db_data = service_data['vector_database']
+                        embedding_models = [EmbeddingModelConfig(**model) for model in vector_db_data.get('embedding_models', [])]
+                        collections = None
+                        if 'collections' in vector_db_data:
+                            collections = [
+                                CollectionConfig(
+                                    class_uri=collection['class_uri'],
+                                    embedding_models=collection['embedding_models']
+                                ) for collection in vector_db_data['collections']
+                            ]
+                        
+                        # Handle defaults for new field structure
+                        rest_ssl = vector_db_data.get('rest_ssl', True)
+                        rest_port = vector_db_data.get('rest_port')
+                        if rest_port is None:
+                            rest_port = 443 if rest_ssl else 80
+                        
+                        vector_database = VectorDatabaseConfig(
+                            vector_database_type=vector_db_data['vector_database_type'],
+                            vector_database_schema_list=vector_db_data.get('vector_database_schema_list'),
+                            rest_endpoint=vector_db_data.get('rest_endpoint'),
+                            rest_port=rest_port,
+                            rest_ssl=rest_ssl,
+                            rest_api_key=vector_db_data.get('rest_api_key'),
+                            grpc_endpoint=vector_db_data.get('grpc_endpoint'),
+                            grpc_port=vector_db_data.get('grpc_port', 50051),
+                            vector_endpoint=vector_db_data.get('vector_endpoint'),
+                            vector_port=vector_db_data.get('vector_port', 8080),
+                            vector_api_key=vector_db_data.get('vector_api_key'),
+                            embedding_models=embedding_models,
+                            collections=collections
+                        )
 
-                    api_key=vector_db_data['api_key'],
-                    vector_database_type=vector_db_data['vector_database_type'],
-                    vector_database_schema_list=vector_db_data['vector_database_schema_list'],
-                    embedding_models=embedding_models,
-                    collections=collections
+                    services.append(VitalServiceConfig(
+                        name=service_data['name'],
+                        namespace=service_data['namespace'],
+                        base_uri=service_data['base_uri'],
+                        graph_database=graph_database,
+                        vector_database=vector_database
+                    ))
+            
+            # Parse implementation mapping section
+            implementation_mapping = None
+            if 'implementation_mapping' in vitalservice_data:
+                impl_data = vitalservice_data['implementation_mapping']
+                implementation_mapping = ImplementationMappingConfig(
+                    graph_databases=impl_data.get('graph_databases', {}),
+                    vector_databases=impl_data.get('vector_databases', {})
                 )
+            
+            vitalservice_section = VitalServiceSection(
+                services=services,
+                implementation_mapping=implementation_mapping
+            )
 
-            services.append(VitalServiceConfig(
-                name=service_data['name'],
-                namespace=service_data['namespace'],
-                base_uri=service_data['base_uri'],
-                graph_database=graph_database,
-                vector_database=vector_database
-            ))
-
-        return VitalSignsConfig(vitalservice_list=services)
+        return VitalSignsConfig(vitalservice=vitalservice_section)
 
 

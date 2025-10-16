@@ -14,14 +14,16 @@ from vital_ai_vitalsigns.service.graph.graph_service_status import GraphServiceS
 from vital_ai_vitalsigns.service.vital_name_graph import VitalNameGraph
 from vital_ai_vitalsigns.service.graph.vital_graph_status import VitalGraphStatus
 
+from vital_ai_vitalsigns.config.vitalsigns_config import GraphDatabaseConfig
+
 G = TypeVar('G', bound='GraphObject')
 
 
 class VitalGraphService(ABC):
-    def __init__(self, **kwargs):
-        self.base_uri = kwargs.get('base_uri', None)
-        self.namespace = kwargs.get('namespace', None)
-        # super().__init__(**kwargs)
+    def __init__(self, config: GraphDatabaseConfig, **kwargs):
+        self.config = config
+        self.base_uri = kwargs.get('base_uri')
+        self.namespace = kwargs.get('namespace')
         super().__init__()
 
     def get_graph_uri(self, *,

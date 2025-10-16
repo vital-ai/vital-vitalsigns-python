@@ -168,7 +168,7 @@ def main():
 
     wordnet_graph_id = 'wordnet-frames-graph-1'
 
-    wordnet_graph_uri = 'http://vital.ai/graph/wordnet-frames-graph-1'
+    # wordnet_graph_uri = 'http://vital.ai/graph/wordnet-frames-graph-1'
 
     gq = (
         QueryBuilder.graph_query(
@@ -176,7 +176,7 @@ def main():
             limit=100,
             resolve_objects=True
         )
-        .graph_uri(wordnet_graph_uri)
+        .graph_id(wordnet_graph_id)
         .arc(
             Arc()
             .node_bind(NodeBind(name="frame"))

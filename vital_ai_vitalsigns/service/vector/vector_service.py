@@ -8,14 +8,17 @@ from vital_ai_vitalsigns.service.vector.vector_result_list import VitalVectorRes
 from vital_ai_vitalsigns.service.vector.vector_status import VitalVectorStatus
 from vital_ai_vitalsigns.metaql.metaql_query import SelectQuery as MetaQLSelectQuery
 from vital_ai_vitalsigns.metaql.metaql_query import GraphQuery as MetaQLGraphQuery
-
+from vital_ai_vitalsigns.service.vector.vector_query import VitalVectorQuery
+from vital_ai_vitalsigns.service.vector.vector_query_result import VitalVectorQueryResult
+from vital_ai_vitalsigns.config.vitalsigns_config import VectorDatabaseConfig
 
 G = TypeVar('G', bound='GraphObject')
 
 class VitalVectorService:
-    def __init__(self, **kwargs):
-        self.base_uri = kwargs.get('base_uri', None)
-        self.namespace = kwargs.get('namespace', None)
+    def __init__(self, config: VectorDatabaseConfig, **kwargs):
+        self.config = config
+        self.base_uri = kwargs.get('base_uri')
+        self.namespace = kwargs.get('namespace')
         super().__init__()
 
     @abstractmethod
@@ -191,6 +194,11 @@ class VitalVectorService:
 
         pass
 
+
+    @abstractmethod
+    def query(self, query: VitalVectorQuery) -> VitalVectorQueryResult:
+        pass
+    
     @abstractmethod
     def metaql_select_query(self, *, graph_query: MetaQLSelectQuery,
                            namespace_list: List[Ontology] = None) -> VitalVectorResultList:

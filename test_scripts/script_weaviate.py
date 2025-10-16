@@ -29,13 +29,19 @@ def main():
         vitalservice = vitalservice_manager.get_vitalservice(vitalservice_name)
         print(f"VitalService Name: {vitalservice.get_vitalservice_name()}")
 
-    vitalservice = vitalservice_manager.get_vitalservice("local_service")
+    # vitalservice = vitalservice_manager.get_vitalservice("local_service")
+
+    vitalservice = vitalservice_manager.get_vitalservice("local_kgraph_test")
+
 
     # assumes weaviate vector service type
 
     weaviate_endpoint = vitalservice.vector_service.endpoint
     weaviate_grpc_endpoint = vitalservice.vector_service.grpc_endpoint
     weaviate_vector_endpoint = vitalservice.vector_service.vector_endpoint
+
+    print(f"Weaviate Endpoint: {weaviate_endpoint}")
+    print(f"Weaviate GRPC Endpoint: {weaviate_grpc_endpoint}")
 
     client = weaviate.WeaviateClient(
         connection_params=ConnectionParams.from_params(
