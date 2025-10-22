@@ -1,0 +1,103 @@
+from __future__ import annotations
+
+from typing import TypeVar, List, Optional
+from vital_ai_vitalsigns.model.vital_constants import VitalConstants
+
+G = TypeVar('G', bound=Optional['GraphObject'])
+
+
+class GraphObjectDictUtils:
+    """Utility class containing dictionary-related functionality for GraphObject."""
+
+    @staticmethod
+    def to_dict_impl(graph_object) -> dict:
+        """Implementation of to_dict functionality."""
+        from vital_ai_vitalsigns.model.VITAL_GraphContainerObject import VITAL_GraphContainerObject
+
+        serializable_dict = {}
+
+        for uri, prop in graph_object._properties.items():
+            prop_value = prop.to_json()["value"]
+            if uri == VitalConstants.uri_prop_uri:
+                serializable_dict['URI'] = prop_value
+            else:
+                serializable_dict[uri] = prop_value
+
+        if isinstance(graph_object, VITAL_GraphContainerObject):
+            for name, prop in graph_object._extern_properties.items():
+                prop_value = prop.to_json()["value"]
+                uri = "urn:extern:" + name
+                serializable_dict[uri] = prop_value
+
+        class_uri = graph_object.get_class_uri()
+
+        serializable_dict['type'] = class_uri
+
+        serializable_dict[VitalConstants.vitaltype_uri] = class_uri
+
+        serializable_dict['types'] = [class_uri]
+
+        return serializable_dict
+
+    @staticmethod
+    def from_dict_impl(cls, dict_map: dict, *, modified=False) -> G:
+        """Implementation of from_dict functionality."""
+        from vital_ai_vitalsigns.vitalsigns import VitalSigns
+
+        data = dict_map
+
+        type_uri = data['type']
+
+        vitaltype_class_uri = data.get(VitalConstants.vitaltype_uri)
+
+        vs = VitalSigns()
+
+        registry = vs.get_registry()
+
+        # graph_object_cls = registry.vitalsigns_classes[type_uri]
+
+        graph_object_cls = registry.get_vitalsigns_class(type_uri)
+
+        # TODO switch to this
+        # graph_object_cls = registry.get_vitalsigns_class(vitaltype_class_uri)
+
+        graph_object = graph_object_cls(modified=modified)
+
+        for key, value in data.items():
+            if key == 'type':
+                continue
+            if key == 'types':
+                continue
+            if key == 'vitaltype':  # is this used?
+                continue
+            if key == VitalConstants.vitaltype_uri:
+                continue
+            if key == VitalConstants.uri_prop_uri:
+                graph_object.URI = value
+                continue
+
+            setattr(graph_object, key, value)
+
+        return graph_object
+
+    @staticmethod
+    def to_dict_list_impl(graph_object_list) -> List[dict]:
+        """Implementation of to_dict_list functionality."""
+        dict_list = []
+        
+        for graph_object in graph_object_list:
+            dict_obj = GraphObjectDictUtils.to_dict_impl(graph_object)
+            dict_list.append(dict_obj)
+        
+        return dict_list
+
+    @staticmethod
+    def from_dict_list_impl(cls, dict_list: List[dict], *, modified=False) -> List[G]:
+        """Implementation of from_dict_list functionality."""
+        graph_object_list = []
+
+        for data in dict_list:
+            graph_object = cls.from_dict(data, modified=modified)
+            graph_object_list.append(graph_object)
+
+        return graph_object_list

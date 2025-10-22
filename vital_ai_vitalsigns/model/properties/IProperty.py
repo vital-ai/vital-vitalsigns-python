@@ -9,7 +9,10 @@ class IProperty:
         return str(self.value)
 
     def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
+        result = self.__eq__(other)
+        if result is NotImplemented:
+            return NotImplemented
+        return not result
 
     def get_value(self):
         return self.value

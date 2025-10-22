@@ -16,8 +16,15 @@ from functools import wraps
 from functools import lru_cache
 from rdflib.term import _is_valid_uri
 from vital_ai_vitalsigns.model.utils.class_utils import ClassUtils
+from vital_ai_vitalsigns.model.utils.graphobject_triples_utils import GraphObjectTriplesUtils
+from vital_ai_vitalsigns.model.utils.graphobject_rdf_utils import GraphObjectRdfUtils
+from vital_ai_vitalsigns.model.utils.graphobject_json_utils import GraphObjectJsonUtils
+from vital_ai_vitalsigns.model.utils.graphobject_dict_utils import GraphObjectDictUtils
+from vital_ai_vitalsigns.model.utils.graphobject_jsonld_utils import GraphObjectJsonldUtils
 from collections import defaultdict
 
+# Create logger for this module
+logger = logging.getLogger(__name__)
 
 def cacheable_method(method):
     @lru_cache(None)
@@ -27,24 +34,15 @@ def cacheable_method(method):
     cached_method._is_cacheable = True
     return cached_method
 
-
-class VitalSignsEncoder(json.JSONEncoder):
-    def default(self, o):
-        if isinstance(o, datetime):
-            return o.isoformat()
-        return super().default(o)
-
-
 class AttributeComparisonProxy:
     def __init__(self, cls, name):
         self.cls = cls
         self.name = name
 
     def __eq__(self, value):
-        print(f"Comparing {self.cls.__name__}.{self.name} with {value}")
+        logger.info(f"Comparing {self.cls.__name__}.{self.name} with {value}")
         # TODO Add logic here
         return False  # Placeholder for the example
-
 
 class GraphObjectMeta(type):
     def __init__(cls, name, bases, dct):
@@ -56,18 +54,16 @@ class GraphObjectMeta(type):
                         setattr(cls, attr_name, cacheable_method(dct[attr_name]))
 
     def __setattr__(self, name, value):
-        print(f"Setting class attribute {name} to {value}")
+        logger.info(f"Setting class attribute {name} to {value}")
         super().__setattr__(name, value)
 
     def __getattr__(self, name):
         if name.startswith('__') and name.endswith('__'):
-            print(f"Getting internal class attribute: {name}")
+            logger.info(f"Getting internal class attribute: {name}")
         return AttributeComparisonProxy(self, name)
-
 
 G = TypeVar('G', bound=Optional['GraphObject'])
 GC = TypeVar('GC', bound='GraphCollection')
-
 
 class GraphObject(metaclass=GraphObjectMeta):
     _allowed_properties = []
@@ -114,20 +110,20 @@ class GraphObject(metaclass=GraphObjectMeta):
         return f"GraphObject(class={clazz}, json={go_json})"
 
     def __del__(self):
-        # print(f"deleting: {self}")
+        # logger.debug(f"deleting: {self}")
 
         if sys.meta_path is None or not hasattr(sys, 'modules'):
             # Python is shutting down, skip cleanup
-            # print("shutting down")
+            # logger.debug("shutting down")
             return
 
         try:
             from vital_ai_vitalsigns.vitalsigns import VitalSigns
-            # print(f"deleting: {self.URI}")
+            # logger.debug(f"deleting: {self.URI}")
             vs = VitalSigns()
             vs.remove_graph_object(self)
         except Exception as ex:
-            # print(ex)
+            # logger.debug(ex)
             pass
 
     def __setattr__(self, name, value):
@@ -139,6 +135,7 @@ class GraphObject(metaclass=GraphObjectMeta):
                 self._properties.pop('http://vital.ai/ontology/vital-core#URIProp', None)
             else:
                 self._properties['http://vital.ai/ontology/vital-core#URIProp'] = VitalSignsImpl.create_property_with_trait(URIProperty, 'http://vital.ai/ontology/vital-core#URIProp', value)
+            
             super().__setattr__('_modified', True)
 
             return
@@ -151,7 +148,7 @@ class GraphObject(metaclass=GraphObjectMeta):
         domain_prop_list = self.get_allowed_domain_properties()
 
         # for d in domain_prop_list:
-        #    print(f"Domain Prop: {d}")
+        #    logger.debug(f"Domain Prop: {d}")
 
         # this includes properties defined when the class was defined
         # including properties associated with parent classes when
@@ -168,7 +165,7 @@ class GraphObject(metaclass=GraphObjectMeta):
             trait_class = VitalSignsImpl.get_trait_class_from_uri(uri)
 
             # full uri case
-            # print(f"uri: {uri} :: name: {name}")
+            # logger.debug(f"uri: {uri} :: name: {name}")
 
             if trait_class and uri == name:
                 if value is None:
@@ -211,11 +208,17 @@ class GraphObject(metaclass=GraphObjectMeta):
             return self._properties[VitalConstants.uri_prop_uri]
         if name == 'vitaltype':
             return self.get_class_uri()
+        
+        # Check if name is a full URI first
+        if name in self._properties:
+            return self._properties[name]
+            
+        # Then check for short names
         for prop_info in self.get_allowed_domain_properties():
             uri = prop_info['uri']
-            # print(uri)
+            # logger.debug(uri)
             trait_class = VitalSignsImpl.get_trait_class_from_uri(uri)
-            # print(trait_class)
+            # logger.debug(trait_class)
             if trait_class and trait_class.get_short_name() == name:
                 if uri in self._properties:
                     return self._properties[uri]
@@ -234,7 +237,7 @@ class GraphObject(metaclass=GraphObjectMeta):
                                 if go:
                                     return go
                         except Exception as e:
-                            print(f"Exception: {e}")
+                            logger.info(f"Exception: {e}")
                             pass
                 return value
             return None
@@ -374,312 +377,37 @@ class GraphObject(metaclass=GraphObjectMeta):
         pass
 
     def to_dict(self) -> dict:
+        return GraphObjectDictUtils.to_dict_impl(self)
 
-        from vital_ai_vitalsigns.model.VITAL_GraphContainerObject import VITAL_GraphContainerObject
-
-        serializable_dict = {}
-
-        for uri, prop in self._properties.items():
-            prop_value = prop.to_json()["value"]
-            if uri == VitalConstants.uri_prop_uri:
-                serializable_dict['URI'] = prop_value
-            else:
-                serializable_dict[uri] = prop_value
-
-        if isinstance(self, VITAL_GraphContainerObject):
-            for name, prop in self._extern_properties.items():
-                prop_value = prop.to_json()["value"]
-                uri = "urn:extern:" + name
-                serializable_dict[uri] = prop_value
-
-        class_uri = self.get_class_uri()
-
-        serializable_dict['type'] = class_uri
-
-        serializable_dict[VitalConstants.vitaltype_uri] = class_uri
-
-        serializable_dict['types'] = [class_uri]
-
-        return serializable_dict
+    @staticmethod
+    def to_dict_list(graph_object_list) -> List[dict]:
+        return GraphObjectDictUtils.to_dict_list_impl(graph_object_list)
 
     def to_json(self, pretty_print=True) -> str:
+        return GraphObjectJsonUtils.to_json_impl(self, pretty_print)
 
-        from vital_ai_vitalsigns.model.VITAL_GraphContainerObject import VITAL_GraphContainerObject
+    def to_jsonld(self) -> dict:
+        return GraphObjectJsonldUtils.to_jsonld_impl(self)
 
-        serializable_dict = {}
-
-        for uri, prop in self._properties.items():
-            prop_value = prop.to_json()["value"]
-            if uri == VitalConstants.uri_prop_uri:
-                serializable_dict['URI'] = prop_value
-            else:
-                serializable_dict[uri] = prop_value
-
-        if isinstance(self, VITAL_GraphContainerObject):
-            for name, prop in self._extern_properties.items():
-                prop_value = prop.to_json()["value"]
-                uri = "urn:extern:" + name
-                serializable_dict[uri] = prop_value
-
-        class_uri = self.get_class_uri()
-
-        serializable_dict['type'] = class_uri
-
-        serializable_dict[VitalConstants.vitaltype_uri] = class_uri
-
-        serializable_dict['types'] = [class_uri]
-
-        if pretty_print:
-            json_string = json.dumps(serializable_dict, indent=2, cls=VitalSignsEncoder)
-        else:
-            json_string = json.dumps(serializable_dict, indent=None, cls=VitalSignsEncoder)
-
-        return json_string
+    @staticmethod
+    def to_jsonld_list(graph_object_list) -> dict:
+        return GraphObjectJsonldUtils.to_jsonld_list_impl(graph_object_list)
 
     def add_to_dataset(self, dataset: Dataset, graph_uri: str):
-
-        from vital_ai_vitalsigns.model.VITAL_GraphContainerObject import VITAL_GraphContainerObject
-
-        subject = URIRef(str(self._properties[VitalConstants.uri_prop_uri]))
-
-        triples = []
-
-        class_uri = self.get_class_uri()
-
-        triples.append((subject, URIRef(RDF.type), URIRef(class_uri)))
-
-        triples.append((subject, URIRef(VitalConstants.vitaltype_uri), URIRef(class_uri)))
-
-        for prop_uri, prop_instance in self._properties.items():
-
-            rdf_data = prop_instance.to_rdf()
-
-            if rdf_data["datatype"] == list:
-
-                value_list = rdf_data["value"]
-                data_class = rdf_data["data_class"]
-
-                for v in value_list:
-                    if data_class == URIRef:
-                        triples.append((subject, URIRef(prop_uri), URIRef(v)))
-                    else:
-                        if data_class == datetime:
-                            datatype = rdflib.XSD.dateTime
-                        elif data_class == int:
-                            datatype = rdflib.XSD.integer
-                        elif data_class == float:
-                            datatype = rdflib.XSD.float
-                        elif data_class == bool:
-                            datatype = rdflib.XSD.boolean
-                        else:
-                            datatype = rdflib.XSD.string
-
-                        triples.append((subject, URIRef(prop_uri), Literal(v, datatype=datatype)))
-
-            elif rdf_data["datatype"] == URIRef:
-                triples.append((subject, URIRef(prop_uri), URIRef(rdf_data["value"])))
-            else:
-                triples.append((subject, URIRef(prop_uri), Literal(rdf_data["value"], datatype=rdf_data["datatype"])))
-
-        if isinstance(self, VITAL_GraphContainerObject):
-            for name, prop_instance in self._extern_properties.items():
-
-                prop_uri = "urn:extern:" + name
-
-                rdf_data = prop_instance.to_rdf()
-
-                if rdf_data["datatype"] == list:
-
-                    value_list = rdf_data["value"]
-                    data_class = rdf_data["data_class"]
-
-                    for v in value_list:
-                        if data_class == URIRef:
-                            triples.append((subject, URIRef(prop_uri), URIRef(v)))
-                        else:
-                            if data_class == datetime:
-                                datatype = rdflib.XSD.dateTime
-                            elif data_class == int:
-                                datatype = rdflib.XSD.integer
-                            elif data_class == float:
-                                datatype = rdflib.XSD.float
-                            elif data_class == bool:
-                                datatype = rdflib.XSD.boolean
-                            else:
-                                datatype = rdflib.XSD.string
-
-                            triples.append((subject, URIRef(prop_uri), Literal(v, datatype=datatype)))
-
-                elif rdf_data["datatype"] == URIRef:
-                    triples.append((subject, URIRef(prop_uri), URIRef(rdf_data["value"])))
-                else:
-                    triples.append((subject, URIRef(prop_uri), Literal(rdf_data["value"], datatype=rdf_data["datatype"])))
-
-        if len(triples) > 0:
-            triples_with_context = [(s, p, o, URIRef(graph_uri)) for s, p, o in triples]
-            # print(f"Adding: {triples_with_context}")
-            dataset.addN(triples_with_context)
-            # print(f"Added {len(triples_with_context)} triples to graph with triple count: {len(graph)}")
+        GraphObjectTriplesUtils.add_to_dataset_impl(self, dataset, graph_uri)
 
     def add_to_list(self, triple_list: list):
+        GraphObjectTriplesUtils.add_to_list_impl(self, triple_list)
 
-        from vital_ai_vitalsigns.model.VITAL_GraphContainerObject import VITAL_GraphContainerObject
+    def to_triples(self) -> list:
+        return GraphObjectTriplesUtils.to_triples_impl(self)
 
-        subject = URIRef(str(self._properties[VitalConstants.uri_prop_uri]))
-
-        class_uri = self.get_class_uri()
-
-        triple_list.append((subject, URIRef(RDF.type), URIRef(class_uri)))
-
-        triple_list.append((subject, URIRef(VitalConstants.vitaltype_uri), URIRef(class_uri)))
-
-        for prop_uri, prop_instance in self._properties.items():
-
-            rdf_data = prop_instance.to_rdf()
-
-            if rdf_data["datatype"] == list:
-
-                value_list = rdf_data["value"]
-                data_class = rdf_data["data_class"]
-
-                for v in value_list:
-                    if data_class == URIRef:
-                        triple_list.append((subject, URIRef(prop_uri), URIRef(v)))
-                    else:
-                        if data_class == datetime:
-                            datatype = rdflib.XSD.dateTime
-                        elif data_class == int:
-                            datatype = rdflib.XSD.integer
-                        elif data_class == float:
-                            datatype = rdflib.XSD.float
-                        elif data_class == bool:
-                            datatype = rdflib.XSD.boolean
-                        else:
-                            datatype = rdflib.XSD.string
-
-                        triple_list.append((subject, URIRef(prop_uri), Literal(v, datatype=datatype)))
-
-            elif rdf_data["datatype"] == URIRef:
-                triple_list.append((subject, URIRef(prop_uri), URIRef(rdf_data["value"])))
-            else:
-                triple_list.append((subject, URIRef(prop_uri), Literal(rdf_data["value"], datatype=rdf_data["datatype"])))
-
-        if isinstance(self, VITAL_GraphContainerObject):
-            for name, prop_instance in self._extern_properties.items():
-
-                prop_uri = "urn:extern:" + name
-
-                rdf_data = prop_instance.to_rdf()
-
-                if rdf_data["datatype"] == list:
-
-                    value_list = rdf_data["value"]
-                    data_class = rdf_data["data_class"]
-
-                    for v in value_list:
-                        if data_class == URIRef:
-                            # graph.add((subject, URIRef(prop_uri), URIRef(v)))
-                            triple_list.append((subject, URIRef(prop_uri), URIRef(v)))
-                        else:
-                            if data_class == datetime:
-                                datatype = rdflib.XSD.dateTime
-                            elif data_class == int:
-                                datatype = rdflib.XSD.integer
-                            elif data_class == float:
-                                datatype = rdflib.XSD.float
-                            elif data_class == bool:
-                                datatype = rdflib.XSD.boolean
-                            else:
-                                datatype = rdflib.XSD.string
-
-                            triple_list.append((subject, URIRef(prop_uri), Literal(v, datatype=datatype)))
-
-                elif rdf_data["datatype"] == URIRef:
-                    triple_list.append((subject, URIRef(prop_uri), URIRef(rdf_data["value"])))
-                else:
-                    triple_list.append((subject, URIRef(prop_uri), Literal(rdf_data["value"], datatype=rdf_data["datatype"])))
+    @staticmethod
+    def to_triples_list(graph_object_list: List) -> list:
+        return GraphObjectTriplesUtils.to_triples_list_impl(graph_object_list)
 
     def to_rdf(self, format='nt', graph_uri: str = None) -> str:
-
-        from vital_ai_vitalsigns.model.VITAL_GraphContainerObject import VITAL_GraphContainerObject
-
-        g = Graph(identifier=URIRef(graph_uri) if graph_uri else None)
-
-        subject = URIRef(str(self._properties[VitalConstants.uri_prop_uri]))
-
-        class_uri = self.get_class_uri()
-
-        g.add((subject, URIRef(RDF.type), URIRef(class_uri)))
-
-        g.add((subject, URIRef(VitalConstants.vitaltype_uri), URIRef(class_uri)))
-
-        for prop_uri, prop_instance in self._properties.items():
-
-            rdf_data = prop_instance.to_rdf()
-
-            if rdf_data["datatype"] == list:
-
-                value_list = rdf_data["value"]
-                data_class = rdf_data["data_class"]
-
-                for v in value_list:
-                    if data_class == URIRef:
-                        g.add((subject, URIRef(prop_uri), URIRef(v)))
-                    else:
-                        if data_class == datetime:
-                            datatype = rdflib.XSD.dateTime
-                        elif data_class == int:
-                            datatype = rdflib.XSD.integer
-                        elif data_class == float:
-                            datatype = rdflib.XSD.float
-                        elif data_class == bool:
-                            datatype = rdflib.XSD.boolean
-                        else:
-                            datatype = rdflib.XSD.string
-
-                        g.add((subject, URIRef(prop_uri), Literal(v, datatype=datatype)))
-
-            elif rdf_data["datatype"] == URIRef:
-                g.add((subject, URIRef(prop_uri), URIRef(rdf_data["value"])))
-            else:
-                # logging.info(f"Setting {prop_uri}: {rdf_data['value']} : {rdf_data['datatype']}")
-                g.add((subject, URIRef(prop_uri), Literal(rdf_data["value"], datatype=rdf_data["datatype"])))
-
-        if isinstance(self, VITAL_GraphContainerObject):
-            for name, prop_instance in self._extern_properties.items():
-
-                prop_uri = "urn:extern:" + name
-
-                rdf_data = prop_instance.to_rdf()
-
-                if rdf_data["datatype"] == list:
-
-                    value_list = rdf_data["value"]
-                    data_class = rdf_data["data_class"]
-
-                    for v in value_list:
-                        if data_class == URIRef:
-                            g.add((subject, URIRef(prop_uri), URIRef(v)))
-                        else:
-                            if data_class == datetime:
-                                datatype = rdflib.XSD.dateTime
-                            elif data_class == int:
-                                datatype = rdflib.XSD.integer
-                            elif data_class == float:
-                                datatype = rdflib.XSD.float
-                            elif data_class == bool:
-                                datatype = rdflib.XSD.boolean
-                            else:
-                                datatype = rdflib.XSD.string
-
-                            g.add((subject, URIRef(prop_uri), Literal(v, datatype=datatype)))
-
-                elif rdf_data["datatype"] == URIRef:
-                    g.add((subject, URIRef(prop_uri), URIRef(rdf_data["value"])))
-                else:
-                    g.add((subject, URIRef(prop_uri), Literal(rdf_data["value"], datatype=rdf_data["datatype"])))
-
-        return g.serialize(format=format)
+        return GraphObjectRdfUtils.to_rdf_impl(self, format, graph_uri)
 
     @staticmethod
     @lru_cache(maxsize=1000)
@@ -688,457 +416,48 @@ class GraphObject(metaclass=GraphObjectMeta):
 
     @classmethod
     def from_json_triples(cls, json_string: str) -> list:
-
-        from vital_ai_vitalsigns.vitalsigns import VitalSigns
-
-        vs = VitalSigns()
-
-        triple_list = []
-
-        object_map = json.loads(json_string)
-
-        subject = URIRef(object_map['URI'])
-
-        type_uri = object_map['type']
-
-        type_uri_ref = URIRef(type_uri)
-
-        triple_list.append((subject, RDF.type, type_uri_ref))
-
-        triple_list.append((subject, URIRef(VitalConstants.vitaltype_uri), type_uri_ref))
-
-        triple_list.append((subject, URIRef(VitalConstants.uri_prop_uri), subject))
-
-        registry = vs.get_registry()
-
-        graph_object_cls = registry.get_vitalsigns_class(type_uri)
-
-        allowed_prop_list = graph_object_cls.get_allowed_domain_properties()
-
-        # TODO
-        # handle types
-        # handle vitaltype
-        # handle lists or prop values?
-
-        for property_uri, value in object_map.items():
-
-            if property_uri == 'type':
-                continue
-            if property_uri == 'types':
-                continue
-            if property_uri == 'URI':
-                continue
-            if property_uri == 'vitaltype':  # is this used?
-                continue
-            if property_uri == VitalConstants.vitaltype_uri:
-                continue
-
-            triple_prop_class = None
-
-            for prop_info in allowed_prop_list:
-                p_uri = prop_info['uri']
-                if p_uri == property_uri:
-                    prop_class = prop_info['prop_class']
-                    triple_prop_class = prop_class
-                    break
-
-            prop_uri = URIRef(property_uri)
-
-            try:
-                if isinstance(value, dict):
-                    continue
-
-                if triple_prop_class == URIProperty:
-                    triple = (subject, prop_uri, URIRef(value))
-                elif triple_prop_class is not None:
-                    datatype = IProperty.get_rdf_datatype(value)
-                    literal_value = Literal(value, datatype=datatype)
-                    triple = (subject, prop_uri, literal_value)
-                elif cls.valid_uri(value):
-                    triple = (subject, prop_uri, URIRef(value))
-                else:
-                    datatype = IProperty.get_rdf_datatype(value)
-                    literal_value = Literal(value, datatype=datatype)
-                    triple = (subject, prop_uri, literal_value)
-
-                triple_list.append(triple)
-            except ValueError as e:
-                print(f"Error creating triple for {property_uri}: {e}")
-
-        return triple_list
+        return GraphObjectTriplesUtils.from_json_triples_impl(cls, json_string)
 
     @classmethod
     def from_json(cls, json_map: str, *, modified=False) -> G:
-
-        from vital_ai_vitalsigns.vitalsigns import VitalSigns
-
-        data = json.loads(json_map)
-
-        type_uri = data['type']
-
-        vitaltype_class_uri = data.get(VitalConstants.vitaltype_uri)
-
-        vs = VitalSigns()
-
-        registry = vs.get_registry()
-
-        # graph_object_cls = registry.vitalsigns_classes[type_uri]
-
-        graph_object_cls = registry.get_vitalsigns_class(type_uri)
-
-        # TODO switch to this
-        # graph_object_cls = registry.get_vitalsigns_class(vitaltype_class_uri)
-
-        graph_object = graph_object_cls(modified=modified)
-
-        for key, value in data.items():
-            if key == 'type':
-                continue
-            if key == 'types':
-                continue
-            if key == 'vitaltype':  # is this used?
-                continue
-            if key == VitalConstants.vitaltype_uri:
-                continue
-            if key == VitalConstants.uri_prop_uri:
-                graph_object.URI = value
-                continue
-
-            setattr(graph_object, key, value)
-
-        return graph_object
+        return GraphObjectJsonUtils.from_json_impl(cls, json_map, modified=modified)
 
     @classmethod
     def from_json_map(cls, json_map: dict, *, modified=False) -> G:
+        return GraphObjectJsonUtils.from_json_map_impl(cls, json_map, modified=modified)
 
-        from vital_ai_vitalsigns.vitalsigns import VitalSigns
+    @classmethod
+    def from_dict(cls, dict_map: dict, *, modified=False) -> G:
+        return GraphObjectDictUtils.from_dict_impl(cls, dict_map, modified=modified)
 
-        data = json_map
+    @classmethod
+    def from_dict_list(cls, dict_list: List[dict], *, modified=False) -> List[G]:
+        return GraphObjectDictUtils.from_dict_list_impl(cls, dict_list, modified=modified)
 
-        type_uri = data['type']
+    @classmethod
+    def from_jsonld(cls, jsonld_data: dict, *, modified=False) -> G:
+        return GraphObjectJsonldUtils.from_jsonld_impl(cls, jsonld_data, modified=modified)
 
-        vitaltype_class_uri = data.get(VitalConstants.vitaltype_uri)
-
-        vs = VitalSigns()
-
-        registry = vs.get_registry()
-
-        # graph_object_cls = registry.vitalsigns_classes[type_uri]
-
-        graph_object_cls = registry.get_vitalsigns_class(type_uri)
-
-        # TODO switch to this
-        # graph_object_cls = registry.get_vitalsigns_class(vitaltype_class_uri)
-
-        graph_object = graph_object_cls(modified=modified)
-
-        for key, value in data.items():
-            if key == 'type':
-                continue
-            if key == 'types':
-                continue
-            if key == 'vitaltype':  # is this used?
-                continue
-            if key == VitalConstants.vitaltype_uri:
-                continue
-            if key == VitalConstants.uri_prop_uri:
-                graph_object.URI = value
-                continue
-
-            setattr(graph_object, key, value)
-
-        return graph_object
-
-
+    @classmethod
+    def from_jsonld_list(cls, jsonld_doc, *, modified=False) -> List[G]:
+        return GraphObjectJsonldUtils.from_jsonld_list_impl(cls, jsonld_doc, modified=modified)
 
     @classmethod
     def from_json_list(cls, json_map_list: str, *, modified=False) -> List[G]:
-
-        graph_object_list = []
-
-        data_list = json.loads(json_map_list)
-
-        for data in data_list:
-            graph_object = cls.from_json_map(data, modified=modified)
-            graph_object_list.append(graph_object)
-
-        return graph_object_list
+        return GraphObjectJsonUtils.from_json_list_impl(cls, json_map_list, modified=modified)
 
     @classmethod
     def from_rdf(cls, rdf_string: str, *, modified=False) -> G:
-
-        from vital_ai_vitalsigns.vitalsigns import VitalSigns
-        from vital_ai_vitalsigns.model.VITAL_GraphContainerObject import VITAL_GraphContainerObject
-
-        g = Graph()
-
-        g.parse(data=rdf_string, format='nt')
-
-        type_uri = None
-
-        subject_uri = None
-
-        vitaltype_class_uri = None
-
-        for subject, predicate, obj in g.triples((None, RDF.type, None)):
-            type_uri = str(obj)
-            subject_uri = subject
-            break
-
-        for subject, predicate, obj in g.triples((None, URIRef(VitalConstants.vitaltype_uri), None)):
-            vitaltype_class_uri = str(obj)
-            break
-
-        if not type_uri:
-            raise ValueError("Type URI not found in RDF data.")
-
-        if not subject_uri:
-            raise ValueError("Subject URI not found in RDF data.")
-
-        # TODO enforce: vitaltype_class_uri
-
-        vs = VitalSigns()
-
-        registry = vs.get_registry()
-
-        # TODO switch to
-        # graph_object_cls = registry.get_vitalsigns_class(vitaltype_class_uri)
-
-        graph_object_cls = registry.get_vitalsigns_class(type_uri)
-
-        graph_object = graph_object_cls(modified=modified)
-
-        graph_object.URI = subject_uri
-
-        multi_valued_props = []
-
-        for subject, predicate, obj_value in g:
-
-            if predicate == RDF.type:
-                continue
-
-            predicate = str(predicate)
-
-            if predicate == VitalConstants.vitaltype_uri:
-                continue
-
-            if predicate == VitalConstants.uri_prop_uri:
-                continue
-
-            trait_cls = registry.vitalsigns_property_classes.get(predicate, None)
-
-            multiple_values = False
-
-            # for GCO this is not set
-            # need to inspect the literal to detect multiple values?
-            if trait_cls:
-                multiple_values = trait_cls.multiple_values
-
-            if multiple_values is True:
-
-                if predicate in multi_valued_props:
-                    continue
-
-                value_list = []
-
-                for multi_value_subject, multi_value_predicate, multi_obj_value in g.triples((subject, URIRef(predicate), None)):
-                    value_list.append(multi_obj_value)
-
-                setattr(graph_object, predicate, value_list)
-
-                multi_valued_props.append(predicate)
-
-                continue
-
-            value = None
-            if isinstance(obj_value, Literal):
-                value = obj_value.toPython()
-            elif isinstance(obj_value, URIRef):
-                value = str(obj_value)
-
-            setattr(graph_object, predicate, value)
-
-        if modified is False:
-            graph_object.mark_serialized()
-
-        return graph_object
+        return GraphObjectRdfUtils.from_rdf_impl(cls, rdf_string, modified=modified)
 
     @classmethod
     def from_triples(cls, triples: Generator[Tuple, None, None], *, modified=False) -> G:
-
-        from vital_ai_vitalsigns.vitalsigns import VitalSigns
-
-        type_uri = None
-        subject_uri = None
-        vitaltype_class_uri = None
-
-        generated_triples = []
-
-        # copy the generated triples into a list for repeat processing
-        for subject, predicate, obj in triples:
-            generated_triples.append((subject, predicate, obj))
-
-        for subject, predicate, obj in generated_triples:
-            # print(f"Triple: {subject}, {predicate}, {obj}")
-            if predicate == RDF.type:
-                type_uri = str(obj)
-                subject_uri = str(subject)
-                break
-
-        if not type_uri:
-            raise ValueError("Type URI not found in RDF data.")
-
-        if not subject_uri:
-            raise ValueError("Subject URI not found in RDF data.")
-
-        # TODO enforce vitaltype_class_uri
-
-        vs = VitalSigns()
-
-        registry = vs.get_registry()
-
-        # TODO switch to: vitaltype_class_uri
-        # graph_object_cls = registry.get_vitalsigns_class(vitaltype_class_uri)
-
-        graph_object_cls = registry.get_vitalsigns_class(type_uri)
-
-        graph_object = graph_object_cls(modified=modified)
-
-        graph_object.URI = subject_uri
-
-        for subject, predicate, obj_value in generated_triples:
-
-            if predicate == RDF.type:
-                continue
-
-            predicate = str(predicate)
-
-            # skip
-            if predicate == VitalConstants.vitaltype_uri:
-                continue
-
-            if predicate == VitalConstants.uri_prop_uri:
-                continue
-
-            value = None
-
-            if isinstance(obj_value, Literal):
-                value = obj_value.toPython()
-            elif isinstance(obj_value, URIRef):
-                value = str(obj_value)
-
-            setattr(graph_object, predicate, value)
-
-        if modified is False:
-            graph_object.mark_serialized()
-
-        return graph_object
+        return GraphObjectTriplesUtils.from_triples_impl(cls, triples, modified=modified)
 
     @classmethod
     def from_triples_list(cls, triples_list: Generator[Tuple, None, None], *, modified=False) -> List[G]:
-
-        from vital_ai_vitalsigns.vitalsigns import VitalSigns
-
-        vs = VitalSigns()
-
-        # TODO enforce vitaltype_class_uri
-        registry = vs.get_registry()
-
-        graph_object_list = []
-
-        generated_triples = []
-
-        grouped_triples = defaultdict(list)
-
-        for subject, predicate, obj in triples_list:
-            generated_triples.append((subject, predicate, obj))
-            grouped_triples[subject].append((predicate, obj))
-
-        for subject, triples in grouped_triples.items():
-
-            type_uri = None
-            vitaltype_class_uri = None
-            subject_uri = str(subject)
-
-            for predicate, obj in triples:
-
-                if predicate == RDF.type:
-                    type_uri = str(obj)
-                    break
-
-            if not type_uri:
-                logging.info(f"subject: {subject}")
-                logging.info(f"triples: {triples}")
-                raise ValueError("Type URI not found in RDF data.")
-
-            if not subject_uri:
-                logging.info(f"subject: {subject}")
-                logging.info(f"triples: {triples}")
-                raise ValueError("Subject URI not found in RDF data.")
-
-            # TODO switch to: vitaltype_class_uri
-            # graph_object_cls = registry.get_vitalsigns_class(vitaltype_class_uri)
-
-            graph_object_cls = registry.get_vitalsigns_class(type_uri)
-
-            graph_object = graph_object_cls(modified=modified)
-
-            graph_object.URI = subject_uri
-
-            for predicate, obj_value in triples:
-
-                if predicate == RDF.type:
-                    continue
-
-                predicate = str(predicate)
-
-                # skip
-                if predicate == VitalConstants.vitaltype_uri:
-                    continue
-
-                if predicate == VitalConstants.uri_prop_uri:
-                    continue
-
-                value = None
-
-                if isinstance(obj_value, Literal):
-                    value = obj_value.toPython()
-                elif isinstance(obj_value, URIRef):
-                    value = str(obj_value)
-
-                setattr(graph_object, predicate, value)
-
-            if modified is False:
-                graph_object.mark_serialized()
-
-            graph_object_list.append(graph_object)
-
-        return graph_object_list
+        return GraphObjectTriplesUtils.from_triples_list_impl(cls, triples_list, modified=modified)
 
     @classmethod
     def from_rdf_list(cls, rdf_string: str, *, modified=False) -> List[G]:
-
-        g = Graph()
-
-        g.parse(data=rdf_string, format='nt')
-
-        subjects = set(g.subjects())
-
-        split_rdf_strings = []
-
-        for subj in subjects:
-
-            subj_graph = Graph()
-
-            for s, p, o in g.triples((subj, None, None)):
-                subj_graph.add((s, p, o))
-
-            split_rdf_strings.append(subj_graph.serialize(format='nt').decode('utf-8'))
-
-        graph_object_list = []
-
-        for rdf_split in split_rdf_strings:
-            graph_object = cls.from_rdf(rdf_split, modified=modified)
-            graph_object_list.append(graph_object)
-
-        return graph_object_list
+        return GraphObjectRdfUtils.from_rdf_list_impl(cls, rdf_string, modified=modified)

@@ -169,6 +169,18 @@ class VitalSigns(metaclass=VitalSignsMeta):
     def from_json_list(self, json_map_list: str, *, modified=False) -> List[G]:
         return GraphObject.from_json_list(json_map_list, modified=modified)
 
+    def from_dict(self, dict_map: dict, *, modified=False) -> G:
+        return GraphObject.from_dict(dict_map, modified=modified)
+
+    def from_dict_list(self, dict_list: List[dict], *, modified=False) -> List[G]:
+        return GraphObject.from_dict_list(dict_list, modified=modified)
+
+    def from_jsonld(self, jsonld_data: dict, *, modified=False) -> G:
+        return GraphObject.from_jsonld(jsonld_data, modified=modified)
+
+    def from_jsonld_list(self, jsonld_doc, *, modified=False) -> List[G]:
+        return GraphObject.from_jsonld_list(jsonld_doc, modified=modified)
+
     def from_rdf(self, rdf_string: str, *, modified=False) -> G:
         return GraphObject.from_rdf(rdf_string, modified=modified)
 

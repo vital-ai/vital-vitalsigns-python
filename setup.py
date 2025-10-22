@@ -39,6 +39,7 @@ setup(
         'python-dotenv>=1.0.1',
         'rdflib>=7.0.0',
         'PyYAML>=6.0.1',
+        'PyLD>=2.0.0',
         'numpy>=1.26.4',
         'hnswlib>=0.8.0',
         'owlready2==0.46',
