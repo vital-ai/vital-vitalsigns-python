@@ -57,18 +57,7 @@ class AttributeComparisonProxy:
         # TODO Add logic here
         return False  # Placeholder for the example
     
-    def __getitem__(self, key):
-        # Make proxy subscriptable to avoid Pydantic errors
-        # Return None or raise KeyError for missing items
-        raise KeyError(f"'{self.name}' has no key '{key}'")
     
-    def __iter__(self):
-        # Make proxy iterable (returns empty iterator)
-        return iter([])
-    
-    def __len__(self):
-        # Make proxy support len()
-        return 0
 
 class GraphObjectMeta(type):
     def __init__(cls, name, bases, dct):
@@ -86,6 +75,34 @@ class GraphObjectMeta(type):
     def __getattr__(self, name):
         if name.startswith('__') and name.endswith('__'):
             logger.info(f"Getting internal class attribute: {name}")
+        
+        # Prevent Pydantic from encountering AttributeComparisonProxy objects
+        # by raising AttributeError for Pydantic-specific attributes
+        pydantic_attrs = {
+            '__get_pydantic_json_schema__',
+            '__pydantic_generic_metadata__',
+            '__pydantic_core_schema__',
+            '__pydantic_serializer__',
+            '__pydantic_validator__',
+            '__pydantic_decorators__',
+            '__pydantic_fields__',
+            '__pydantic_config__',
+            '__pydantic_complete__',
+            '__pydantic_custom_init_subclass_params__',
+            '__pydantic_init_subclass__',
+            '__pydantic_post_init__',
+            '__pydantic_private__',
+            '__pydantic_extra__',
+            '__pydantic_fields_set__',
+            '__pydantic_parent_namespace__',
+            '__args__',  # Used by Pydantic for generic type checking
+            '__origin__',  # Used by Pydantic for generic type checking
+            '__parameters__'  # Used by Pydantic for generic type checking
+        }
+        
+        if name in pydantic_attrs:
+            raise AttributeError(f"'{self.__name__}' has no attribute '{name}'")
+        
         return AttributeComparisonProxy(self, name)
 
 G = TypeVar('G', bound=Optional['GraphObject'])
@@ -531,3 +548,12 @@ class GraphObject(metaclass=GraphObjectMeta):
         import json
         data = json.loads(json_data)
         return cls.model_validate(data, **kwargs)
+
+    @classmethod
+    def __get_pydantic_json_schema__(cls, core_schema, handler):
+        """Pydantic v2 JSON schema generation method with enhanced property structure."""
+        if not PYDANTIC_V2_AVAILABLE:
+            raise ImportError("Pydantic v2 is required for this functionality. Install with: pip install pydantic>=2.0")
+        
+        # Use enhanced schema generation that shows VitalSigns property structure
+        return GraphObjectPydanticUtils.get_pydantic_json_schema_impl(cls, core_schema, handler)

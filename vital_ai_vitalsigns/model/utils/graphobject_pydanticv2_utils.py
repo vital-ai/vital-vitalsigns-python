@@ -48,6 +48,122 @@ class GraphObjectPydanticUtils:
         """Generate Pydantic schema for GraphObject properties."""
         if not PYDANTIC_V2_AVAILABLE:
             raise ImportError("Pydantic v2 is required for this functionality")
+    
+    @staticmethod
+    def get_pydantic_json_schema_impl(cls, core_schema, handler):
+        """Generate enhanced JSON schema for OpenAPI documentation showing VitalSigns property structure."""
+        if not PYDANTIC_V2_AVAILABLE:
+            raise ImportError("Pydantic v2 is required for this functionality")
+        
+        try:
+            # Get all properties for this class from VitalSigns ontology
+            properties = cls.get_allowed_domain_properties()
+            schema_properties = {}
+            
+            # Always include URI property (fundamental VitalSigns property)
+            schema_properties["URI"] = {
+                "type": "string",
+                "description": "Unique identifier for the VitalSigns object",
+                "format": "uri"
+            }
+            
+            # Add vitaltype for class identification
+            schema_properties["vitaltype"] = {
+                "type": "string", 
+                "description": "VitalSigns class type identifier",
+                "readOnly": True,
+                "example": cls.get_class_uri() if hasattr(cls, 'get_class_uri') else cls.__name__
+            }
+            
+            # Process each property from the ontology
+            for prop_info in properties:
+                prop_uri = prop_info['uri']
+                prop_class = prop_info['prop_class']
+                
+                # Get property trait for additional metadata
+                from vital_ai_vitalsigns.impl.vitalsigns_impl import VitalSignsImpl
+                trait_class = VitalSignsImpl.get_trait_class_from_uri(prop_uri)
+                
+                if trait_class:
+                    short_name = trait_class.get_short_name()
+                    
+                    # Generate JSON schema for this property
+                    prop_schema = GraphObjectPydanticUtils._map_property_to_json_schema(prop_class, trait_class)
+                    
+                    # Use short name for better API usability
+                    schema_properties[short_name] = prop_schema
+            
+            # Create the complete schema
+            json_schema = {
+                "type": "object",
+                "title": cls.__name__,
+                "description": f"VitalSigns {cls.__name__} with ontology-defined properties",
+                "properties": schema_properties,
+                "additionalProperties": False,  # Strict schema - only defined properties
+                "required": ["URI"]  # URI is typically required for VitalSigns objects
+            }
+            
+            return json_schema
+            
+        except Exception as e:
+            # Fallback to simple schema if ontology access fails
+            return {
+                "type": "object",
+                "title": cls.__name__,
+                "description": f"VitalSigns {cls.__name__} object (simplified schema)",
+                "properties": {
+                    "URI": {
+                        "type": "string",
+                        "description": "Unique identifier for the object"
+                    }
+                },
+                "additionalProperties": True
+            }
+    
+    @staticmethod
+    def _map_property_to_json_schema(prop_class: Type, trait_class: Type) -> Dict[str, Any]:
+        """Map VitalSigns property class to JSON schema definition."""
+        
+        # Base type mapping for VitalSigns properties
+        type_mapping = {
+            'StringProperty': {"type": "string"},
+            'IntegerProperty': {"type": "integer"},
+            'LongProperty': {"type": "integer", "format": "int64"},
+            'FloatProperty': {"type": "number", "format": "float"},
+            'DoubleProperty': {"type": "number", "format": "double"},
+            'BooleanProperty': {"type": "boolean"},
+            'TruthProperty': {"type": "boolean"},
+            'DateTimeProperty': {"type": "string", "format": "date-time"},
+            'URIProperty': {"type": "string", "format": "uri"},
+            'GeoLocationProperty': {"type": "string", "description": "Geographic location"},
+            'MultiValueProperty': {"type": "array", "items": {"type": "string"}},
+            'OtherProperty': {"type": "string", "description": "Generic property value"},
+        }
+        
+        prop_class_name = prop_class.__name__
+        base_schema = type_mapping.get(prop_class_name, {"type": "string"})
+        
+        # Enhanced schema with metadata
+        enhanced_schema = base_schema.copy()
+        
+        # Add description from property class
+        if hasattr(prop_class, '__doc__') and prop_class.__doc__:
+            enhanced_schema["description"] = prop_class.__doc__.strip()
+        
+        # Handle multiple values
+        if hasattr(trait_class, 'get_multiple_values') and trait_class.get_multiple_values():
+            if prop_class_name != 'MultiValueProperty':  # Avoid double-wrapping
+                enhanced_schema = {
+                    "type": "array",
+                    "items": enhanced_schema,
+                    "description": f"List of {enhanced_schema.get('description', 'values')}"
+                }
+        
+        # Add property URI as additional metadata
+        if hasattr(trait_class, 'get_uri'):
+            enhanced_schema["x-vitalsigns-uri"] = trait_class.get_uri()
+        
+        return enhanced_schema
             
         from vital_ai_vitalsigns.impl.vitalsigns_impl import VitalSignsImpl
         

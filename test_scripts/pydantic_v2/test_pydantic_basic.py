@@ -218,5 +218,82 @@ class TestPydanticListHandling:
         assert edge_source == "http://example.com/node1"
 
 
+class TestOpenAPISchemaGeneration:
+    """Test that reproduces the production API OpenAPI schema generation error."""
+
+    @classmethod
+    def setup_class(cls):
+        """Initialize VitalSigns for testing."""
+        vs = VitalSigns()
+
+    def test_fastapi_openapi_schema_generation_error(self):
+        """Test that reproduces the 'AttributeComparisonProxy' object is not callable error."""
+        try:
+            from pydantic import BaseModel
+            from pydantic.json_schema import GenerateJsonSchema
+            from pydantic._internal._generate_schema import GenerateSchema
+            from pydantic._internal._config import ConfigWrapper
+            
+            class APIModel(BaseModel):
+                node: VITAL_Node
+                edge: VITAL_Edge
+                nodes: List[VITAL_Node] = []
+            
+            # This should trigger the same error as the production API
+            # when FastAPI tries to generate OpenAPI schema
+            try:
+                schema = APIModel.model_json_schema()
+                # If this succeeds, the error is fixed
+                assert isinstance(schema, dict)
+                print("✓ OpenAPI schema generation successful - error is fixed")
+                
+                # Verify the schema has expected structure
+                assert 'properties' in schema
+                assert 'node' in schema['properties']
+                assert 'edge' in schema['properties']
+                assert 'nodes' in schema['properties']
+                
+            except TypeError as e:
+                if "'AttributeComparisonProxy' object is not callable" in str(e):
+                    # This is the exact error we're trying to reproduce and fix
+                    print(f"✗ Reproduced production API error: {e}")
+                    raise e
+                elif "argument of type 'NoneType' is not iterable" in str(e):
+                    # This suggests our fix is returning None when Pydantic expects a proper schema
+                    print(f"✗ Fix is incomplete - Pydantic expects proper schema handler: {e}")
+                    raise e
+                else:
+                    # Different error, re-raise it
+                    raise e
+                
+        except ImportError:
+            pytest.skip("Pydantic schema generation testing requires full Pydantic installation")
+
+    def test_pydantic_attributes_raise_attribute_error(self):
+        """Test that Pydantic-specific attributes raise AttributeError instead of returning AttributeComparisonProxy."""
+        
+        # Test that most Pydantic attributes raise AttributeError on GraphObject classes
+        # Note: __get_pydantic_json_schema__ and __get_pydantic_core_schema__ are now implemented
+        pydantic_attrs_should_raise = [
+            '__pydantic_generic_metadata__',
+            '__pydantic_serializer__',
+            '__pydantic_validator__',
+            '__pydantic_decorators__',
+            '__pydantic_fields__'
+        ]
+        
+        for attr in pydantic_attrs_should_raise:
+            with pytest.raises(AttributeError):
+                getattr(VITAL_Node, attr)
+        
+        # Test that implemented Pydantic methods exist and are callable
+        assert hasattr(VITAL_Node, '__get_pydantic_json_schema__')
+        assert hasattr(VITAL_Node, '__get_pydantic_core_schema__')
+        assert callable(getattr(VITAL_Node, '__get_pydantic_json_schema__'))
+        assert callable(getattr(VITAL_Node, '__get_pydantic_core_schema__'))
+                
+        print(f"✓ Pydantic attributes properly handled - some raise AttributeError, others are implemented")
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
