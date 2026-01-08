@@ -4,6 +4,8 @@ from collections import OrderedDict
 import logging
 import numpy as np
 import onnxruntime as ort
+# Suppress ONNX Runtime warnings about GPU device discovery
+ort.set_default_logger_severity(3)  # 3 = ERROR level, suppresses warnings
 from transformers import AutoTokenizer
 from importlib.resources import files  # Python 3.9+
 # from sentence_transformers import SentenceTransformer
@@ -67,7 +69,9 @@ class EmbeddingModel:
 
         # Create an ONNXRuntime session for inference
         model_path = get_model_file(package_name, model_name)
-        self.ort_session = ort.InferenceSession(model_path)
+        # Use CPU provider only to avoid GPU device discovery warnings
+        providers = ['CPUExecutionProvider']
+        self.ort_session = ort.InferenceSession(model_path, providers=providers)
 
         self.model_id = model_id
         self.cache = LRUEmbeddingCache(maxsize=cache_size)

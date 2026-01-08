@@ -23,6 +23,19 @@ from vital_ai_vitalsigns.model.utils.graphobject_dict_utils import GraphObjectDi
 from vital_ai_vitalsigns.model.utils.graphobject_jsonld_utils import GraphObjectJsonldUtils
 from collections import defaultdict
 
+# Pydantic v2 imports (optional)
+try:
+    from vital_ai_vitalsigns.model.utils.graphobject_pydanticv2_utils import GraphObjectPydanticUtils
+    from pydantic import GetCoreSchemaHandler
+    from pydantic_core import core_schema
+    from typing import Type, Any, Dict
+    PYDANTIC_V2_AVAILABLE = True
+except ImportError:
+    PYDANTIC_V2_AVAILABLE = False
+    GraphObjectPydanticUtils = None
+    GetCoreSchemaHandler = None
+    core_schema = None
+
 # Create logger for this module
 logger = logging.getLogger(__name__)
 
@@ -43,6 +56,19 @@ class AttributeComparisonProxy:
         logger.info(f"Comparing {self.cls.__name__}.{self.name} with {value}")
         # TODO Add logic here
         return False  # Placeholder for the example
+    
+    def __getitem__(self, key):
+        # Make proxy subscriptable to avoid Pydantic errors
+        # Return None or raise KeyError for missing items
+        raise KeyError(f"'{self.name}' has no key '{key}'")
+    
+    def __iter__(self):
+        # Make proxy iterable (returns empty iterator)
+        return iter([])
+    
+    def __len__(self):
+        # Make proxy support len()
+        return 0
 
 class GraphObjectMeta(type):
     def __init__(cls, name, bases, dct):
@@ -205,7 +231,10 @@ class GraphObject(metaclass=GraphObjectMeta):
         vs = VitalSigns()
 
         if name == 'URI':
-            return self._properties[VitalConstants.uri_prop_uri]
+            if VitalConstants.uri_prop_uri in self._properties:
+                return self._properties[VitalConstants.uri_prop_uri]
+            else:
+                return None
         if name == 'vitaltype':
             return self.get_class_uri()
         
@@ -461,3 +490,44 @@ class GraphObject(metaclass=GraphObjectMeta):
     @classmethod
     def from_rdf_list(cls, rdf_string: str, *, modified=False) -> List[G]:
         return GraphObjectRdfUtils.from_rdf_list_impl(cls, rdf_string, modified=modified)
+
+    # Pydantic v2 compatibility methods
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, 
+        source_type: Type[Any], 
+        handler: GetCoreSchemaHandler
+    ) -> core_schema.CoreSchema:
+        """Pydantic v2 core schema generation for GraphObject classes."""
+        if not PYDANTIC_V2_AVAILABLE:
+            raise ImportError("Pydantic v2 is required for this functionality. Install with: pip install pydantic>=2.0")
+        return GraphObjectPydanticUtils.get_pydantic_core_schema_impl(cls, source_type, handler)
+
+    def model_dump(self, **kwargs) -> Dict[str, Any]:
+        """Pydantic-compatible serialization method."""
+        if not PYDANTIC_V2_AVAILABLE:
+            raise ImportError("Pydantic v2 is required for this functionality. Install with: pip install pydantic>=2.0")
+        return GraphObjectPydanticUtils.pydantic_serialize_impl(self)
+
+    @classmethod
+    def model_validate(cls, data: Any, **kwargs) -> 'GraphObject':
+        """Pydantic-compatible validation method."""
+        if not PYDANTIC_V2_AVAILABLE:
+            raise ImportError("Pydantic v2 is required for this functionality. Install with: pip install pydantic>=2.0")
+        return GraphObjectPydanticUtils.pydantic_validate_impl(cls, data)
+
+    def model_dump_json(self, **kwargs) -> str:
+        """Pydantic-compatible JSON serialization."""
+        if not PYDANTIC_V2_AVAILABLE:
+            raise ImportError("Pydantic v2 is required for this functionality. Install with: pip install pydantic>=2.0")
+        import json
+        return json.dumps(self.model_dump(**kwargs))
+
+    @classmethod
+    def model_validate_json(cls, json_data: str, **kwargs) -> 'GraphObject':
+        """Pydantic-compatible JSON validation."""
+        if not PYDANTIC_V2_AVAILABLE:
+            raise ImportError("Pydantic v2 is required for this functionality. Install with: pip install pydantic>=2.0")
+        import json
+        data = json.loads(json_data)
+        return cls.model_validate(data, **kwargs)

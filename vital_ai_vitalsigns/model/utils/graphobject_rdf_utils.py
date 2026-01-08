@@ -21,6 +21,10 @@ class GraphObjectRdfUtils:
 
         g = Graph(identifier=URIRef(graph_uri) if graph_uri else None)
 
+        # Check if URI property exists
+        if VitalConstants.uri_prop_uri not in graph_object._properties:
+            raise ValueError("Cannot convert GraphObject to RDF - missing URI property")
+        
         subject = URIRef(str(graph_object._properties[VitalConstants.uri_prop_uri]))
 
         class_uri = graph_object.get_class_uri()

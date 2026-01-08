@@ -426,7 +426,7 @@ class VitalSignsOntologyManager:
             WHERE {
                 ?objectProperty rdf:type owl:ObjectProperty .
                 ?objectProperty rdfs:domain ?classExpression .
-                ?objectProperty rdfs:range ?rangeExpression .
+                OPTIONAL { ?objectProperty rdfs:range ?rangeExpression . }
             }
             """
 
@@ -439,7 +439,7 @@ class VitalSignsOntologyManager:
 
             # Extract all classes from the class expression and range expression
             domain_classes = list(self.extract_classes(class_expression, self._domain_graph))
-            range_classes = list(self.extract_classes(range_expression, self._domain_graph))
+            range_classes = list(self.extract_classes(range_expression, self._domain_graph)) if range_expression else []
 
             # Add to results dictionary
             if object_property_uri not in self._ont_prop_results_dict:
