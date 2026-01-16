@@ -98,7 +98,7 @@ class GraphObjectJsonldUtils:
         Returns:
             dict: Context with namespaces needed for the data
         """
-        # Start with base JSON-LD context (no aliases for @id/@type)
+        # Start with essential vital namespaces that are commonly used
         context = {}
         
         # Extract all URIs from the objects
@@ -109,21 +109,26 @@ class GraphObjectJsonldUtils:
             # Scan object properties for URIs
             uris_found.update(GraphObjectJsonldUtils._extract_uris_from_object(obj))
         
-        # Map URIs to known ontology prefixes using VitalSigns OntologyManager
+        # Extract all URIs from the objects
+        used_namespaces = set()
+        for uri in uris_found:
+            namespace = GraphObjectJsonldUtils._get_namespace_from_uri(uri)
+            if namespace:
+                used_namespaces.add(namespace)
+        
+        # Try to get prefixes from ontology manager for all namespaces
         try:
             from vital_ai_vitalsigns.vitalsigns import VitalSigns
             vs = VitalSigns()
             ontology_manager = vs.get_ontology_manager()
             
-            for uri in uris_found:
-                namespace = GraphObjectJsonldUtils._get_namespace_from_uri(uri)
-                if namespace:
-                    prefix = GraphObjectJsonldUtils._get_prefix_for_namespace(ontology_manager, namespace)
-                    if prefix:
-                        context[prefix] = namespace
+            for namespace in used_namespaces:
+                prefix = GraphObjectJsonldUtils._get_prefix_for_namespace(ontology_manager, namespace)
+                if prefix and prefix not in context:
+                    context[prefix] = namespace
         except Exception as e:
-            # Fallback to static context if dynamic fails
-            return GraphObjectJsonldUtils._get_default_context()
+            # If ontology manager fails, return empty context
+            pass
         
         return context
 
@@ -171,12 +176,78 @@ class GraphObjectJsonldUtils:
         try:
             ontology_list = ontology_manager.get_ontology_list()
             for ontology in ontology_list:
+                # The ontology objects have prefix and ontology_iri attributes
                 if hasattr(ontology, 'ontology_iri') and hasattr(ontology, 'prefix'):
                     if ontology.ontology_iri == namespace:
                         return ontology.prefix
-        except Exception:
+        except Exception as e:
+            # Log the exception for debugging
+            import logging
+            logging.debug(f"Error getting prefix for namespace {namespace}: {e}")
             pass
         return None
+
+    @staticmethod
+    def _add_explicit_type_field(jsonld_data, graph_object, context):
+        """Add explicit @type field with vitaltype string value."""
+        # Get the vitaltype from the GraphObject - this calls get_class_uri()
+        try:
+            vitaltype_str = graph_object.get_class_uri()
+            if vitaltype_str:
+                # Convert to prefixed form if possible
+                namespace_to_prefix = {namespace: prefix for prefix, namespace in context.items()}
+                prefixed_type = GraphObjectJsonldUtils._convert_uri_to_prefixed(vitaltype_str, namespace_to_prefix)
+                
+                # Set @type as string value (not array)
+                jsonld_data["@type"] = prefixed_type
+        except Exception:
+            # If we can't get class URI, leave existing @type unchanged
+            pass
+
+    @staticmethod
+    def _apply_context_to_data(jsonld_data, context):
+        """Apply context to convert full URIs to prefixed names where possible."""
+        if not context:
+            return
+        
+        # Create reverse mapping from namespace to prefix
+        namespace_to_prefix = {namespace: prefix for prefix, namespace in context.items()}
+        
+        # Don't modify 'type' property - keep it as-is from RDF serialization (array format)
+        # The @type field is handled separately by _add_explicit_type_field()
+        
+        # Convert property keys (but preserve @id, @type, @context)
+        keys_to_convert = []
+        for key in jsonld_data.keys():
+            if not key.startswith("@"):
+                keys_to_convert.append(key)
+        
+        for key in keys_to_convert:
+            prefixed_key = GraphObjectJsonldUtils._convert_uri_to_prefixed(key, namespace_to_prefix)
+            if prefixed_key != key:
+                # Replace the key with prefixed version
+                value = jsonld_data.pop(key)
+                jsonld_data[prefixed_key] = value
+
+    @staticmethod
+    def _convert_uri_to_prefixed(uri, namespace_to_prefix):
+        """Convert a full URI to prefixed form if possible."""
+        if not isinstance(uri, str):
+            return uri
+        
+        # Find the longest matching namespace
+        best_namespace = None
+        for namespace in namespace_to_prefix.keys():
+            if uri.startswith(namespace):
+                if best_namespace is None or len(namespace) > len(best_namespace):
+                    best_namespace = namespace
+        
+        if best_namespace:
+            prefix = namespace_to_prefix[best_namespace]
+            local_name = uri[len(best_namespace):]
+            return f"{prefix}:{local_name}"
+        
+        return uri
 
     @staticmethod
     def to_jsonld_impl(graph_object) -> dict:
@@ -212,13 +283,18 @@ class GraphObjectJsonldUtils:
         # Add proper context with namespaces based on actual data
         context = GraphObjectJsonldUtils._build_dynamic_context(graph_object)
         
+        # Add explicit @type field with vitaltype string value
+        GraphObjectJsonldUtils._add_explicit_type_field(jsonld_data, graph_object, context)
+        
+        # Apply context to convert full URIs to prefixed names
+        GraphObjectJsonldUtils._apply_context_to_data(jsonld_data, context)
+        
         # Create final JSON-LD object with context (NOT a document)
         jsonld_obj = {
             "@context": context,
             **jsonld_data  # Merge the object data
         }
         
-        # Return without compaction to preserve @id and @type
         return jsonld_obj
 
     @staticmethod
@@ -315,6 +391,10 @@ class GraphObjectJsonldUtils:
                     del obj_data["@context"]
                 # Ensure proper identifier normalization
                 GraphObjectJsonldUtils._normalize_identifier_to_jsonld(graph_object, obj_data)
+                # Add explicit @type field with vitaltype string value
+                GraphObjectJsonldUtils._add_explicit_type_field(obj_data, graph_object, context)
+                # Apply context to convert full URIs to prefixed names
+                GraphObjectJsonldUtils._apply_context_to_data(obj_data, context)
                 objects_data.append(obj_data)
             elif isinstance(jsonld_data, dict):
                 # Remove any @context from individual objects
@@ -322,6 +402,10 @@ class GraphObjectJsonldUtils:
                     del jsonld_data["@context"]
                 # Ensure proper identifier normalization
                 GraphObjectJsonldUtils._normalize_identifier_to_jsonld(graph_object, jsonld_data)
+                # Add explicit @type field with vitaltype string value
+                GraphObjectJsonldUtils._add_explicit_type_field(jsonld_data, graph_object, context)
+                # Apply context to convert full URIs to prefixed names
+                GraphObjectJsonldUtils._apply_context_to_data(jsonld_data, context)
                 objects_data.append(jsonld_data)
         
         # Create the final JSON-LD document with shared context and @graph

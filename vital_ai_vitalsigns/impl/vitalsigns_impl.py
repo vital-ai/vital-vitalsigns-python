@@ -39,6 +39,22 @@ class VitalSignsImpl:
 
                 def __hash__(self):
                     return hash((self.get_uri(), self.value))
+                
+                def __iter__(self):
+                    # Only add __iter__ if the value is actually iterable (like strings)
+                    # This way hasattr(obj, '__iter__') will only return True for truly iterable values
+                    if hasattr(self.value, '__iter__') and not isinstance(self.value, (bytes, bytearray)):
+                        return iter(self.value)
+                    else:
+                        raise TypeError(f"'{self.__class__.__name__}' object is not iterable")
+                
+                def __getattribute__(self, name):
+                    # Override __getattribute__ to hide __iter__ for non-iterable values
+                    if name == '__iter__':
+                        value = super().__getattribute__('value')
+                        if not (hasattr(value, '__iter__') and not isinstance(value, (bytes, bytearray))):
+                            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '__iter__'")
+                    return super().__getattribute__(name)
 
             return CombinedProperty
         else:
@@ -48,6 +64,10 @@ class VitalSignsImpl:
 
                 def __hash__(self):
                     return hash((self.get_uri(), self.value))
+                
+                def __iter__(self):
+                    # Multi-value properties should delegate to the underlying UnorderedList
+                    return iter(self.value)
 
             return CombinedProperty
 
