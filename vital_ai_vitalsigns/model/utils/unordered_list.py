@@ -3,39 +3,38 @@ from typing import TypeVar, Generic, List
 T = TypeVar('T')
 
 
-class UnorderedList(Generic[T]):
+class UnorderedList(list, Generic[T]):
     def __init__(self, elements: List[T] = None):
-        self.elements = elements if elements else []
+        elements = elements if elements else []
+        # Initialize list with the elements - self IS the list now
+        list.__init__(self, elements)
 
     def __repr__(self):
-        return f"UnorderedList({self.elements})"
+        return f"UnorderedList({list(self)})"
 
     def __eq__(self, other):
         if not isinstance(other, UnorderedList):
             return NotImplemented
-        return sorted(self.elements) == sorted(other.elements)
+        return sorted(self) == sorted(other)
 
     def __hash__(self):
-        return hash(tuple(sorted(self.elements)))
+        return hash(tuple(sorted(self)))
 
     def add(self, element: T) -> None:
-        self.elements.append(element)
+        self.append(element)
 
     def remove(self, element: T) -> None:
-        self.elements.remove(element)
-
-    def __getitem__(self, index: int) -> T:
-        return self.elements[index]
-
-    def __len__(self) -> int:
-        return len(self.elements)
-
-    def __iter__(self):
-        return iter(self.elements)
-
-    def __contains__(self, item: T) -> bool:
-        return item in self.elements
+        # Use list's remove method
+        list.remove(self, element)
+    
+    # __getitem__, __len__, __iter__, __contains__ are inherited from list
+    # No need to override them
 
     def to_list(self) -> List[T]:
-        return list(self.elements)
+        return list(self)
+    
+    @property
+    def elements(self):
+        """Returns self as a list"""
+        return list(self)
 

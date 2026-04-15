@@ -22,12 +22,15 @@ class VitalSignsOntologyManager:
     # of the metadata
 
     def __init__(self):
-        self._domain_graph = Graph()
+        self._domain_graph = None
+        self._domain_graph_loaded = False
         self._ont_map = {}
         self._domain_property_map = {}
         self._data_prop_results_dict = {}
         self._ont_prop_results_dict = {}
         self._range_property_map = {}
+        self._cached_ont_tuple_list = None
+        self._cached_ont_iri_list = None
 
     # TODO adding single ontology to check if imports are already
     # loaded, and don't import if not
@@ -82,6 +85,9 @@ class VitalSignsOntologyManager:
         self._ont_map[vitalsigns_ontology.get_ontology_iri()] = vitalsigns_ontology
 
         ont_graph = vitalsigns_ontology.get_ontology_graph()
+
+        if self._domain_graph is None:
+            self._domain_graph = Graph()
 
         for triple in ont_graph:
             self._domain_graph.add(triple)
@@ -303,7 +309,12 @@ class VitalSignsOntologyManager:
             # logging.info(f"Ont Module: {ont_module} : OWL File: {owl_file}")
             file_paths.append(owl_file)
 
+        if self._domain_graph is None:
+            self._domain_graph = Graph()
+
         ontology_metadata, namespaces, graph, triple_count = self.load_ontologies(ontology_list)
+
+        self._domain_graph_loaded = True
 
         if ontology_metadata and namespaces and graph:
 
@@ -333,7 +344,36 @@ class VitalSignsOntologyManager:
             logging.error('Failed to load ontology metadata.')
 
     def get_domain_graph(self) -> Graph:
+        if not self._domain_graph_loaded and self._cached_ont_tuple_list is not None:
+            self._lazy_load_domain_graph()
+        if self._domain_graph is None:
+            self._domain_graph = Graph()
         return self._domain_graph
+
+    def _lazy_load_domain_graph(self):
+        logging.info("Lazy-loading domain graph from OWL files...")
+        import time as _time
+        t0 = _time.perf_counter()
+
+        ont_tuple_list = self._cached_ont_tuple_list
+        if ont_tuple_list and len(ont_tuple_list) > 0:
+            self._domain_graph = Graph()
+            self._domain_graph_loaded = True
+
+            ontology_metadata, namespaces, graph, triple_count = self.load_ontologies(ont_tuple_list)
+
+            if ontology_metadata and namespaces and graph:
+                for triple in graph:
+                    self._domain_graph.add(triple)
+                logging.info(f"Domain Graph Triple Count: {len(self._domain_graph)}")
+            else:
+                logging.error('Failed to lazy-load ontology metadata.')
+        else:
+            self._domain_graph = Graph()
+            self._domain_graph_loaded = True
+
+        elapsed = _time.perf_counter() - t0
+        logging.info(f"Domain graph lazy-loaded in {elapsed:.3f}s")
 
     def get_subclass_uri_list(self, class_uri: str) -> List[str]:
 
@@ -527,6 +567,8 @@ class VitalSignsOntologyManager:
             self._range_property_map[uri_prop_uri] = uri_property_range_map
 
     def get_ontology_iri_list(self) -> List[str]:
+        if self._cached_ont_iri_list is not None and len(self._ont_map) == 0:
+            return list(self._cached_ont_iri_list)
         return list(self._ont_map.keys())
 
     def get_vitalsigns_ontology(self, ontology_iri: str) -> VitalSignsOntology:

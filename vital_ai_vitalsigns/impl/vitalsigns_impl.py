@@ -40,6 +40,14 @@ class VitalSignsImpl:
                 def __hash__(self):
                     return hash((self.get_uri(), self.value))
                 
+                def __str__(self):
+                    # Delegate to underlying value's string representation
+                    return str(self.value)
+                
+                def __repr__(self):
+                    # Keep repr showing it's a property for debugging
+                    return f"{self.__class__.__name__}({self.value!r})"
+                
                 def __iter__(self):
                     # Only add __iter__ if the value is actually iterable (like strings)
                     # This way hasattr(obj, '__iter__') will only return True for truly iterable values
@@ -89,6 +97,15 @@ class VitalSignsImpl:
             return prop(value, property_class)
 
     @classmethod
+    def create_property_with_trait_from_classes(cls, property_class, trait_class, value):
+        multiple_values = trait_class.multiple_values
+        prop = cls.create_property_with_trait_class(property_class, trait_class)
+        if not multiple_values:
+            return prop(value)
+        else:
+            return prop(value, property_class)
+
+    @classmethod
     def create_extern_property(cls, value):
 
         property_class = cls.get_property_class_from_value(value)
@@ -110,7 +127,7 @@ class VitalSignsImpl:
 
         registry = vs.get_registry()
 
-        trait_cls = registry.vitalsigns_property_classes[uri]
+        trait_cls = registry.get_vitalsigns_property_class(uri)
 
         return trait_cls
 

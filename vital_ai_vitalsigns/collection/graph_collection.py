@@ -48,7 +48,7 @@ class GraphCollection(MutableSequence[G]):
         for item in self._data:
             if hasattr(item, 'URI'):
 
-                self._uri_map[item.URI] = item
+                self._uri_map[str(item.URI)] = item
 
                 if self._use_rdfstore is True:
                     obj_nt = item.to_rdf()
@@ -92,10 +92,10 @@ class GraphCollection(MutableSequence[G]):
             raise ValueError("All items must be instances of GraphObject or its subclasses")
 
         if hasattr(self._data[index], 'URI'):
-            self._uri_map.pop(self._data[index].URI, None)
+            self._uri_map.pop(str(self._data[index].URI), None)
 
         if hasattr(value, 'URI'):
-            self._uri_map[value.URI] = value
+            self._uri_map[str(value.URI)] = value
 
         value.include_on_graph(self)
 
@@ -104,7 +104,7 @@ class GraphCollection(MutableSequence[G]):
     def __delitem__(self, index):
 
         if hasattr(self._data[index], 'URI'):
-            self._uri_map.pop(self._data[index].URI, None)
+            self._uri_map.pop(str(self._data[index].URI), None)
 
         value = self._data[index]
 
@@ -121,19 +121,14 @@ class GraphCollection(MutableSequence[G]):
         self.pop_uri(value.URI)
 
         if hasattr(value, 'URI'):
-            self._uri_map[value.URI] = value
+            self._uri_map[str(value.URI)] = value
 
         value.include_on_graph(self)
 
         self._data.insert(index, value)
 
     def get(self, uri, default=None) -> G:
-
-        for item in self._data:
-            if item.URI == uri:
-                return item
-
-        return default
+        return self._uri_map.get(str(uri), default)
 
     def pop(self, index: int = -1):
 
@@ -142,6 +137,7 @@ class GraphCollection(MutableSequence[G]):
         if obj:
             obj.remove_from_graph(self)
             obj_uri = obj.URI
+            self._uri_map.pop(str(obj_uri), None)
 
             if self._use_rdfstore is True:
                 self._rdfstore.delete_triples(obj_uri)
@@ -156,6 +152,8 @@ class GraphCollection(MutableSequence[G]):
         for i, item in enumerate(self._data):
 
             if item.URI == uri:
+
+                self._uri_map.pop(str(uri), None)
 
                 if self._use_rdfstore is True:
                     self._rdfstore.delete_triples(uri)
@@ -300,6 +298,7 @@ class GraphCollection(MutableSequence[G]):
             for i, item in enumerate(self._data):
                 if item.URI == uri:
                     to_remove_indexes.append(i)
+                    self._uri_map.pop(str(uri), None)
                     if self._use_rdfstore is True:
                         self._rdfstore.delete_triples(uri)
                     if self._use_vectordb is True:

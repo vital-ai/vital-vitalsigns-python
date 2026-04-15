@@ -193,6 +193,15 @@ class VitalSigns(metaclass=VitalSignsMeta):
     def from_triples_list(self, triples: Generator[Tuple, None, None], *, modified=False) -> List[G]:
         return GraphObject.from_triples_list(triples, modified=modified)
 
+    def from_property_map(self, subject_uri: str, type_uri: str,
+                          properties: dict, *, modified=False) -> G:
+        return GraphObject.from_property_map(subject_uri, type_uri, properties, modified=modified)
+
+    def from_property_maps(self, entries: list, *, modified=False) -> list:
+        return GraphObject.from_property_maps(entries, modified=modified)
+
+    def to_property_maps(self, graph_object_list: list) -> list:
+        return GraphObject.to_property_maps(graph_object_list)
 
     def to_json(self, graph_object_list: List[G]) -> str:
         json_list = []

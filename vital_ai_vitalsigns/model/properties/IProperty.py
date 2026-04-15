@@ -16,6 +16,18 @@ class IProperty:
 
     def get_value(self):
         return self.value
+    
+    def isinstance(self, classinfo):
+        """
+        Check if this property or its underlying value is an instance of the given type(s).
+        For multi-value properties (lists), checks if the property itself is a list.
+        For single-value properties, checks if the underlying value is of the given type.
+        """
+        # First check if the property itself is an instance (for MultiValueProperty which inherits from list)
+        if isinstance(self, classinfo):
+            return True
+        # Otherwise check the underlying value
+        return isinstance(self.value, classinfo)
 
     @classmethod
     def get_data_class(cls):

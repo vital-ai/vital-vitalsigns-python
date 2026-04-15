@@ -12,6 +12,7 @@ from vital_ai_vitalsigns.model.properties.IProperty import IProperty
 from vital_ai_vitalsigns.model.properties.URIProperty import URIProperty
 from rdflib.term import _is_valid_uri
 from collections import defaultdict
+from vital_ai_vitalsigns.model.utils.rdf_utils import get_xsd_datatype
 
 G = TypeVar('G', bound=Optional['GraphObject'])
 
@@ -49,7 +50,7 @@ class GraphObjectTriplesUtils:
 
         graph_object_cls = registry.get_vitalsigns_class(type_uri)
 
-        allowed_prop_list = graph_object_cls.get_allowed_domain_properties()
+        uri_dict, _ = graph_object_cls._get_property_lookup_dicts()
 
         # TODO
         # handle types
@@ -69,14 +70,8 @@ class GraphObjectTriplesUtils:
             if property_uri == VitalConstants.vitaltype_uri:
                 continue
 
-            triple_prop_class = None
-
-            for prop_info in allowed_prop_list:
-                p_uri = prop_info['uri']
-                if p_uri == property_uri:
-                    prop_class = prop_info['prop_class']
-                    triple_prop_class = prop_class
-                    break
+            entry = uri_dict.get(property_uri)
+            triple_prop_class = entry['prop_class'] if entry else None
 
             prop_uri = URIRef(property_uri)
 
@@ -146,28 +141,52 @@ class GraphObjectTriplesUtils:
 
         graph_object.URI = subject_uri
 
-        for subject, predicate, obj_value in generated_triples:
+        uri_dict, _ = graph_object_cls._get_property_lookup_dicts()
 
+        # Single-pass direct _properties write
+        multi_value_accum = None
+
+        for subject, predicate, obj_value in generated_triples:
             if predicate == RDF.type:
                 continue
-
-            predicate = str(predicate)
-
-            # skip
-            if predicate == VitalConstants.vitaltype_uri:
+            predicate_str = str(predicate)
+            if predicate_str == VitalConstants.vitaltype_uri:
+                continue
+            if predicate_str == VitalConstants.uri_prop_uri:
                 continue
 
-            if predicate == VitalConstants.uri_prop_uri:
+            entry = uri_dict.get(predicate_str)
+            if not entry:
                 continue
-
-            value = None
 
             if isinstance(obj_value, Literal):
                 value = obj_value.toPython()
             elif isinstance(obj_value, URIRef):
                 value = str(obj_value)
+            else:
+                value = obj_value
 
-            setattr(graph_object, predicate, value)
+            if value is None:
+                continue
+
+            if entry['trait_class'].multiple_values:
+                if multi_value_accum is None:
+                    multi_value_accum = {}
+                accum = multi_value_accum.get(predicate_str)
+                if accum is None:
+                    multi_value_accum[predicate_str] = (entry, [value])
+                else:
+                    accum[1].append(value)
+            else:
+                graph_object._properties[predicate_str] = \
+                    VitalSignsImpl.create_property_with_trait_from_classes(
+                        entry['prop_class'], entry['trait_class'], value)
+
+        if multi_value_accum:
+            for pred_str, (entry, value_list) in multi_value_accum.items():
+                graph_object._properties[pred_str] = \
+                    VitalSignsImpl.create_property_with_trait_from_classes(
+                        entry['prop_class'], entry['trait_class'], value_list)
 
         if modified is False:
             graph_object.mark_serialized()
@@ -186,12 +205,9 @@ class GraphObjectTriplesUtils:
 
         graph_object_list = []
 
-        generated_triples = []
-
         grouped_triples = defaultdict(list)
 
         for subject, predicate, obj in triples_list:
-            generated_triples.append((subject, predicate, obj))
             grouped_triples[subject].append((predicate, obj))
 
         for subject, triples in grouped_triples.items():
@@ -225,28 +241,52 @@ class GraphObjectTriplesUtils:
 
             graph_object.URI = subject_uri
 
-            for predicate, obj_value in triples:
+            uri_dict, _ = graph_object_cls._get_property_lookup_dicts()
 
+            # Single-pass direct _properties write
+            multi_value_accum = None
+
+            for predicate, obj_value in triples:
                 if predicate == RDF.type:
                     continue
-
-                predicate = str(predicate)
-
-                # skip
-                if predicate == VitalConstants.vitaltype_uri:
+                predicate_str = str(predicate)
+                if predicate_str == VitalConstants.vitaltype_uri:
+                    continue
+                if predicate_str == VitalConstants.uri_prop_uri:
                     continue
 
-                if predicate == VitalConstants.uri_prop_uri:
+                entry = uri_dict.get(predicate_str)
+                if not entry:
                     continue
-
-                value = None
 
                 if isinstance(obj_value, Literal):
                     value = obj_value.toPython()
                 elif isinstance(obj_value, URIRef):
                     value = str(obj_value)
+                else:
+                    value = obj_value
 
-                setattr(graph_object, predicate, value)
+                if value is None:
+                    continue
+
+                if entry['trait_class'].multiple_values:
+                    if multi_value_accum is None:
+                        multi_value_accum = {}
+                    accum = multi_value_accum.get(predicate_str)
+                    if accum is None:
+                        multi_value_accum[predicate_str] = (entry, [value])
+                    else:
+                        accum[1].append(value)
+                else:
+                    graph_object._properties[predicate_str] = \
+                        VitalSignsImpl.create_property_with_trait_from_classes(
+                            entry['prop_class'], entry['trait_class'], value)
+
+            if multi_value_accum:
+                for pred_str, (entry, value_list) in multi_value_accum.items():
+                    graph_object._properties[pred_str] = \
+                        VitalSignsImpl.create_property_with_trait_from_classes(
+                            entry['prop_class'], entry['trait_class'], value_list)
 
             if modified is False:
                 graph_object.mark_serialized()
@@ -281,18 +321,7 @@ class GraphObjectTriplesUtils:
                     if data_class == URIRef:
                         triple_list.append((subject, URIRef(prop_uri), URIRef(v)))
                     else:
-                        if data_class == datetime:
-                            datatype = rdflib.XSD.dateTime
-                        elif data_class == int:
-                            datatype = rdflib.XSD.integer
-                        elif data_class == float:
-                            datatype = rdflib.XSD.float
-                        elif data_class == bool:
-                            datatype = rdflib.XSD.boolean
-                        else:
-                            datatype = rdflib.XSD.string
-
-                        triple_list.append((subject, URIRef(prop_uri), Literal(v, datatype=datatype)))
+                        triple_list.append((subject, URIRef(prop_uri), Literal(v, datatype=get_xsd_datatype(data_class))))
 
             elif rdf_data["datatype"] == URIRef:
                 triple_list.append((subject, URIRef(prop_uri), URIRef(rdf_data["value"])))
@@ -313,21 +342,9 @@ class GraphObjectTriplesUtils:
 
                     for v in value_list:
                         if data_class == URIRef:
-                            # graph.add((subject, URIRef(prop_uri), URIRef(v)))
                             triple_list.append((subject, URIRef(prop_uri), URIRef(v)))
                         else:
-                            if data_class == datetime:
-                                datatype = rdflib.XSD.dateTime
-                            elif data_class == int:
-                                datatype = rdflib.XSD.integer
-                            elif data_class == float:
-                                datatype = rdflib.XSD.float
-                            elif data_class == bool:
-                                datatype = rdflib.XSD.boolean
-                            else:
-                                datatype = rdflib.XSD.string
-
-                            triple_list.append((subject, URIRef(prop_uri), Literal(v, datatype=datatype)))
+                            triple_list.append((subject, URIRef(prop_uri), Literal(v, datatype=get_xsd_datatype(data_class))))
 
                 elif rdf_data["datatype"] == URIRef:
                     triple_list.append((subject, URIRef(prop_uri), URIRef(rdf_data["value"])))
@@ -362,18 +379,7 @@ class GraphObjectTriplesUtils:
                     if data_class == URIRef:
                         triples.append((subject, URIRef(prop_uri), URIRef(v)))
                     else:
-                        if data_class == datetime:
-                            datatype = rdflib.XSD.dateTime
-                        elif data_class == int:
-                            datatype = rdflib.XSD.integer
-                        elif data_class == float:
-                            datatype = rdflib.XSD.float
-                        elif data_class == bool:
-                            datatype = rdflib.XSD.boolean
-                        else:
-                            datatype = rdflib.XSD.string
-
-                        triples.append((subject, URIRef(prop_uri), Literal(v, datatype=datatype)))
+                        triples.append((subject, URIRef(prop_uri), Literal(v, datatype=get_xsd_datatype(data_class))))
 
             elif rdf_data["datatype"] == URIRef:
                 triples.append((subject, URIRef(prop_uri), URIRef(rdf_data["value"])))
@@ -396,18 +402,7 @@ class GraphObjectTriplesUtils:
                         if data_class == URIRef:
                             triples.append((subject, URIRef(prop_uri), URIRef(v)))
                         else:
-                            if data_class == datetime:
-                                datatype = rdflib.XSD.dateTime
-                            elif data_class == int:
-                                datatype = rdflib.XSD.integer
-                            elif data_class == float:
-                                datatype = rdflib.XSD.float
-                            elif data_class == bool:
-                                datatype = rdflib.XSD.boolean
-                            else:
-                                datatype = rdflib.XSD.string
-
-                            triples.append((subject, URIRef(prop_uri), Literal(v, datatype=datatype)))
+                            triples.append((subject, URIRef(prop_uri), Literal(v, datatype=get_xsd_datatype(data_class))))
 
                 elif rdf_data["datatype"] == URIRef:
                     triples.append((subject, URIRef(prop_uri), URIRef(rdf_data["value"])))

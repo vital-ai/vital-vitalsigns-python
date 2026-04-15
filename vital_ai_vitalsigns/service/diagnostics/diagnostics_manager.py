@@ -1,4 +1,3 @@
-from test_scripts import vitalservice
 from vital_ai_vitalsigns.vitalsigns import VitalSigns
 
 

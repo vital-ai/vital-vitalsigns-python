@@ -8,10 +8,11 @@ import logging
 from pathlib import Path
 import importlib.resources as resources
 import concurrent.futures
-from typing import Type, Dict
+from typing import Type, Dict, Optional
 from importlib.metadata import entry_points
 from vital_ai_vitalsigns.model.GraphObject import GraphObject
 from vital_ai_vitalsigns.ontology.vitalsigns_ontology_manager import VitalSignsOntologyManager
+from vital_ai_vitalsigns.impl.vitalsigns_registry_cache import VitalSignsRegistryCache
 
 
 # these are not imported here to remove a circular dependency on start-up
@@ -164,6 +165,9 @@ class VitalSignsRegistry:
         self.vitalsigns_property_classes = {}
         self.vitalsigns_ontologies = set()
         self.ontology_manager = ontology_manager
+        self._resolved_classes: Dict[str, Type[GraphObject]] = {}
+        self._resolved_property_classes: Dict[str, type] = {}
+        self._loaded_from_cache = False
 
     def get_package_root(self):
         # Get the root of the current package
@@ -174,18 +178,116 @@ class VitalSignsRegistry:
 
     @lru_cache(maxsize=None)
     def get_vitalsigns_class(self, class_uri: str) -> Type[GraphObject]:
-        return self.vitalsigns_classes[class_uri]
+        cls = self._resolved_classes.get(class_uri)
+        if cls is not None:
+            return cls
+
+        entry = self.vitalsigns_classes.get(class_uri)
+        if entry is None:
+            raise KeyError(f"No VitalSigns class registered for URI: {class_uri}")
+
+        if isinstance(entry, str):
+            module_path, class_name = entry.rsplit('.', 1)
+            module = importlib.import_module(module_path)
+            cls = getattr(module, class_name)
+            self._resolved_classes[class_uri] = cls
+            return cls
+        else:
+            self._resolved_classes[class_uri] = entry
+            return entry
 
     @lru_cache(maxsize=None)
     def get_vitalsigns_property_class(self, property_uri: str) -> Type[PropertyTrait]:
-        return self.vitalsigns_property_classes[property_uri]
+        cls = self._resolved_property_classes.get(property_uri)
+        if cls is not None:
+            return cls
+
+        entry = self.vitalsigns_property_classes.get(property_uri)
+        if entry is None:
+            raise KeyError(f"No VitalSigns property class registered for URI: {property_uri}")
+
+        if isinstance(entry, str):
+            module_path, class_name = entry.rsplit('.', 1)
+            module = importlib.import_module(module_path)
+            cls = getattr(module, class_name)
+            self._resolved_property_classes[property_uri] = cls
+            return cls
+        else:
+            self._resolved_property_classes[property_uri] = entry
+            return entry
 
     def build_registry(self):
         self.vitalsigns_packages = []
         self.vitalsigns_ontologies = set()
         self.vitalsigns_classes = {}
+        self.vitalsigns_property_classes = {}
 
         logging.info('building vitalsigns class and property registry...')
+
+        cache_path = VitalSignsRegistryCache.get_cache_path()
+        cache_key = VitalSignsRegistryCache.compute_cache_key()
+
+        cached = VitalSignsRegistryCache.load_cache(cache_path, cache_key)
+
+        if cached is not None:
+            self._restore_from_cache(cached)
+            return
+
+        self._full_scan()
+
+        self._save_to_cache(cache_path, cache_key)
+
+    def _restore_from_cache(self, cached: dict):
+        import time as _time
+        t0 = _time.perf_counter()
+
+        self.vitalsigns_classes = cached["vitalsigns_classes"]
+        self.vitalsigns_property_classes = cached["vitalsigns_property_classes"]
+
+        self.ontology_manager._domain_property_map = (
+            VitalSignsRegistryCache.deserialize_domain_property_map(
+                cached["domain_property_map"]
+            )
+        )
+        self.ontology_manager._range_property_map = (
+            VitalSignsRegistryCache.deserialize_range_property_map(
+                cached["range_property_map"]
+            )
+        )
+
+        ont_tuple_list = cached.get("ont_tuple_list", [])
+        ont_iri_list = cached.get("ont_iri_list", [])
+
+        self.ontology_manager._cached_ont_tuple_list = ont_tuple_list
+        self.ontology_manager._cached_ont_iri_list = ont_iri_list
+
+        self._loaded_from_cache = True
+
+        elapsed = _time.perf_counter() - t0
+        logging.info(f"Registry restored from cache in {elapsed:.3f}s")
+        logging.info(f"  Classes: {len(self.vitalsigns_classes)}")
+        logging.info(f"  Property classes: {len(self.vitalsigns_property_classes)}")
+        logging.info(f"  Domain property map entries: {len(self.ontology_manager._domain_property_map)}")
+        logging.info(f"  Range property map entries: {len(self.ontology_manager._range_property_map)}")
+
+    def _save_to_cache(self, cache_path: Path, cache_key: str):
+        try:
+            ont_iri_list = self.ontology_manager.get_ontology_iri_list()
+
+            data = VitalSignsRegistryCache.serialize_registry(
+                vitalsigns_classes=self.vitalsigns_classes,
+                vitalsigns_property_classes=self.vitalsigns_property_classes,
+                domain_property_map=self.ontology_manager._domain_property_map,
+                range_property_map=self.ontology_manager._range_property_map,
+                ont_tuple_list=getattr(self, '_ont_tuple_list', []),
+                ont_iri_list=ont_iri_list,
+            )
+
+            VitalSignsRegistryCache.save_cache(cache_path, cache_key, data)
+        except Exception as e:
+            logging.warning(f"Failed to save registry cache: {e}")
+
+    def _full_scan(self):
 
         package_root = self.get_package_root()
         logging.info(f'Package root: {package_root}')
@@ -201,8 +303,6 @@ class VitalSignsRegistry:
         self.vitalsigns_classes[VITAL_HyperNode.get_class_uri()] = VITAL_HyperNode
         self.vitalsigns_classes[VITAL_HyperEdge.get_class_uri()] = VITAL_HyperEdge
         self.vitalsigns_classes[VITAL_GraphContainerObject.get_class_uri()] = VITAL_GraphContainerObject
-
-        self.vitalsigns_property_classes = {}
 
         ont_tuple_list = []
 
@@ -264,6 +364,8 @@ class VitalSignsRegistry:
         logging.info('completed build of vitalsigns class and property registry.')
 
         logging.info(f"Ontology Tuple List: {ont_tuple_list}")
+
+        self._ont_tuple_list = ont_tuple_list
 
         if len(ont_tuple_list) > 0:
 

@@ -135,6 +135,22 @@ class GraphObject(metaclass=GraphObjectMeta):
 
         return property_list
 
+    @classmethod
+    @cacheable_method
+    def _get_property_lookup_dicts(cls):
+        uri_dict = {}
+        short_name_dict = {}
+        for prop_info in cls.get_allowed_domain_properties():
+            uri = prop_info['uri']
+            prop_class = prop_info['prop_class']
+            trait_class = VitalSignsImpl.get_trait_class_from_uri(uri)
+            if trait_class:
+                entry = {'uri': uri, 'prop_class': prop_class, 'trait_class': trait_class}
+                uri_dict[uri] = entry
+                short_name = trait_class.get_short_name()
+                short_name_dict[short_name] = entry
+        return uri_dict, short_name_dict
+
     def __init__(self, *, modified=True):
         super().__setattr__('_properties', {})
         super().__setattr__('_extern_properties', {})
@@ -171,8 +187,6 @@ class GraphObject(metaclass=GraphObjectMeta):
 
     def __setattr__(self, name, value):
 
-        from vital_ai_vitalsigns.model.VITAL_GraphContainerObject import VITAL_GraphContainerObject
-
         if name == 'URI':
             if value is None:
                 self._properties.pop('http://vital.ai/ontology/vital-core#URIProp', None)
@@ -188,45 +202,32 @@ class GraphObject(metaclass=GraphObjectMeta):
         # class was defined
         # this list is built using all OWL ontologies
         # currently loaded
-        domain_prop_list = self.get_allowed_domain_properties()
-
-        # for d in domain_prop_list:
-        #    logger.debug(f"Domain Prop: {d}")
 
         # this includes properties defined when the class was defined
         # including properties associated with parent classes when
         # those were defined
         # if an extending ontology adds a property to an existing class
         # this list will not include it
-        # prop_list = self.get_allowed_properties()
-        # for prop_info in prop_list:
 
-        for prop_info in domain_prop_list:
+        uri_dict, short_name_dict = self._get_property_lookup_dicts()
 
-            uri = prop_info['uri']
-            prop_class = prop_info['prop_class']
-            trait_class = VitalSignsImpl.get_trait_class_from_uri(uri)
+        # O(1) lookup by full URI
+        entry = uri_dict.get(name)
+        if entry is None:
+            # O(1) lookup by short name
+            entry = short_name_dict.get(name)
 
-            # full uri case
-            # logger.debug(f"uri: {uri} :: name: {name}")
+        if entry:
+            uri = entry['uri']
+            if value is None:
+                self._properties.pop(uri, None)
+            else:
+                self._properties[uri] = VitalSignsImpl.create_property_with_trait_from_classes(
+                    entry['prop_class'], entry['trait_class'], value)
+            super().__setattr__('_modified', True)
+            return
 
-            if trait_class and uri == name:
-                if value is None:
-                    self._properties.pop(uri, None)
-                else:
-                    self._properties[uri] = VitalSignsImpl.create_property_with_trait(prop_class, uri, value)
-                super().__setattr__('_modified', True)
-                return
-
-            # short name case
-            if trait_class and trait_class.get_short_name() == name:
-                if value is None:
-                    self._properties.pop(uri, None)
-                else:
-                    self._properties[uri] = VitalSignsImpl.create_property_with_trait(prop_class, uri, value)
-                super().__setattr__('_modified', True)
-                return
-
+        from vital_ai_vitalsigns.model.VITAL_GraphContainerObject import VITAL_GraphContainerObject
         if isinstance(self, VITAL_GraphContainerObject):
             # arbitrary properties are allowed
             if value is None:
@@ -241,12 +242,6 @@ class GraphObject(metaclass=GraphObjectMeta):
 
     def my_getattr(self, name):
 
-        from vital_ai_vitalsigns.model.VITAL_GraphContainerObject import VITAL_GraphContainerObject
-        from vital_ai_vitalsigns_core.model.GraphMatch import GraphMatch
-        from vital_ai_vitalsigns.vitalsigns import VitalSigns
-
-        vs = VitalSigns()
-
         if name == 'URI':
             if VitalConstants.uri_prop_uri in self._properties:
                 return self._properties[VitalConstants.uri_prop_uri]
@@ -258,25 +253,28 @@ class GraphObject(metaclass=GraphObjectMeta):
         # Check if name is a full URI first
         if name in self._properties:
             return self._properties[name]
-            
-        # Then check for short names
-        for prop_info in self.get_allowed_domain_properties():
-            uri = prop_info['uri']
-            # logger.debug(uri)
-            trait_class = VitalSignsImpl.get_trait_class_from_uri(uri)
-            # logger.debug(trait_class)
-            if trait_class and trait_class.get_short_name() == name:
-                if uri in self._properties:
-                    return self._properties[uri]
-                else:
-                    return None
+
+        # O(1) short name lookup using cached dict
+        _, short_name_dict = self._get_property_lookup_dicts()
+        entry = short_name_dict.get(name)
+        if entry:
+            uri = entry['uri']
+            if uri in self._properties:
+                return self._properties[uri]
+            else:
+                return None
+
+        from vital_ai_vitalsigns.model.VITAL_GraphContainerObject import VITAL_GraphContainerObject
         if isinstance(self, VITAL_GraphContainerObject):
             if name in self._extern_properties:
                 value = self._extern_properties[name]
                 # GraphMatch case of expanding embedded objects
+                from vital_ai_vitalsigns_core.model.GraphMatch import GraphMatch
                 if isinstance(self, GraphMatch):
                     if VitalSignsImpl.is_parseable_as_uri(name):
                         try:
+                            from vital_ai_vitalsigns.vitalsigns import VitalSigns
+                            vs = VitalSigns()
                             parsed_json = json.loads(str(value))
                             if isinstance(parsed_json, dict):
                                 go = vs.from_json(str(value))
@@ -290,13 +288,9 @@ class GraphObject(metaclass=GraphObjectMeta):
         return NotImplemented
 
     def get_property_value(self, property_uri):
-        if property_uri == VitalConstants.uri_prop_uri:
-            return self._properties[VitalConstants.uri_prop_uri]
-        trait_class = VitalSignsImpl.get_trait_class_from_uri(property_uri)
-        if not trait_class:
-            raise AttributeError(f"'{type(self).__name__}' object has no attribute with uri'{property_uri}'")
-        name = trait_class.get_short_name()
-        return self.__getattr__(name)
+        if property_uri in self._properties:
+            return self._properties[property_uri]
+        return None
 
     def __getattr__(self, name):
         value = self.my_getattr(name)
@@ -322,10 +316,9 @@ class GraphObject(metaclass=GraphObjectMeta):
         self.set_property(key, None)
 
     def keys(self):
-        from vital_ai_vitalsigns.model.VITAL_GraphContainerObject import VITAL_GraphContainerObject
-
         keys = list(self._properties.keys())
 
+        from vital_ai_vitalsigns.model.VITAL_GraphContainerObject import VITAL_GraphContainerObject
         if isinstance(self, VITAL_GraphContainerObject):
             extern_keys = list(self._extern_properties.keys())
             keys = keys + extern_keys
@@ -333,10 +326,9 @@ class GraphObject(metaclass=GraphObjectMeta):
         return keys
 
     def values(self):
-        from vital_ai_vitalsigns.model.VITAL_GraphContainerObject import VITAL_GraphContainerObject
-
         values = list(self._properties.values())
 
+        from vital_ai_vitalsigns.model.VITAL_GraphContainerObject import VITAL_GraphContainerObject
         if isinstance(self, VITAL_GraphContainerObject):
             extern_values = list(self._extern_properties.values())
             values = values + extern_values
@@ -344,14 +336,12 @@ class GraphObject(metaclass=GraphObjectMeta):
         return values
 
     def items(self):
-
-        from vital_ai_vitalsigns.model.VITAL_GraphContainerObject import VITAL_GraphContainerObject
-
         go_map = {}
 
         for key, value in self._properties.items():
             go_map[key] = value
 
+        from vital_ai_vitalsigns.model.VITAL_GraphContainerObject import VITAL_GraphContainerObject
         if isinstance(self, VITAL_GraphContainerObject):
             for key, value in self._extern_properties.items():
                 go_map[key] = value
@@ -445,6 +435,50 @@ class GraphObject(metaclass=GraphObjectMeta):
     def add_to_list(self, triple_list: list):
         GraphObjectTriplesUtils.add_to_list_impl(self, triple_list)
 
+    def to_property_map(self) -> dict:
+        """Serialize to a property map — the fastest outbound path, no rdflib.
+
+        Returns: {'subject_uri': str, 'type_uri': str, 'properties': {uri: value}}
+        Multi-value properties are returned as lists.
+        """
+        properties = {}
+        subject_uri = None
+
+        for uri, prop in self._properties.items():
+            if uri == VitalConstants.uri_prop_uri:
+                subject_uri = prop.get_value()
+                continue
+            properties[uri] = prop.get_value()
+
+        return {
+            'subject_uri': subject_uri,
+            'type_uri': self.get_class_uri(),
+            'properties': properties
+        }
+
+    @staticmethod
+    def to_property_maps(graph_object_list: list) -> list:
+        """Serialize a list of GraphObjects to property maps (batch).
+
+        Returns list of {'subject_uri': str, 'type_uri': str, 'properties': {uri: value}}
+        """
+        uri_prop = VitalConstants.uri_prop_uri
+        results = []
+        for graph_object in graph_object_list:
+            properties = {}
+            subject_uri = None
+            for uri, prop in graph_object._properties.items():
+                if uri == uri_prop:
+                    subject_uri = prop.get_value()
+                    continue
+                properties[uri] = prop.get_value()
+            results.append({
+                'subject_uri': subject_uri,
+                'type_uri': graph_object.get_class_uri(),
+                'properties': properties
+            })
+        return results
+
     def to_triples(self) -> list:
         return GraphObjectTriplesUtils.to_triples_impl(self)
 
@@ -507,6 +541,89 @@ class GraphObject(metaclass=GraphObjectMeta):
     @classmethod
     def from_rdf_list(cls, rdf_string: str, *, modified=False) -> List[G]:
         return GraphObjectRdfUtils.from_rdf_list_impl(cls, rdf_string, modified=modified)
+
+    @staticmethod
+    def from_property_map(subject_uri: str, type_uri: str,
+                          properties: dict, *, modified=False) -> 'GraphObject':
+        """Create a GraphObject directly from a property map.
+
+        Bypasses rdflib and __setattr__ — the fastest deserialization path.
+
+        Args:
+            subject_uri: The URI of the graph object
+            type_uri: The RDF type URI of the graph object
+            properties: Dict mapping predicate URI strings to Python values.
+                        Multi-value properties should map to a list of values.
+            modified: Whether to mark the object as modified (default False)
+        """
+        from vital_ai_vitalsigns.vitalsigns import VitalSigns
+        from vital_ai_vitalsigns.impl.vitalsigns_impl import VitalSignsImpl
+
+        vs = VitalSigns()
+        registry = vs.get_registry()
+
+        graph_object_cls = registry.get_vitalsigns_class(type_uri)
+        graph_object = graph_object_cls(modified=modified)
+        graph_object.URI = subject_uri
+
+        uri_dict, _ = graph_object_cls._get_property_lookup_dicts()
+
+        for prop_uri, value in properties.items():
+            if value is None:
+                continue
+            entry = uri_dict.get(prop_uri)
+            if not entry:
+                continue
+            graph_object._properties[prop_uri] = \
+                VitalSignsImpl.create_property_with_trait_from_classes(
+                    entry['prop_class'], entry['trait_class'], value)
+
+        if not modified:
+            graph_object.mark_serialized()
+
+        return graph_object
+
+    @staticmethod
+    def from_property_maps(entries: list, *, modified=False) -> list:
+        """Create GraphObjects from a list of property maps (batch).
+
+        Each entry: {'subject_uri': str, 'type_uri': str, 'properties': {uri: value}}
+        Multi-value properties should map to a list of values.
+        """
+        from vital_ai_vitalsigns.vitalsigns import VitalSigns
+        from vital_ai_vitalsigns.impl.vitalsigns_impl import VitalSignsImpl
+
+        vs = VitalSigns()
+        registry = vs.get_registry()
+
+        results = []
+        for entry_map in entries:
+            subject_uri = entry_map['subject_uri']
+            type_uri = entry_map['type_uri']
+            properties = entry_map['properties']
+
+            graph_object_cls = registry.get_vitalsigns_class(type_uri)
+            graph_object = graph_object_cls(modified=modified)
+            graph_object.URI = subject_uri
+
+            uri_dict, _ = graph_object_cls._get_property_lookup_dicts()
+
+            for prop_uri, value in properties.items():
+                if value is None:
+                    continue
+                entry = uri_dict.get(prop_uri)
+                if not entry:
+                    continue
+                graph_object._properties[prop_uri] = \
+                    VitalSignsImpl.create_property_with_trait_from_classes(
+                        entry['prop_class'], entry['trait_class'], value)
+
+            if not modified:
+                graph_object.mark_serialized()
+
+            results.append(graph_object)
+
+        return results
 
     # Pydantic v2 compatibility methods
     @classmethod

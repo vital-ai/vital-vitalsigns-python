@@ -12,20 +12,19 @@ class GraphObjectDictUtils:
     @staticmethod
     def to_dict_impl(graph_object) -> dict:
         """Implementation of to_dict functionality."""
-        from vital_ai_vitalsigns.model.VITAL_GraphContainerObject import VITAL_GraphContainerObject
-
         serializable_dict = {}
 
         for uri, prop in graph_object._properties.items():
-            prop_value = prop.to_json()["value"]
+            prop_value = prop.get_value()
             if uri == VitalConstants.uri_prop_uri:
                 serializable_dict['URI'] = prop_value
             else:
                 serializable_dict[uri] = prop_value
 
+        from vital_ai_vitalsigns.model.VITAL_GraphContainerObject import VITAL_GraphContainerObject
         if isinstance(graph_object, VITAL_GraphContainerObject):
             for name, prop in graph_object._extern_properties.items():
-                prop_value = prop.to_json()["value"]
+                prop_value = prop.get_value()
                 uri = "urn:extern:" + name
                 serializable_dict[uri] = prop_value
 
@@ -63,6 +62,10 @@ class GraphObjectDictUtils:
 
         graph_object = graph_object_cls(modified=modified)
 
+        uri_dict, short_name_dict = graph_object_cls._get_property_lookup_dicts()
+
+        from vital_ai_vitalsigns.impl.vitalsigns_impl import VitalSignsImpl
+
         for key, value in data.items():
             if key == 'type':
                 continue
@@ -76,7 +79,18 @@ class GraphObjectDictUtils:
                 graph_object.URI = value
                 continue
 
-            setattr(graph_object, key, value)
+            entry = uri_dict.get(key)
+            if entry is None:
+                entry = short_name_dict.get(key)
+            if entry:
+                uri = entry['uri']
+                if value is None:
+                    graph_object._properties.pop(uri, None)
+                else:
+                    graph_object._properties[uri] = VitalSignsImpl.create_property_with_trait_from_classes(
+                        entry['prop_class'], entry['trait_class'], value)
+            else:
+                setattr(graph_object, key, value)
 
         return graph_object
 

@@ -637,11 +637,11 @@ class VitalSignsJSONSchemaGenerator(VitalSignsOntologyGenerator):
         return individuals
     
     def convert_individual_to_json(self, individual) -> Dict[str, Any]:
-        """Convert OWL individual to JSON instance."""
+        """Convert OWL individual to VitalSigns JSON instance."""
         
-        # Start with basic structure
+        # Start with basic structure using VitalSigns JSON format
         json_instance = {
-            "@id": str(individual.iri)
+            "URI": str(individual.iri)
         }
         
         # Get the class type(s)
@@ -649,9 +649,12 @@ class VitalSignsJSONSchemaGenerator(VitalSignsOntologyGenerator):
             # Use the first class as the primary type
             primary_class = individual.is_a[0]
             if hasattr(primary_class, 'iri'):
-                json_instance["@type"] = str(primary_class.iri)
+                class_uri = str(primary_class.iri)
             else:
-                json_instance["@type"] = str(primary_class)
+                class_uri = str(primary_class)
+            json_instance["type"] = class_uri
+            json_instance["http://vital.ai/ontology/vital-core#vitaltype"] = class_uri
+            json_instance["types"] = [class_uri]
         
         # Extract all properties
         try:
