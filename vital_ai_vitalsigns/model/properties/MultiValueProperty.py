@@ -6,7 +6,10 @@ from vital_ai_vitalsigns.model.utils.unordered_list import UnorderedList
 class MultiValueProperty(list, IProperty):
     def __init__(self, value: list, property_class):
         self.property_class = property_class
-        list_value = list(value)
+        if isinstance(value, str):
+            list_value = [value]
+        else:
+            list_value = list(value)
         # Initialize list with the values
         list.__init__(self, list_value)
         # Store as UnorderedList for backward compatibility with existing code
