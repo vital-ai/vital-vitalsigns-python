@@ -2,9 +2,9 @@ import traceback
 from vital_ai_vitalsigns.model.properties.IProperty import IProperty
 
 class IntegerProperty(IProperty):
-    def __init__(self, value: int):
+    def __init__(self, value: int, lang=None):
         int_value = int(value)
-        super().__init__(int_value)
+        super().__init__(int_value, lang=lang)
 
     @classmethod
     def get_data_class(cls):

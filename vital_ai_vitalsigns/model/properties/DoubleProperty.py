@@ -2,9 +2,9 @@ import traceback
 from vital_ai_vitalsigns.model.properties.IProperty import IProperty
 
 class DoubleProperty(IProperty):
-    def __init__(self, value: float):
+    def __init__(self, value: float, lang=None):
         double_value = float(value)
-        super().__init__(double_value)
+        super().__init__(double_value, lang=lang)
 
     @classmethod
     def get_data_class(cls):

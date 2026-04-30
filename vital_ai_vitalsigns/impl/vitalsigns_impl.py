@@ -16,6 +16,7 @@ from vital_ai_vitalsigns.model.properties.MultiValueProperty import MultiValuePr
 from vital_ai_vitalsigns.model.properties.StringProperty import StringProperty
 from vital_ai_vitalsigns.model.properties.TruthProperty import TruthProperty
 from vital_ai_vitalsigns.model.properties.URIProperty import URIProperty
+from vital_ai_vitalsigns.model.properties.IProperty import IProperty
 from vital_ai_vitalsigns.model.trait.PropertyTrait import PropertyTrait
 from functools import lru_cache
 
@@ -87,21 +88,31 @@ class VitalSignsImpl:
         if not trait_class:
             raise ValueError(f"No trait found with URI: {trait_uri}")
 
+        lang = None
+        if isinstance(value, IProperty):
+            lang = value.lang
+            value = value.value
+
         multiple_values = trait_class.multiple_values
 
         prop = cls.create_property_with_trait_class(property_class, trait_class)
 
         if not multiple_values:
-            return prop(value)
+            return prop(value, lang=lang)
         else:
             return prop(value, property_class)
 
     @classmethod
     def create_property_with_trait_from_classes(cls, property_class, trait_class, value):
+        lang = None
+        if isinstance(value, IProperty):
+            lang = value.lang
+            value = value.value
+
         multiple_values = trait_class.multiple_values
         prop = cls.create_property_with_trait_class(property_class, trait_class)
         if not multiple_values:
-            return prop(value)
+            return prop(value, lang=lang)
         else:
             return prop(value, property_class)
 

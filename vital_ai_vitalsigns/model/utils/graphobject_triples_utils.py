@@ -13,6 +13,7 @@ from vital_ai_vitalsigns.model.properties.URIProperty import URIProperty
 from rdflib.term import _is_valid_uri
 from collections import defaultdict
 from vital_ai_vitalsigns.model.utils.rdf_utils import get_xsd_datatype
+from vital_ai_vitalsigns.impl.annotation_registry import is_annotation_property
 
 G = TypeVar('G', bound=Optional['GraphObject'])
 
@@ -155,12 +156,21 @@ class GraphObjectTriplesUtils:
             if predicate_str == VitalConstants.uri_prop_uri:
                 continue
 
+            if is_annotation_property(predicate_str):
+                if isinstance(obj_value, Literal):
+                    ann_lang = obj_value.language
+                    ann_val = str(obj_value)
+                    graph_object.add_annotation(predicate_str, ann_val, lang=ann_lang)
+                continue
+
             entry = uri_dict.get(predicate_str)
             if not entry:
                 continue
 
+            lang = None
             if isinstance(obj_value, Literal):
                 value = obj_value.toPython()
+                lang = obj_value.language
             elif isinstance(obj_value, URIRef):
                 value = str(obj_value)
             else:
@@ -178,9 +188,11 @@ class GraphObjectTriplesUtils:
                 else:
                     accum[1].append(value)
             else:
-                graph_object._properties[predicate_str] = \
-                    VitalSignsImpl.create_property_with_trait_from_classes(
-                        entry['prop_class'], entry['trait_class'], value)
+                prop = VitalSignsImpl.create_property_with_trait_from_classes(
+                    entry['prop_class'], entry['trait_class'], value)
+                if lang:
+                    prop.lang = lang
+                graph_object._properties[predicate_str] = prop
 
         if multi_value_accum:
             for pred_str, (entry, value_list) in multi_value_accum.items():
@@ -255,12 +267,21 @@ class GraphObjectTriplesUtils:
                 if predicate_str == VitalConstants.uri_prop_uri:
                     continue
 
+                if is_annotation_property(predicate_str):
+                    if isinstance(obj_value, Literal):
+                        ann_lang = obj_value.language
+                        ann_val = str(obj_value)
+                        graph_object.add_annotation(predicate_str, ann_val, lang=ann_lang)
+                    continue
+
                 entry = uri_dict.get(predicate_str)
                 if not entry:
                     continue
 
+                lang = None
                 if isinstance(obj_value, Literal):
                     value = obj_value.toPython()
+                    lang = obj_value.language
                 elif isinstance(obj_value, URIRef):
                     value = str(obj_value)
                 else:
@@ -278,9 +299,11 @@ class GraphObjectTriplesUtils:
                     else:
                         accum[1].append(value)
                 else:
-                    graph_object._properties[predicate_str] = \
-                        VitalSignsImpl.create_property_with_trait_from_classes(
-                            entry['prop_class'], entry['trait_class'], value)
+                    prop = VitalSignsImpl.create_property_with_trait_from_classes(
+                        entry['prop_class'], entry['trait_class'], value)
+                    if lang:
+                        prop.lang = lang
+                    graph_object._properties[predicate_str] = prop
 
             if multi_value_accum:
                 for pred_str, (entry, value_list) in multi_value_accum.items():
@@ -312,7 +335,9 @@ class GraphObjectTriplesUtils:
 
             rdf_data = prop_instance.to_rdf()
 
-            if rdf_data["datatype"] == list:
+            if "lang" in rdf_data:
+                triple_list.append((subject, URIRef(prop_uri), Literal(rdf_data["value"], lang=rdf_data["lang"])))
+            elif rdf_data["datatype"] == list:
 
                 value_list = rdf_data["value"]
                 data_class = rdf_data["data_class"]
@@ -335,7 +360,9 @@ class GraphObjectTriplesUtils:
 
                 rdf_data = prop_instance.to_rdf()
 
-                if rdf_data["datatype"] == list:
+                if "lang" in rdf_data:
+                    triple_list.append((subject, URIRef(prop_uri), Literal(rdf_data["value"], lang=rdf_data["lang"])))
+                elif rdf_data["datatype"] == list:
 
                     value_list = rdf_data["value"]
                     data_class = rdf_data["data_class"]
@@ -350,6 +377,13 @@ class GraphObjectTriplesUtils:
                     triple_list.append((subject, URIRef(prop_uri), URIRef(rdf_data["value"])))
                 else:
                     triple_list.append((subject, URIRef(prop_uri), Literal(rdf_data["value"], datatype=rdf_data["datatype"])))
+
+        for ann_uri, ann_values in graph_object._annotations.items():
+            for av in ann_values:
+                if av.lang:
+                    triple_list.append((subject, URIRef(ann_uri), Literal(str(av), lang=av.lang)))
+                else:
+                    triple_list.append((subject, URIRef(ann_uri), Literal(str(av))))
 
     @staticmethod
     def add_to_dataset_impl(graph_object, dataset: Dataset, graph_uri: str):
@@ -370,7 +404,9 @@ class GraphObjectTriplesUtils:
 
             rdf_data = prop_instance.to_rdf()
 
-            if rdf_data["datatype"] == list:
+            if "lang" in rdf_data:
+                triples.append((subject, URIRef(prop_uri), Literal(rdf_data["value"], lang=rdf_data["lang"])))
+            elif rdf_data["datatype"] == list:
 
                 value_list = rdf_data["value"]
                 data_class = rdf_data["data_class"]
@@ -393,7 +429,9 @@ class GraphObjectTriplesUtils:
 
                 rdf_data = prop_instance.to_rdf()
 
-                if rdf_data["datatype"] == list:
+                if "lang" in rdf_data:
+                    triples.append((subject, URIRef(prop_uri), Literal(rdf_data["value"], lang=rdf_data["lang"])))
+                elif rdf_data["datatype"] == list:
 
                     value_list = rdf_data["value"]
                     data_class = rdf_data["data_class"]
@@ -408,6 +446,13 @@ class GraphObjectTriplesUtils:
                     triples.append((subject, URIRef(prop_uri), URIRef(rdf_data["value"])))
                 else:
                     triples.append((subject, URIRef(prop_uri), Literal(rdf_data["value"], datatype=rdf_data["datatype"])))
+
+        for ann_uri, ann_values in graph_object._annotations.items():
+            for av in ann_values:
+                if av.lang:
+                    triples.append((subject, URIRef(ann_uri), Literal(str(av), lang=av.lang)))
+                else:
+                    triples.append((subject, URIRef(ann_uri), Literal(str(av))))
 
         if len(triples) > 0:
             triples_with_context = [(s, p, o, URIRef(graph_uri)) for s, p, o in triples]

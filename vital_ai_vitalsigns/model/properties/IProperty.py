@@ -2,8 +2,9 @@ from datetime import datetime
 import rdflib
 
 class IProperty:
-    def __init__(self, value):
+    def __init__(self, value, lang=None):
         self.value = value
+        self.lang = lang
 
     def __str__(self):
         return str(self.value)
@@ -51,6 +52,8 @@ class IProperty:
         return datatype
 
     def to_rdf(self):
+        if self.lang:
+            return {"value": str(self.value), "lang": self.lang}
         if isinstance(self.value, datetime):
             value = self.value.isoformat()
             datatype = rdflib.XSD.dateTime

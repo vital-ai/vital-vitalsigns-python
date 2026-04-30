@@ -8,6 +8,8 @@ from rdflib import Graph, Literal, URIRef, RDF
 from vital_ai_vitalsigns.impl.vitalsigns_impl import VitalSignsImpl
 from vital_ai_vitalsigns.model.vital_constants import VitalConstants
 from vital_ai_vitalsigns.model.utils.rdf_utils import get_xsd_datatype
+from vital_ai_vitalsigns.impl.annotation_registry import is_annotation_property
+from vital_ai_vitalsigns.model.annotation import AnnotationValue
 
 G = TypeVar('G', bound=Optional['GraphObject'])
 
@@ -36,7 +38,9 @@ class GraphObjectRdfUtils:
 
             rdf_data = prop_instance.to_rdf()
 
-            if rdf_data["datatype"] == list:
+            if "lang" in rdf_data:
+                g.add((subject, URIRef(prop_uri), Literal(rdf_data["value"], lang=rdf_data["lang"])))
+            elif rdf_data["datatype"] == list:
 
                 value_list = rdf_data["value"]
                 data_class = rdf_data["data_class"]
@@ -60,7 +64,9 @@ class GraphObjectRdfUtils:
 
                 rdf_data = prop_instance.to_rdf()
 
-                if rdf_data["datatype"] == list:
+                if "lang" in rdf_data:
+                    g.add((subject, URIRef(prop_uri), Literal(rdf_data["value"], lang=rdf_data["lang"])))
+                elif rdf_data["datatype"] == list:
 
                     value_list = rdf_data["value"]
                     data_class = rdf_data["data_class"]
@@ -75,6 +81,13 @@ class GraphObjectRdfUtils:
                     g.add((subject, URIRef(prop_uri), URIRef(rdf_data["value"])))
                 else:
                     g.add((subject, URIRef(prop_uri), Literal(rdf_data["value"], datatype=rdf_data["datatype"])))
+
+        for ann_uri, ann_values in graph_object._annotations.items():
+            for av in ann_values:
+                if av.lang:
+                    g.add((subject, URIRef(ann_uri), Literal(str(av), lang=av.lang)))
+                else:
+                    g.add((subject, URIRef(ann_uri), Literal(str(av))))
 
         return g.serialize(format=format)
 
@@ -167,6 +180,13 @@ class GraphObjectRdfUtils:
             if predicate_str == VitalConstants.uri_prop_uri:
                 continue
 
+            if is_annotation_property(predicate_str):
+                if isinstance(obj_value, Literal):
+                    ann_lang = obj_value.language
+                    ann_val = str(obj_value)
+                    graph_object.add_annotation(predicate_str, ann_val, lang=ann_lang)
+                continue
+
             entry = uri_dict.get(predicate_str)
             if not entry:
                 # Fallback for unknown properties (e.g. VITAL_GraphContainerObject extern)
@@ -179,8 +199,10 @@ class GraphObjectRdfUtils:
                     setattr(graph_object, predicate_str, value)
                 continue
 
+            lang = None
             if isinstance(obj_value, Literal):
                 value = obj_value.toPython()
+                lang = obj_value.language
             elif isinstance(obj_value, URIRef):
                 value = str(obj_value)
             else:
@@ -198,9 +220,11 @@ class GraphObjectRdfUtils:
                 else:
                     accum[1].append(value)
             else:
-                graph_object._properties[predicate_str] = \
-                    VitalSignsImpl.create_property_with_trait_from_classes(
-                        entry['prop_class'], entry['trait_class'], value)
+                prop = VitalSignsImpl.create_property_with_trait_from_classes(
+                    entry['prop_class'], entry['trait_class'], value)
+                if lang:
+                    prop.lang = lang
+                graph_object._properties[predicate_str] = prop
 
         if multi_value_accum:
             for pred_str, (entry, value_list) in multi_value_accum.items():
@@ -263,6 +287,13 @@ class GraphObjectRdfUtils:
                 if predicate_str == VitalConstants.uri_prop_uri:
                     continue
 
+                if is_annotation_property(predicate_str):
+                    if isinstance(obj_value, Literal):
+                        ann_lang = obj_value.language
+                        ann_val = str(obj_value)
+                        graph_object.add_annotation(predicate_str, ann_val, lang=ann_lang)
+                    continue
+
                 entry = uri_dict.get(predicate_str)
                 if not entry:
                     if isinstance(graph_object, VITAL_GraphContainerObject):
@@ -274,8 +305,10 @@ class GraphObjectRdfUtils:
                         setattr(graph_object, predicate_str, value)
                     continue
 
+                lang = None
                 if isinstance(obj_value, Literal):
                     value = obj_value.toPython()
+                    lang = obj_value.language
                 elif isinstance(obj_value, URIRef):
                     value = str(obj_value)
                 else:
@@ -293,9 +326,11 @@ class GraphObjectRdfUtils:
                     else:
                         accum[1].append(value)
                 else:
-                    graph_object._properties[predicate_str] = \
-                        VitalSignsImpl.create_property_with_trait_from_classes(
-                            entry['prop_class'], entry['trait_class'], value)
+                    prop = VitalSignsImpl.create_property_with_trait_from_classes(
+                        entry['prop_class'], entry['trait_class'], value)
+                    if lang:
+                        prop.lang = lang
+                    graph_object._properties[predicate_str] = prop
 
             if multi_value_accum:
                 for pred_str, (entry, value_list) in multi_value_accum.items():

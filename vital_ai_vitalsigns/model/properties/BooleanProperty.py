@@ -2,9 +2,9 @@ from vital_ai_vitalsigns.model.properties.IProperty import IProperty
 
 
 class BooleanProperty(IProperty):
-    def __init__(self, value: bool):
+    def __init__(self, value: bool, lang=None):
         bool_value = bool(value)
-        super().__init__(bool_value)
+        super().__init__(bool_value, lang=lang)
 
     @classmethod
     def get_data_class(cls):

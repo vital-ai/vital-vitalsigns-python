@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TypeVar, List, Optional
 from vital_ai_vitalsigns.model.vital_constants import VitalConstants
+from vital_ai_vitalsigns.model.annotation import AnnotationValue
 
 G = TypeVar('G', bound=Optional['GraphObject'])
 
@@ -35,6 +36,12 @@ class GraphObjectDictUtils:
         serializable_dict[VitalConstants.vitaltype_uri] = class_uri
 
         serializable_dict['types'] = [class_uri]
+
+        if graph_object._annotations:
+            ann_dict = {}
+            for ann_uri, ann_values in graph_object._annotations.items():
+                ann_dict[ann_uri] = [av.to_json() for av in ann_values]
+            serializable_dict['annotations'] = ann_dict
 
         return serializable_dict
 
@@ -77,6 +84,13 @@ class GraphObjectDictUtils:
                 continue
             if key == VitalConstants.uri_prop_uri:
                 graph_object.URI = value
+                continue
+            if key == 'annotations':
+                if isinstance(value, dict):
+                    for ann_uri, ann_list in value.items():
+                        for av_data in ann_list:
+                            av = AnnotationValue.from_json(av_data)
+                            graph_object.add_annotation(ann_uri, av)
                 continue
 
             entry = uri_dict.get(key)

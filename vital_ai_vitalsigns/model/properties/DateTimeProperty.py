@@ -4,18 +4,18 @@ from vital_ai_vitalsigns.model.properties.IProperty import IProperty
 
 
 class DateTimeProperty(IProperty):
-    def __init__(self, value):
+    def __init__(self, value, lang=None):
 
         if isinstance(value, datetime):
             datetime_value = value
-            super().__init__(datetime_value)
+            super().__init__(datetime_value, lang=lang)
         elif isinstance(value, int):
             datetime_value = datetime.fromtimestamp(value / 1000)
-            super().__init__(datetime_value )
+            super().__init__(datetime_value, lang=lang)
         elif isinstance(value, str):
             try:
                 datetime_value = datetime.fromisoformat(value)
-                super().__init__(datetime_value)
+                super().__init__(datetime_value, lang=lang)
             except ValueError:
                 raise TypeError(f"Unsupported string {value} for datetime property: {type(value).__name__}")
         else:

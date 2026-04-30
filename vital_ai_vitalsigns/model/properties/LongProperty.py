@@ -2,9 +2,9 @@ import traceback
 from vital_ai_vitalsigns.model.properties.IProperty import IProperty
 
 class LongProperty(IProperty):
-    def __init__(self, value: int):
+    def __init__(self, value: int, lang=None):
         long_value = int(value)
-        super().__init__(long_value)
+        super().__init__(long_value, lang=lang)
 
     @classmethod
     def get_data_class(cls):

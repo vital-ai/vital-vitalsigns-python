@@ -574,6 +574,121 @@ class VitalSignsOntologyManager:
     def get_vitalsigns_ontology(self, ontology_iri: str) -> VitalSignsOntology:
         return self._ont_map[ontology_iri]
 
+    def get_class_label(self, class_uri: str, *, lang: str = None) -> str | None:
+        """Return the rdfs:label for a class URI, optionally filtered by language tag."""
+        domain_graph = self.get_domain_graph()
+        if lang:
+            query = f"""
+                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                SELECT ?label WHERE {{
+                    <{class_uri}> rdfs:label ?label .
+                    FILTER (lang(?label) = "{lang}")
+                }}
+                """
+        else:
+            query = f"""
+                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                SELECT ?label WHERE {{
+                    <{class_uri}> rdfs:label ?label .
+                }}
+                """
+        for row in domain_graph.query(query):
+            return str(row['label'])
+        return None
+
+    def get_class_comment(self, class_uri: str, *, lang: str = None) -> str | None:
+        """Return the rdfs:comment for a class URI, optionally filtered by language tag."""
+        domain_graph = self.get_domain_graph()
+        if lang:
+            query = f"""
+                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                SELECT ?comment WHERE {{
+                    <{class_uri}> rdfs:comment ?comment .
+                    FILTER (lang(?comment) = "{lang}")
+                }}
+                """
+        else:
+            query = f"""
+                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                SELECT ?comment WHERE {{
+                    <{class_uri}> rdfs:comment ?comment .
+                }}
+                """
+        for row in domain_graph.query(query):
+            return str(row['comment'])
+        return None
+
+    def get_class_annotations(self, class_uri: str) -> dict:
+        """Return all annotation values for a class URI.
+
+        Returns dict mapping annotation URI to list of (value, lang) tuples.
+        Only returns rdfs:label, rdfs:comment, rdfs:seeAlso, rdfs:isDefinedBy,
+        owl:versionInfo, and owl:deprecated annotations.
+        """
+        domain_graph = self.get_domain_graph()
+        query = f"""
+            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+            PREFIX owl: <http://www.w3.org/2002/07/owl#>
+            SELECT ?pred ?val WHERE {{
+                <{class_uri}> ?pred ?val .
+                FILTER (?pred IN (
+                    rdfs:label, rdfs:comment, rdfs:seeAlso, rdfs:isDefinedBy,
+                    owl:versionInfo, owl:deprecated
+                ))
+            }}
+            """
+        annotations = {}
+        for row in domain_graph.query(query):
+            pred = str(row['pred'])
+            val = row['val']
+            val_lang = val.language if hasattr(val, 'language') else None
+            annotations.setdefault(pred, []).append((str(val), val_lang))
+        return annotations
+
+    def get_property_label(self, property_uri: str, *, lang: str = None) -> str | None:
+        """Return the rdfs:label for a property URI, optionally filtered by language tag."""
+        domain_graph = self.get_domain_graph()
+        if lang:
+            query = f"""
+                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                SELECT ?label WHERE {{
+                    <{property_uri}> rdfs:label ?label .
+                    FILTER (lang(?label) = "{lang}")
+                }}
+                """
+        else:
+            query = f"""
+                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                SELECT ?label WHERE {{
+                    <{property_uri}> rdfs:label ?label .
+                }}
+                """
+        for row in domain_graph.query(query):
+            return str(row['label'])
+        return None
+
+    def get_property_comment(self, property_uri: str, *, lang: str = None) -> str | None:
+        """Return the rdfs:comment for a property URI, optionally filtered by language tag."""
+        domain_graph = self.get_domain_graph()
+        if lang:
+            query = f"""
+                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                SELECT ?comment WHERE {{
+                    <{property_uri}> rdfs:comment ?comment .
+                    FILTER (lang(?comment) = "{lang}")
+                }}
+                """
+        else:
+            query = f"""
+                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                SELECT ?comment WHERE {{
+                    <{property_uri}> rdfs:comment ?comment .
+                }}
+                """
+        for row in domain_graph.query(query):
+            return str(row['comment'])
+        return None
+
     # dict of ontology uri to VitalSignsOntology instance
     # note: this means one version of an ontology in the manager at a time
     # potentially incorporate multi-versions

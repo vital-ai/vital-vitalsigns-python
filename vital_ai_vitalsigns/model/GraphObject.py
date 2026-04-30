@@ -12,6 +12,8 @@ from vital_ai_vitalsigns.impl.vitalsigns_impl import VitalSignsImpl
 from vital_ai_vitalsigns.model.vital_constants import VitalConstants
 from vital_ai_vitalsigns.model.properties.IProperty import IProperty
 from vital_ai_vitalsigns.model.properties.URIProperty import URIProperty
+from vital_ai_vitalsigns.model.annotation import AnnotationValue
+from vital_ai_vitalsigns.impl.annotation_registry import is_annotation_property
 from functools import wraps
 from functools import lru_cache
 from rdflib.term import _is_valid_uri
@@ -46,6 +48,24 @@ def cacheable_method(method):
         return method(*args, **kwargs)
     cached_method._is_cacheable = True
     return cached_method
+
+def _parse_annotation_value(v):
+    """Convert various value formats to AnnotationValue.
+
+    Accepts:
+      - AnnotationValue — returned as-is
+      - dict with 'value' and optional 'lang' keys
+      - rdflib Literal (has .language attribute)
+      - str — plain string, no language tag
+    """
+    if isinstance(v, AnnotationValue):
+        return v
+    if isinstance(v, dict):
+        return AnnotationValue(v["value"], lang=v.get("lang"))
+    if hasattr(v, 'language'):
+        return AnnotationValue(str(v), lang=v.language)
+    return AnnotationValue(str(v))
+
 
 class AttributeComparisonProxy:
     def __init__(self, cls, name):
@@ -111,6 +131,15 @@ GC = TypeVar('GC', bound='GraphCollection')
 class GraphObject(metaclass=GraphObjectMeta):
     _allowed_properties = []
 
+    _ANNOTATION_SHORT_NAMES = {
+        'rdfs_label': 'http://www.w3.org/2000/01/rdf-schema#label',
+        'rdfs_comment': 'http://www.w3.org/2000/01/rdf-schema#comment',
+        'rdfs_seeAlso': 'http://www.w3.org/2000/01/rdf-schema#seeAlso',
+        'rdfs_isDefinedBy': 'http://www.w3.org/2000/01/rdf-schema#isDefinedBy',
+        'owl_versionInfo': 'http://www.w3.org/2002/07/owl#versionInfo',
+        'owl_deprecated': 'http://www.w3.org/2002/07/owl#deprecated',
+    }
+
     @classmethod
     @cacheable_method
     def get_allowed_properties(cls):
@@ -154,6 +183,7 @@ class GraphObject(metaclass=GraphObjectMeta):
     def __init__(self, *, modified=True):
         super().__setattr__('_properties', {})
         super().__setattr__('_extern_properties', {})
+        super().__setattr__('_annotations', {})
         super().__setattr__('_graph_collection_set', set())
         super().__setattr__('_graph_uri_set', set())
         super().__setattr__('_modified', modified)
@@ -186,6 +216,11 @@ class GraphObject(metaclass=GraphObjectMeta):
             pass
 
     def __setattr__(self, name, value):
+
+        ann_uri = self._ANNOTATION_SHORT_NAMES.get(name)
+        if ann_uri is not None:
+            self.set_annotation(ann_uri, value)
+            return
 
         if name == 'URI':
             if value is None:
@@ -249,7 +284,11 @@ class GraphObject(metaclass=GraphObjectMeta):
                 return None
         if name == 'vitaltype':
             return self.get_class_uri()
-        
+
+        ann_uri = self._ANNOTATION_SHORT_NAMES.get(name)
+        if ann_uri is not None:
+            return self.get_annotation(ann_uri)
+
         # Check if name is a full URI first
         if name in self._properties:
             return self._properties[name]
@@ -298,13 +337,125 @@ class GraphObject(metaclass=GraphObjectMeta):
             raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
         return value
 
-    def set_property(self, prop, value):
+    def set_property(self, prop, value, lang=None):
+        if lang is not None:
+            from vital_ai_vitalsigns.model.properties.StringProperty import StringProperty
+            value = StringProperty(value, lang=lang)
         prop_string = str(prop)
         setattr(self, prop_string, value)
 
     def get_property(self, prop):
         prop_string = str(prop)
         return getattr(self, prop_string)
+
+    # --- Annotation API ---
+
+    def get_annotations(self, uri: str) -> list:
+        return list(self._annotations.get(uri, []))
+
+    def get_annotation(self, uri: str, lang=None):
+        values = self._annotations.get(uri, [])
+        if not values:
+            return None
+        if lang is not None:
+            for av in values:
+                if av.lang == lang:
+                    return str(av)
+            return None
+        return str(values[0])
+
+    def set_annotation(self, uri: str, value, lang=None):
+        if value is None:
+            self._annotations.pop(uri, None)
+        else:
+            if isinstance(value, AnnotationValue):
+                av = value
+            else:
+                av = AnnotationValue(str(value), lang=lang)
+            self._annotations[uri] = [av]
+        super().__setattr__('_modified', True)
+
+    def add_annotation(self, uri: str, value, lang=None):
+        if isinstance(value, AnnotationValue):
+            av = value
+        else:
+            av = AnnotationValue(str(value), lang=lang)
+        if uri not in self._annotations:
+            self._annotations[uri] = []
+        self._annotations[uri].append(av)
+        super().__setattr__('_modified', True)
+
+    def remove_annotation(self, uri: str, value=None, lang=None):
+        if uri not in self._annotations:
+            return
+        if value is None and lang is None:
+            del self._annotations[uri]
+        else:
+            self._annotations[uri] = [
+                av for av in self._annotations[uri]
+                if not (
+                    (value is None or str(av) == str(value)) and
+                    (lang is None or av.lang == lang)
+                )
+            ]
+            if not self._annotations[uri]:
+                del self._annotations[uri]
+        super().__setattr__('_modified', True)
+
+    # --- Convenience annotation accessors with lang ---
+
+    def get_rdfs_label(self, lang=None):
+        return self.get_annotation('http://www.w3.org/2000/01/rdf-schema#label', lang=lang)
+
+    def set_rdfs_label(self, value, lang=None):
+        if lang is not None:
+            self.remove_annotation('http://www.w3.org/2000/01/rdf-schema#label', lang=lang)
+            if value is not None:
+                self.add_annotation('http://www.w3.org/2000/01/rdf-schema#label', value, lang=lang)
+        else:
+            self.set_annotation('http://www.w3.org/2000/01/rdf-schema#label', value)
+
+    def get_rdfs_comment(self, lang=None):
+        return self.get_annotation('http://www.w3.org/2000/01/rdf-schema#comment', lang=lang)
+
+    def set_rdfs_comment(self, value, lang=None):
+        if lang is not None:
+            self.remove_annotation('http://www.w3.org/2000/01/rdf-schema#comment', lang=lang)
+            if value is not None:
+                self.add_annotation('http://www.w3.org/2000/01/rdf-schema#comment', value, lang=lang)
+        else:
+            self.set_annotation('http://www.w3.org/2000/01/rdf-schema#comment', value)
+
+    def set_rdfs_labels(self, lang_map: dict):
+        """Replace all rdfs:label annotations with the given language map.
+
+        Args:
+            lang_map: dict mapping language tag to label string,
+                      e.g. {"en": "Cat", "fr": "Chat", "de": "Katze"}.
+                      Use None key for a label with no language tag.
+        """
+        self.set_annotations_by_lang('http://www.w3.org/2000/01/rdf-schema#label', lang_map)
+
+    def set_rdfs_comments(self, lang_map: dict):
+        """Replace all rdfs:comment annotations with the given language map.
+
+        Args:
+            lang_map: dict mapping language tag to comment string.
+                      Use None key for a comment with no language tag.
+        """
+        self.set_annotations_by_lang('http://www.w3.org/2000/01/rdf-schema#comment', lang_map)
+
+    def set_annotations_by_lang(self, uri: str, lang_map: dict):
+        """Replace all annotations for a URI with the given language map.
+
+        Args:
+            uri: The annotation URI
+            lang_map: dict mapping language tag (or None) to value string.
+        """
+        self._annotations.pop(uri, None)
+        for lang, value in lang_map.items():
+            self.add_annotation(uri, value, lang=lang)
+        super().__setattr__('_modified', True)
 
     def __getitem__(self, key):
         return self.get_property(key)
@@ -450,11 +601,19 @@ class GraphObject(metaclass=GraphObjectMeta):
                 continue
             properties[uri] = prop.get_value()
 
-        return {
+        result = {
             'subject_uri': subject_uri,
             'type_uri': self.get_class_uri(),
             'properties': properties
         }
+
+        if self._annotations:
+            ann_dict = {}
+            for ann_uri, ann_values in self._annotations.items():
+                ann_dict[ann_uri] = [av.to_json() for av in ann_values]
+            result['annotations'] = ann_dict
+
+        return result
 
     @staticmethod
     def to_property_maps(graph_object_list: list) -> list:
@@ -472,11 +631,17 @@ class GraphObject(metaclass=GraphObjectMeta):
                     subject_uri = prop.get_value()
                     continue
                 properties[uri] = prop.get_value()
-            results.append({
+            entry = {
                 'subject_uri': subject_uri,
                 'type_uri': graph_object.get_class_uri(),
                 'properties': properties
-            })
+            }
+            if graph_object._annotations:
+                ann_dict = {}
+                for ann_uri, ann_values in graph_object._annotations.items():
+                    ann_dict[ann_uri] = [av.to_json() for av in ann_values]
+                entry['annotations'] = ann_dict
+            results.append(entry)
         return results
 
     def to_triples(self) -> list:
@@ -544,7 +709,7 @@ class GraphObject(metaclass=GraphObjectMeta):
 
     @staticmethod
     def from_property_map(subject_uri: str, type_uri: str,
-                          properties: dict, *, modified=False) -> 'GraphObject':
+                          properties: dict, *, modified=False, **kwargs) -> 'GraphObject':
         """Create a GraphObject directly from a property map.
 
         Bypasses rdflib and __setattr__ — the fastest deserialization path.
@@ -572,11 +737,23 @@ class GraphObject(metaclass=GraphObjectMeta):
             if value is None:
                 continue
             entry = uri_dict.get(prop_uri)
-            if not entry:
-                continue
-            graph_object._properties[prop_uri] = \
-                VitalSignsImpl.create_property_with_trait_from_classes(
-                    entry['prop_class'], entry['trait_class'], value)
+            if entry:
+                graph_object._properties[prop_uri] = \
+                    VitalSignsImpl.create_property_with_trait_from_classes(
+                        entry['prop_class'], entry['trait_class'], value)
+            elif is_annotation_property(prop_uri):
+                if isinstance(value, list):
+                    for v in value:
+                        graph_object.add_annotation(prop_uri, _parse_annotation_value(v))
+                else:
+                    graph_object.add_annotation(prop_uri, _parse_annotation_value(value))
+
+        annotations = kwargs.get('annotations')
+        if annotations and isinstance(annotations, dict):
+            for ann_uri, ann_list in annotations.items():
+                for av_data in ann_list:
+                    av = AnnotationValue.from_json(av_data)
+                    graph_object.add_annotation(ann_uri, av)
 
         if not modified:
             graph_object.mark_serialized()
@@ -612,11 +789,23 @@ class GraphObject(metaclass=GraphObjectMeta):
                 if value is None:
                     continue
                 entry = uri_dict.get(prop_uri)
-                if not entry:
-                    continue
-                graph_object._properties[prop_uri] = \
-                    VitalSignsImpl.create_property_with_trait_from_classes(
-                        entry['prop_class'], entry['trait_class'], value)
+                if entry:
+                    graph_object._properties[prop_uri] = \
+                        VitalSignsImpl.create_property_with_trait_from_classes(
+                            entry['prop_class'], entry['trait_class'], value)
+                elif is_annotation_property(prop_uri):
+                    if isinstance(value, list):
+                        for v in value:
+                            graph_object.add_annotation(prop_uri, _parse_annotation_value(v))
+                    else:
+                        graph_object.add_annotation(prop_uri, _parse_annotation_value(value))
+
+            annotations = entry_map.get('annotations')
+            if annotations and isinstance(annotations, dict):
+                for ann_uri, ann_list in annotations.items():
+                    for av_data in ann_list:
+                        av = AnnotationValue.from_json(av_data)
+                        graph_object.add_annotation(ann_uri, av)
 
             if not modified:
                 graph_object.mark_serialized()

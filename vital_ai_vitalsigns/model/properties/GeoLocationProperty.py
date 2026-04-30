@@ -5,9 +5,9 @@ from vital_ai_vitalsigns.model.properties.IProperty import IProperty
 # TODO add in implementation
 
 class GeoLocationProperty(IProperty):
-    def __init__(self, value: str):
+    def __init__(self, value: str, lang=None):
         str_value = str(value)
-        super().__init__(str_value)
+        super().__init__(str_value, lang=lang)
 
     @classmethod
     def get_data_class(cls):
