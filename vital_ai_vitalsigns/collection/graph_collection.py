@@ -69,13 +69,9 @@ class GraphCollection(MutableSequence[G]):
 
                     # todo index data
 
-    def __del__(self):
-
-        from vital_ai_vitalsigns.vitalsigns import VitalSigns
-
-        vs = VitalSigns()
-        vs.remove_graph_collection(self)
-        # MutableSequence does not have a del
+    # No __del__: the VitalSigns registry is a WeakValueDictionary and evicts this
+    # collection automatically. The previous finalizer was unguarded and could raise
+    # during interpreter shutdown.
 
     def __len__(self):
         return len(self._data)
@@ -193,6 +189,12 @@ class GraphCollection(MutableSequence[G]):
 
         self._data.append(obj)
 
+        # Index for get(). Only the constructor did this, so anything added
+        # after construction was invisible to get() while len() still counted
+        # it -- a silent None that surfaced far from the cause.
+        if getattr(obj, 'URI', None) is not None:
+            self._uri_map[str(obj.URI)] = obj
+
         if self._use_vectordb is True:
 
             vs = VitalSigns()
@@ -242,6 +244,10 @@ class GraphCollection(MutableSequence[G]):
             obj.include_on_graph(self)
 
             self._data.append(obj)
+
+            # see add(): keep _uri_map in step with _data so get() works
+            if getattr(obj, 'URI', None) is not None:
+                self._uri_map[str(obj.URI)] = obj
 
             if self._use_vectordb is True:
 

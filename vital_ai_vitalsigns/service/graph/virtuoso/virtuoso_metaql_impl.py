@@ -2,6 +2,9 @@ from typing import List
 from vital_ai_vitalsigns.metaql.metaql_query import SelectQuery as MetaQLSelectQuery
 from vital_ai_vitalsigns.metaql.metaql_query import GraphQuery as MetaQLGraphQuery
 from vital_ai_vitalsigns.ontology.ontology import Ontology
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class VirtuosoMetaQLImpl:
@@ -19,9 +22,9 @@ class VirtuosoMetaQLImpl:
         graph_id_list = select_query.get('graph_id_list', [])
 
 
-        print(graph_uri_list)
+        logger.debug(graph_uri_list)
 
-        print(graph_id_list)
+        logger.debug(graph_id_list)
 
 
         return ""

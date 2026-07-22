@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import sys
 from abc import ABC, abstractmethod
 import json
 from datetime import datetime
@@ -49,6 +48,12 @@ def cacheable_method(method):
     cached_method._is_cacheable = True
     return cached_method
 
+def _rebuild_graph_object_from_json(json_str):
+    """Module-level unpickler for GraphObject.__reduce__ (must be importable)."""
+    from vital_ai_vitalsigns.vitalsigns import VitalSigns
+    return VitalSigns().from_json(json_str)
+
+
 def _parse_annotation_value(v):
     """Convert various value formats to AnnotationValue.
 
@@ -92,44 +97,34 @@ class GraphObjectMeta(type):
         logger.info(f"Setting class attribute {name} to {value}")
         super().__setattr__(name, value)
 
-    def __getattr__(self, name):
+    def __getattr__(cls, name):
+        # Never synthesize a proxy for a dunder. Python's own protocols probe
+        # classes with getattr(cls, "__copy__", None) / "__deepcopy__" /
+        # "__reduce__" and treat any truthy result as callable, so handing back
+        # an AttributeComparisonProxy broke copy, deepcopy and pickle outright.
+        #
+        # This previously carried a hand-maintained denylist of ~18 pydantic
+        # dunder names to work around the same problem for one library. Raising
+        # for all dunders covers pydantic and every other consumer, so the
+        # denylist is gone.
+        #
+        # The query DSL is unaffected: its attributes are property short names,
+        # never dunders.
         if name.startswith('__') and name.endswith('__'):
-            logger.info(f"Getting internal class attribute: {name}")
-        
-        # Prevent Pydantic from encountering AttributeComparisonProxy objects
-        # by raising AttributeError for Pydantic-specific attributes
-        pydantic_attrs = {
-            '__get_pydantic_json_schema__',
-            '__pydantic_generic_metadata__',
-            '__pydantic_core_schema__',
-            '__pydantic_serializer__',
-            '__pydantic_validator__',
-            '__pydantic_decorators__',
-            '__pydantic_fields__',
-            '__pydantic_config__',
-            '__pydantic_complete__',
-            '__pydantic_custom_init_subclass_params__',
-            '__pydantic_init_subclass__',
-            '__pydantic_post_init__',
-            '__pydantic_private__',
-            '__pydantic_extra__',
-            '__pydantic_fields_set__',
-            '__pydantic_parent_namespace__',
-            '__args__',  # Used by Pydantic for generic type checking
-            '__origin__',  # Used by Pydantic for generic type checking
-            '__parameters__'  # Used by Pydantic for generic type checking
-        }
-        
-        if name in pydantic_attrs:
-            raise AttributeError(f"'{self.__name__}' has no attribute '{name}'")
-        
-        return AttributeComparisonProxy(self, name)
+            raise AttributeError(f"type object '{cls.__name__}' has no attribute '{name}'")
+
+        return AttributeComparisonProxy(cls, name)
 
 G = TypeVar('G', bound=Optional['GraphObject'])
 GC = TypeVar('GC', bound='GraphCollection')
 
 class GraphObject(metaclass=GraphObjectMeta):
     _allowed_properties = []
+
+    # Opt-in object registry, published by VitalSigns.__init__. Default off:
+    # the registry exists for planned ontology inference over live objects,
+    # which is not in regular use, so construction should not pay for it.
+    _registry_enabled = False
 
     _ANNOTATION_SHORT_NAMES = {
         'rdfs_label': 'http://www.w3.org/2000/01/rdf-schema#label',
@@ -189,31 +184,22 @@ class GraphObject(metaclass=GraphObjectMeta):
         super().__setattr__('_modified', modified)
         super().__setattr__('_object_hash', "")
 
-        from vital_ai_vitalsigns.vitalsigns import VitalSigns
-        vs = VitalSigns()
-        vs.include_graph_object(self)
+        # Opt-in object registry, default off. When disabled this is a single
+        # class-attribute test -- no import, no singleton lookup, no map write.
+        # VitalSigns.__init__ publishes the flag, so enabling the registry
+        # requires VitalSigns() to exist before the objects you want tracked.
+        if GraphObject._registry_enabled:
+            from vital_ai_vitalsigns.vitalsigns import VitalSigns
+            VitalSigns().include_graph_object(self)
 
     def __repr__(self):
         go_json = self.to_json(False)
         clazz=type(self)
         return f"GraphObject(class={clazz}, json={go_json})"
 
-    def __del__(self):
-        # logger.debug(f"deleting: {self}")
-
-        if sys.meta_path is None or not hasattr(sys, 'modules'):
-            # Python is shutting down, skip cleanup
-            # logger.debug("shutting down")
-            return
-
-        try:
-            from vital_ai_vitalsigns.vitalsigns import VitalSigns
-            # logger.debug(f"deleting: {self.URI}")
-            vs = VitalSigns()
-            vs.remove_graph_object(self)
-        except Exception as ex:
-            # logger.debug(ex)
-            pass
+    # No __del__: the VitalSigns registry is a WeakValueDictionary and evicts this
+    # object automatically. A finalizer here would add a singleton lookup to every
+    # teardown and force the cycle collector to run it per-object.
 
     def __setattr__(self, name, value):
 
@@ -332,10 +318,27 @@ class GraphObject(metaclass=GraphObjectMeta):
         return None
 
     def __getattr__(self, name):
+        # Internal slots and dunders are never synthesized. my_getattr() reads
+        # self._properties, which __init__ installs -- but copy and pickle
+        # rebuild objects with cls.__new__(cls) and never call __init__, so
+        # _properties is absent, the read lands back here, and it recurses until
+        # the stack blows. __getattr__ only runs after normal lookup has already
+        # failed, so an absent underscore attribute genuinely is an AttributeError.
+        if name.startswith('_'):
+            raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+
         value = self.my_getattr(name)
         if value is NotImplemented:
             raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
         return value
+
+    def __reduce__(self):
+        # Pickle serializes an instance by reference to its class, but property
+        # classes are built dynamically inside
+        # VitalSignsImpl.create_property_with_trait_class and have no importable
+        # path. Round-trip through the library's own JSON form instead, which
+        # already has round-trip test coverage.
+        return (_rebuild_graph_object_from_json, (self.to_json(),))
 
     def set_property(self, prop, value, lang=None):
         if lang is not None:

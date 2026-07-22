@@ -27,7 +27,16 @@ class VitalSignsCommand:
 
         # Generate command
         generate_parser = subparsers.add_parser('generate', help="Generate Ontology Binding")
-        generate_parser.add_argument('-o', '--ontology', required=True, help="Ontology file path")
+        generate_parser.add_argument('-d', '--domain', required=True,
+                                     help="Domain name as listed in the domain config")
+        generate_parser.add_argument('--ontology-dir', action='append', required=True,
+                                     dest='ontology_dirs', metavar='DIR',
+                                     help="Directory containing .owl files "
+                                          "(repeatable; all dirs are scanned for imports)")
+        generate_parser.add_argument('--domain-config', required=True,
+                                     help="Path to domain-config.yaml")
+        generate_parser.add_argument('--output', required=True,
+                                     help="Directory the package dir is created under")
 
         # Cache command
         cache_parser = subparsers.add_parser('cache', help="Manage the registry cache")
@@ -51,11 +60,18 @@ class VitalSignsCommand:
             self.parser.print_help()
 
     def generate(self):
+        from vital_ai_vitalsigns_generate.vitalsigns_domain_list_generator import \
+            VitalSignsDomainListGenerator
 
-        input_path = os.path.join(self.vital_home, self.args.ontology) if not os.path.isabs(
-            self.args.ontology) else self.args.ontology
+        generator = VitalSignsDomainListGenerator()
 
-        print(f"Generating files from {input_path}")
+        package_dir = generator.generate_domain(
+            ontology_dirs=self.args.ontology_dirs,
+            domain_config_path=self.args.domain_config,
+            domain_name=self.args.domain,
+            output_dir=self.args.output)
+
+        print(f"Generated: {package_dir}")
 
     def info(self):
         vital_home = self.vital_home

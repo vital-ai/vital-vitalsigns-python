@@ -42,5 +42,11 @@ class VitalBlockWriter(VitalBlockIO):
             self.closed = True
 
     def __del__(self):
-        self.close()
+        # A finalizer must never raise: __init__ can fail before file_handle /
+        # closed are set (e.g. the file-extension check), and this can also run
+        # during interpreter shutdown.
+        try:
+            self.close()
+        except Exception:
+            pass
 

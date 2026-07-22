@@ -31,3 +31,13 @@ domain_schema
 
 **/_vitalsigns_cache/
 
+# test artifacts
+.pytest_cache/
+**/.pytest_cache/
+test_log/
+**/*.log
+.coverage
+htmlcov/
+
+planning/*
+

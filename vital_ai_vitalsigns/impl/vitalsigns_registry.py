@@ -1,8 +1,8 @@
 import sys
 from datetime import datetime
-from functools import lru_cache
 from importlib.metadata import entry_points, distribution
 import importlib
+from collections.abc import MutableMapping
 import pkgutil
 import logging
 from pathlib import Path
@@ -155,18 +155,92 @@ def scan_vitalsigns_classes_parallel(vitalsigns_packages):
     return results
 
 
+class LazyClassMap(MutableMapping):
+    """URI -> class mapping that resolves dotted-path strings on access.
+
+    The registry cache stores classes as importable paths
+    ("pkg.module.ClassName") so that a cache hit does not have to import
+    thousands of modules up front. Resolution then happens lazily, per class,
+    on first use.
+
+    Before the cache existed, `vitalsigns_classes` held real classes -- and its
+    annotation still says Dict[str, Type[GraphObject]]. After a cache load it
+    held strings, so any caller iterating .values() and treating them as classes
+    failed with "'str' object has no attribute '__name__'" (or '__module__', or
+    'multiple_values' for property classes). The type of the values silently
+    depended on whether the cache happened to be warm.
+
+    This restores the documented contract: reads always yield classes, while the
+    underlying storage stays lazy. raw_items() exposes the unresolved entries for
+    the cache serializer, which must not force resolution of the whole registry
+    just to write it back out.
+    """
+
+    __slots__ = ('_raw', '_resolved')
+
+    def __init__(self, resolved_cache: dict):
+        self._raw = {}
+        # shared with the registry's _resolved_* dict, so resolution done here
+        # is visible to get_vitalsigns_class() and vice versa
+        self._resolved = resolved_cache
+
+    @staticmethod
+    def _import(path: str):
+        module_path, class_name = path.rsplit('.', 1)
+        return getattr(importlib.import_module(module_path), class_name)
+
+    def __getitem__(self, key):
+        cls = self._resolved.get(key)
+        if cls is not None:
+            return cls
+        entry = self._raw[key]          # KeyError propagates, as a dict would
+        if isinstance(entry, str):
+            entry = self._import(entry)
+        self._resolved[key] = entry
+        return entry
+
+    def __setitem__(self, key, value):
+        self._raw[key] = value
+        self._resolved.pop(key, None)   # drop any stale resolution
+
+    def __delitem__(self, key):
+        del self._raw[key]
+        self._resolved.pop(key, None)
+
+    def __iter__(self):
+        return iter(self._raw)
+
+    def __len__(self):
+        return len(self._raw)
+
+    def __contains__(self, key):
+        return key in self._raw
+
+    def __repr__(self):
+        return f"LazyClassMap({len(self._raw)} entries, {len(self._resolved)} resolved)"
+
+    def raw_items(self):
+        """Unresolved (uri, str-or-class) pairs -- for cache serialization."""
+        return self._raw.items()
+
+    def replace_raw(self, mapping):
+        """Swap in a fresh set of unresolved entries (used on cache load)."""
+        self._raw = dict(mapping)
+        self._resolved.clear()
+
+
 class VitalSignsRegistry:
 
     from vital_ai_vitalsigns.model.trait.PropertyTrait import PropertyTrait
 
     def __init__(self, *, ontology_manager: VitalSignsOntologyManager):
         self.vitalsigns_packages = []
-        self.vitalsigns_classes: Dict[str, Type[GraphObject]] = {}
-        self.vitalsigns_property_classes = {}
-        self.vitalsigns_ontologies = set()
-        self.ontology_manager = ontology_manager
         self._resolved_classes: Dict[str, Type[GraphObject]] = {}
         self._resolved_property_classes: Dict[str, type] = {}
+        self.vitalsigns_classes: Dict[str, Type[GraphObject]] = LazyClassMap(self._resolved_classes)
+        self.vitalsigns_property_classes = LazyClassMap(self._resolved_property_classes)
+        self.vitalsigns_ontologies = set()
+        self.ontology_manager = ontology_manager
         self._loaded_from_cache = False
 
     def get_package_root(self):
@@ -176,7 +250,8 @@ class VitalSignsRegistry:
         package_root = Path(dist.locate_file('')) / package_name
         return package_root
 
-    @lru_cache(maxsize=None)
+    # No @lru_cache here: on an instance method it pins self for the process
+    # lifetime, and _resolved_classes below already memoizes the same lookup.
     def get_vitalsigns_class(self, class_uri: str) -> Type[GraphObject]:
         cls = self._resolved_classes.get(class_uri)
         if cls is not None:
@@ -196,7 +271,8 @@ class VitalSignsRegistry:
             self._resolved_classes[class_uri] = entry
             return entry
 
-    @lru_cache(maxsize=None)
+    # No @lru_cache here: see get_vitalsigns_class. _resolved_property_classes
+    # already memoizes this lookup.
     def get_vitalsigns_property_class(self, property_uri: str) -> Type[PropertyTrait]:
         cls = self._resolved_property_classes.get(property_uri)
         if cls is not None:
@@ -219,8 +295,12 @@ class VitalSignsRegistry:
     def build_registry(self):
         self.vitalsigns_packages = []
         self.vitalsigns_ontologies = set()
-        self.vitalsigns_classes = {}
-        self.vitalsigns_property_classes = {}
+        # clear in place: replacing these with plain dicts would drop the lazy
+        # resolution and re-expose raw path strings to callers
+        self.vitalsigns_classes.clear()
+        self.vitalsigns_property_classes.clear()
+        self._resolved_classes.clear()
+        self._resolved_property_classes.clear()
 
         logging.info('building vitalsigns class and property registry...')
 
@@ -241,8 +321,10 @@ class VitalSignsRegistry:
         import time as _time
         t0 = _time.perf_counter()
 
-        self.vitalsigns_classes = cached["vitalsigns_classes"]
-        self.vitalsigns_property_classes = cached["vitalsigns_property_classes"]
+        # raw dotted paths from the cache; LazyClassMap imports each on first
+        # access, so a cache hit stays cheap while reads still yield classes
+        self.vitalsigns_classes.replace_raw(cached["vitalsigns_classes"])
+        self.vitalsigns_property_classes.replace_raw(cached["vitalsigns_property_classes"])
 
         self.ontology_manager._domain_property_map = (
             VitalSignsRegistryCache.deserialize_domain_property_map(

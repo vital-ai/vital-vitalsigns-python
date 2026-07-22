@@ -9,5 +9,6 @@ class VitalServiceSqlConfig(VitalServiceConfig):
         password: str
         poolInitialSize: int
         poolMaxTotal: int
+        tablesPrefix: str
         username: str
 

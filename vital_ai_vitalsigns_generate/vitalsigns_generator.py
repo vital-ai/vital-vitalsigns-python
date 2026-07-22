@@ -124,3 +124,31 @@ class VitalSignsGenerator:
         for row in result:
             return str(row[0])
         return None
+
+    def extract_imports_from_owl(self, file_path):
+        """Extract the owl:imports IRIs from an OWL RDF/XML file."""
+        g = Graph()
+        g.parse(file_path, format='application/rdf+xml')
+
+        query = """
+        SELECT ?imported WHERE {
+            ?iri a <http://www.w3.org/2002/07/owl#Ontology> .
+            ?iri <http://www.w3.org/2002/07/owl#imports> ?imported .
+        }
+        """
+
+        return sorted(str(row[0]) for row in g.query(query))
+
+    def get_iri_to_imports_map(self, directories):
+        """Map ontology IRI -> list of imported IRIs for all OWL files in the
+        given directories. Complements get_iri_to_file_map for dependency
+        ordering."""
+        iri_to_imports_map = {}
+        for directory in directories:
+            for filename in os.listdir(directory):
+                file_path = os.path.join(directory, filename)
+                if file_path.endswith('.owl'):
+                    iri = self.extract_iri_from_owl(file_path)
+                    if iri:
+                        iri_to_imports_map[iri] = self.extract_imports_from_owl(file_path)
+        return iri_to_imports_map

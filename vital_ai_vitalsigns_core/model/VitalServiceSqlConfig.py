@@ -20,6 +20,7 @@ class VitalServiceSqlConfig(VitalServiceConfig):
         {'uri': 'http://vital.ai/ontology/vital-core#hasPassword', 'prop_class': StringProperty}, 
         {'uri': 'http://vital.ai/ontology/vital-core#hasPoolInitialSize', 'prop_class': IntegerProperty}, 
         {'uri': 'http://vital.ai/ontology/vital-core#hasPoolMaxTotal', 'prop_class': IntegerProperty}, 
+        {'uri': 'http://vital.ai/ontology/vital-core#hasTablesPrefix', 'prop_class': StringProperty}, 
         {'uri': 'http://vital.ai/ontology/vital-core#hasUsername', 'prop_class': StringProperty}, 
     ]
 

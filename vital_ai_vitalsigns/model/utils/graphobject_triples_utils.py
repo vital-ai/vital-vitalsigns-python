@@ -95,7 +95,7 @@ class GraphObjectTriplesUtils:
 
                 triple_list.append(triple)
             except ValueError as e:
-                print(f"Error creating triple for {property_uri}: {e}")
+                logger.error(f"Error creating triple for {property_uri}: {e}")
 
         return triple_list
 

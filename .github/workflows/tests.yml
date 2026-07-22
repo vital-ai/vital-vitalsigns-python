@@ -1,0 +1,68 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[test]"
+
+      # Fast feedback: concurrency and correctness tests, no soak.
+      - name: Unit and concurrency tests
+        run: pytest -v -m "not slow" --timeout=300
+
+      # The soak tests measure real RSS, so they need a quiet, unshared runner
+      # and their own budget. Kept separate so a flaky memory reading does not
+      # mask a genuine correctness failure above.
+      - name: Memory soak tests
+        run: pytest -v -m slow --timeout=900
+
+  # Concurrency bugs are load- and timing-dependent; a single green run proves
+  # little. Repeat the fast suite to shake out races that pass intermittently.
+  stress:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[test]"
+
+      - name: Repeat concurrency tests
+        run: |
+          pytest -v --timeout=1800 --count=10 \
+            tests/test_singleton_metaclass.py \
+            tests/test_registry_lifecycle.py \
+            tests/test_lifecycle_races.py \
+            tests/test_service_manager_races.py \
+            tests/test_shared_state_races.py \
+            tests/test_background_task_mixin.py

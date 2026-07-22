@@ -1,7 +1,8 @@
 
 
-property_import_string = """
-from vital_ai_vitalsigns.model.properties.BooleanProperty import BooleanProperty
+# Fixed block of 11 property-class imports, emitted unconditionally to match
+# the committed Groovy output (PythonDomainGenerator.groovy).
+property_import_string = """from vital_ai_vitalsigns.model.properties.BooleanProperty import BooleanProperty
 from vital_ai_vitalsigns.model.properties.DateTimeProperty import DateTimeProperty
 from vital_ai_vitalsigns.model.properties.DoubleProperty import DoubleProperty
 from vital_ai_vitalsigns.model.properties.FloatProperty import FloatProperty
@@ -27,25 +28,29 @@ class VitalSignsClassGenerator:
 
         property_list_string = cls.generate_property_list_string(property_list)
 
-        class_string = f"""
-{property_import_string}
-from {parent_class_import} import {parent_class_name}
-
-  
-class {class_name}({parent_class_name}):
-    _allowed_properties = [
-{property_list_string}
-    ]
-        
-    @classmethod
-    def get_allowed_properties(cls):
-        return super().get_allowed_properties() + {class_name}._allowed_properties
-
-    @classmethod
-    def get_class_uri(cls) -> str:
-        return '{class_uri}'
-
-    """
+        # Byte-for-byte format of the committed Groovy-generated class files:
+        # leading blank line, 11 property imports, parent import (no blank
+        # between), two blank lines, class body, trailing blank line.
+        class_string = (
+            "\n"
+            f"{property_import_string}"
+            f"from {parent_class_import} import {parent_class_name}\n"
+            "\n"
+            "\n"
+            f"class {class_name}({parent_class_name}):\n"
+            "    _allowed_properties = [\n"
+            f"{property_list_string}"
+            "    ]\n"
+            "\n"
+            "    @classmethod\n"
+            "    def get_allowed_properties(cls):\n"
+            f"        return super().get_allowed_properties() + {class_name}._allowed_properties\n"
+            "\n"
+            "    @classmethod\n"
+            "    def get_class_uri(cls) -> str:\n"
+            f"        return '{class_uri}'\n"
+            "\n"
+        )
 
         return class_string
 
@@ -56,8 +61,10 @@ class {class_name}({parent_class_name}):
     @classmethod
     def generate_property_list_string(cls, property_list: list[dict]):
 
-        property_list_string = ",\n".join(
-            f"\t\t{{'uri': '{entry['uri']}', 'prop_class': {entry['prop_class']}}}"
+        # Each entry: 8-space indent, terminated by "}, " (comma + one
+        # trailing space) including the last entry — matches committed output.
+        property_list_string = "".join(
+            f"        {{'uri': '{entry['uri']}', 'prop_class': {entry['prop_class']}}}, \n"
             for entry in property_list
         )
 
@@ -72,18 +79,21 @@ class {class_name}({parent_class_name}):
             property_interface_list: list[dict]):
 
         if len(property_interface_list) > 0:
-            property_interface_list_string = cls.generate_property_list_interface_string(property_interface_list)
+            # Property lines followed by a trailing blank line (committed form).
+            property_interface_list_string = cls.generate_property_list_interface_string(property_interface_list) + "\n"
         else:
-            property_interface_list_string = "\tpass"
+            # Empty class body: single "    pass" line, no trailing blank line.
+            property_interface_list_string = "    pass\n"
 
-        class_interface_string = f"""
-import datetime
-from {parent_class_import} import {parent_class_name}
-
-
-class {class_name}({parent_class_name}):
-{property_interface_list_string}
-        """
+        class_interface_string = (
+            "\n"
+            "import datetime\n"
+            f"from {parent_class_import} import {parent_class_name}\n"
+            "\n"
+            "\n"
+            f"class {class_name}({parent_class_name}):\n"
+            f"{property_interface_list_string}"
+        )
 
         return class_interface_string
 
@@ -94,8 +104,9 @@ class {class_name}({parent_class_name}):
     @classmethod
     def generate_property_list_interface_string(cls, property_interface_list: list[dict]):
 
-        property_interface_list_string = "\n".join(
-            f"\t{entry['short_prop_name']}: {entry['datatype']}"
+        # 8-space indent per property line — matches committed output.
+        property_interface_list_string = "".join(
+            f"        {entry['short_prop_name']}: {entry['datatype']}\n"
             for entry in property_interface_list
         )
 

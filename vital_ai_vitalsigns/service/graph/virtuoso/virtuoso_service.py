@@ -37,6 +37,8 @@ from vital_ai_vitalsigns_core.model.VitalSegment import VitalSegment
 from vital_ai_vitalsigns.metaql.metaql_query import SelectQuery as MetaQLSelectQuery
 from vital_ai_vitalsigns.metaql.metaql_query import GraphQuery as MetaQLGraphQuery
 
+logger = logging.getLogger(__name__)
+
 G = TypeVar('G', bound='GraphObject')
 
 
@@ -1921,7 +1923,7 @@ LIMIT {limit}
 OFFSET {offset}
 """
 
-        print(f"SPARQL Query:\n{query}\n")
+        logger.debug(f"SPARQL Query:\n{query}\n")
 
         logging.info(query)
 
@@ -2446,10 +2448,10 @@ OFFSET {offset}
             cursor.execute(query)
             connection.commit()
 
-            print(f"File '{file_name}' imported into graph '{graph_uri}'.")
+            logger.info(f"File '{file_name}' imported into graph '{graph_uri}'.")
             return True
         except Exception as e:
-            print(f"Error during bulk import: {e}")
+            logger.error(f"Error during bulk import: {e}")
             return False
 
     def check_import_status_for_file(self, file_name):
@@ -2479,14 +2481,14 @@ OFFSET {offset}
                         WHERE ll_file = '{file_path}'
                     """
 
-            print(query)
+            logger.debug(query)
 
             # Query the LOAD_LIST table for the file
             cursor.execute(query)
 
             results = []
             for row in cursor.fetchall():
-                print(row)
+                logger.debug(row)
                 results.append({
                     "file": row.ll_file,
                     "graph": row.ll_graph,
@@ -2494,11 +2496,11 @@ OFFSET {offset}
                     "error": row.ll_error
                 })
 
-            print(results)
+            logger.debug(results)
 
             return results
         except Exception as e:
-            print(f"Error checking import status: {e}")
+            logger.error(f"Error checking import status: {e}")
             return []
 
     #################################################

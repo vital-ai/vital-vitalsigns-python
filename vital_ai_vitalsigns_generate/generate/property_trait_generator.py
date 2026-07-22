@@ -14,16 +14,18 @@ class VitalSignsPropertyTraitGenerator:
         # local_name = "hasKGChatMessageText"
         # multiple_values = False
 
-        property_trait_string = f"""
-from vital_ai_vitalsigns.model.trait.PropertyTrait import PropertyTrait
-
-
-class {class_name}(PropertyTrait):
-    namespace = "{namespace}"
-    local_name = "{local_name}"
-    multiple_values = {multiple_values}
-
-        """
+        # Byte-for-byte format of committed trait files: import line at top
+        # (no leading blank line), two blank lines, class + 3 attribute lines,
+        # single trailing newline.
+        property_trait_string = (
+            "from vital_ai_vitalsigns.model.trait.PropertyTrait import PropertyTrait\n"
+            "\n"
+            "\n"
+            f"class {class_name}(PropertyTrait):\n"
+            f'    namespace = "{namespace}"\n'
+            f'    local_name = "{local_name}"\n'
+            f"    multiple_values = {multiple_values}\n"
+        )
 
         return property_trait_string
 

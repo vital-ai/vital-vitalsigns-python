@@ -1,3 +1,174 @@
 [build-system]
-requires = ["setuptools >= 64", "wheel"]
+requires = ["setuptools >= 77", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "vital-ai-vitalsigns"
+version = "0.1.54"
+description = "VitalSigns knowledge graph bindings"
+readme = "README.md"
+requires-python = ">=3.12"
+license = "Apache-2.0"
+authors = [{ name = "Marc Hadfield", email = "marc@vital.ai" }]
+classifiers = [
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "packaging>=23.0",
+    "python-dotenv>=1.0.1",
+    # 7.6.0 added rdflib/plugins/sparql/pyparsing_compat.py, which stops it
+    # calling pyparsing's deprecated camelCase API (setParseAction,
+    # leaveWhitespace, delimitedList, ...). Below 7.6.0 a single prepareQuery()
+    # emits 579 DeprecationWarnings, and rdflib declares pyparsing<4 -- so when
+    # pyparsing 4 drops those names, rdflib <7.6.0 breaks outright. The floor is
+    # raised rather than capping pyparsing.
+    "rdflib>=7.6.0",
+    "PyYAML>=6.0.1",
+    "PyLD>=2.0.0",
+    "numpy>=1.26.4",
+    "hnswlib>=0.8.0",
+    "owlready2==0.51",
+    # owlrl and pyshacl move together: pyshacl 0.25.0 required owlrl<7,
+    # pyshacl 0.40.0 requires owlrl>=7.6.2,<8. Upgrading one alone breaks pip's
+    # resolver. Neither is imported by this package -- owlrl is pulled in by
+    # pyshacl, and pyshacl is declared for SHACL validation not yet wired up.
+    "owlrl==7.6.2",
+    # weaviate-client was removed in 515a9a1 along with the in-tree Weaviate
+    # implementation; see planning/issues/stale-service-implementation-mappings.md
+    #
+    # qdrant-client: declared here but NOT imported by this package. The actual
+    # consumer is the sibling repo kgraphmemory (kgraph_vector_db.py), which
+    # declares qdrant-client independently. In-tree it appears only as the
+    # QDRANT_MEMORY config enum and a "# TODO use qdrant-client" in the
+    # VectorMemoryService stub. hnswlib is the vector implementation actually
+    # used here (collection/vector_collection_impl.py).
+    # Retained deliberately -- see planning/issues/vector-backend-qdrant-note.md
+    "qdrant-client",
+    "SPARQLWrapper==2.0.0",
+    "pyshacl==0.40.0",
+    "requests>=2.31.0",
+    "PyODBC>=5.1.0",
+    "onnxruntime>=1.18.0",
+    "onnx>=1.16.1",
+    "tzdata>=2024.1",
+    "pytz>=2024.1",
+    "python-dateutil>=2.9.0",
+    "transformers>=4.49.0",
+    "vital-model-paraphrase-MiniLM-onnx>=0.2.1",
+    "psutil>=6.0.0",
+    "urllib3",
+    "paramiko==3.5.0",
+    "scp==0.15.0",
+    "datasketch>=1.6.5",
+]
+
+[project.optional-dependencies]
+# The embedding path is pure ONNX: onnxruntime for inference and
+# transformers.AutoTokenizer for tokenization. torch is NOT required --
+# transformers only needs it behind its own optional extras.
+base = [
+    "onnxruntime",
+    "numpy",
+]
+dev = [
+    "nltk",
+    "matplotlib",
+    "networkx",
+    # Needed by model_test_scripts/script_convert_model.py, which regenerates
+    # the ONNX model this package ships. Nothing in the library imports either:
+    # the embedding path is pure ONNX. sentence_transformers requires
+    # torch>=1.11.0 unconditionally (~113 MB), so this is the heavy part of the
+    # dev install.
+    "torch>=2.3.0",
+    "sentence_transformers==3.3.1",
+    "transformers",
+    "wheel>=0.43.0",
+    "dill",
+    "pytest",
+    "pytest-timeout",
+    "pytest-repeat",
+    "scikit-learn>=1.6.1",
+    "scipy>=1.15.2",
+]
+# Lightweight test tooling only -- used by CI, which must not pull in
+# torch/transformers from the 'dev' extra just to run the test suite.
+test = [
+    "pytest",
+    "pytest-timeout",  # fail hung concurrency tests instead of blocking CI
+    "pytest-repeat",   # stress job re-runs concurrency tests N times
+]
+
+[project.urls]
+Homepage = "https://github.com/vital-ai/vital-vitalsigns-python"
+
+# The command-line interface. These replaced a bin/ directory of bash wrappers
+# (`#!/bin/bash` + `python -m <module>`) that setup.py shipped via `scripts=`.
+#
+# Those resolved `python` from PATH rather than using the interpreter the
+# package was installed into, so a command installed in one environment could
+# execute in another -- or fail outright on a python3-only system, or on
+# Windows, where bash scripts do not run at all.
+#
+# Console entry points bake in the correct interpreter and are generated for
+# every platform, so `pip install` yields working commands with no shell
+# dependency. See planning/issues/packaging-migration-pep621.md.
+[project.scripts]
+vitalblockcat = "vital_ai_vitalblockcat_cmd.vitalblockcat_command:main"
+vitalprovenance = "vital_ai_vitalprovenance_cmd.vitalprovenance_command:main"
+vitalservice = "vital_ai_vitalservice_cmd.vitalservice_command:main"
+vitalservice_delete = "vital_ai_vitalservice_cmd.vitalservice_delete_command:main"
+vitalservice_export = "vital_ai_vitalservice_cmd.vitalservice_export_command:main"
+vitalservice_import = "vital_ai_vitalservice_cmd.vitalservice_import_command:main"
+vitalservice_index = "vital_ai_vitalservice_cmd.vitalservice_index_command:main"
+vitalservice_query = "vital_ai_vitalservice_cmd.vitalservice_query_command:main"
+vitalsigns = "vital_ai_vitalsigns_cmd.vitalsigns_command:main"
+# historical alias for `vitalsigns`; same entry point
+vitalsigns_python = "vital_ai_vitalsigns_cmd.vitalsigns_command:main"
+
+# Consumed by VitalSignsRegistry.build_registry() to discover ontology packages.
+[project.entry-points.vitalsigns_packages]
+vital_ai_vitalsigns = "vital_ai_vitalsigns"
+vital_ai_vitalsigns_core = "vital_ai_vitalsigns_core"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+# An allowlist, not a denylist. The previous setup.py used
+# find_packages(exclude=[...]), which failed twice over:
+#
+#   1. exclude patterns match full dotted names, so "test_scripts" excluded only
+#      the top-level package -- test_scripts.graphobject, .query, .jsonld,
+#      .vitalservice and .pydantic_v2 all shipped anyway (53 files in the wheel).
+#   2. a denylist only ever excludes what someone remembered to list. Migrating
+#      it verbatim to pyproject also picked up build/, dist/, docs/, planning/,
+#      vitalhome/ and authentication/ as top-level packages.
+#
+# Naming what ships is bounded; naming what must not ship is not.
+include = [
+    "vital_ai_vitalsigns*",          # also covers _cmd, _core, _generate
+    "vital_ai_vitalservice_cmd*",
+    "vital_ai_vitalblockcat_cmd*",
+    "vital_ai_vitalprovenance_cmd*",
+]
+
+# find_packages() required __init__.py; pyproject's discovery defaults to
+# namespaces = true (PEP 420) and treats any directory as a package. That is how
+# docs/, planning/ and authentication/ ended up in top_level.txt. Restore the
+# stricter behaviour.
+namespaces = false
+
+[tool.setuptools.package-data]
+"*" = ["*.pyi"]
+vital_ai_vitalsigns = ["models/**"]
+vital_ai_vitalsigns_core = ["vital-ontology/*.owl"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "slow: long-running soak tests; deselect with -m 'not slow'",
+]
+# concurrency tests can hang on a regression rather than fail; fail loudly instead
+timeout = 900
+filterwarnings = ["default"]

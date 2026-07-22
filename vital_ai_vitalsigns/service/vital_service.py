@@ -5,6 +5,7 @@ from vital_ai_vitalsigns.ontology.ontology import Ontology
 from vital_ai_vitalsigns.query.metaql_result import MetaQLResult
 from vital_ai_vitalsigns.query.result_list import ResultList
 from vital_ai_vitalsigns.service.base_service import BaseService
+from vital_ai_vitalsigns.utils.background_task import BackgroundTaskMixin
 from vital_ai_vitalsigns.service.graph.graph_object_generator import GraphObjectGenerator
 from vital_ai_vitalsigns.service.graph.graph_service import VitalGraphService
 from vital_ai_vitalsigns.service.graph.graph_service_status import GraphServiceStatusType
@@ -19,13 +20,28 @@ from vital_ai_vitalsigns.metaql.metaql_query import GraphQuery as MetaQLGraphQue
 import threading
 import time
 
+logger = logging.getLogger(__name__)
+
 G = TypeVar('G', bound=Optional['GraphObject'])
+
+# Interval between graph-info refreshes, and the slice the loop actually sleeps
+# in so stop() returns promptly instead of blocking for a full interval.
+GRAPH_INFO_INTERVAL_SECONDS = 60
+SLEEP_SLICE_SECONDS = 1
+
+# how long stop() waits for the background thread before giving up on the join
+STOP_JOIN_TIMEOUT_SECONDS = 30
 
 # TODO
 # have top-level namespace so multiple vital services can co-exist
 
 
-class VitalService(BaseService):
+class VitalService(BackgroundTaskMixin, BaseService):
+
+    BG_INTERVAL_SECONDS = GRAPH_INFO_INTERVAL_SECONDS
+    BG_SLEEP_SLICE_SECONDS = SLEEP_SLICE_SECONDS
+    BG_JOIN_TIMEOUT_SECONDS = STOP_JOIN_TIMEOUT_SECONDS
+
     def __init__(self,
                  vitalservice_name: str = None,
                  vitalservice_namespace: str = None,
@@ -40,8 +56,9 @@ class VitalService(BaseService):
         self.graph_service = graph_service
         self.vector_service = vector_service
         self.graph_info_lock = threading.RLock()
-        self.background_thread = None
-        self.running = False
+        # Lifecycle state lives in BackgroundTaskMixin; its lock is separate
+        # from graph_info_lock so stop() never waits behind a refresh.
+        self._init_background_task()
         if synchronize_service:
             self.synchronize_service()
         if synchronize_task:
@@ -92,26 +109,28 @@ class VitalService(BaseService):
         with self.graph_info_lock:
             pass
 
-    def background_task(self):
-        while self.running:
-            self.query_graph_info()
-            time.sleep(60)
+    def _background_tick(self):
+        self.query_graph_info()
 
-    def start(self):
-        if not self.running:
-            self.running = True
-            self.background_thread = threading.Thread(target=self.background_task, daemon=True)
-            self.background_thread.start()
+    def _background_task_name(self):
+        return f"VitalService '{self.vitalservice_name}'"
 
-    def stop(self):
-        if self.running:
-            self.running = False
-            if self.background_thread:
-                self.background_thread.join()
-                self.background_thread = None
+    # legacy attribute names, preserved as public API
+    @property
+    def running(self):
+        return self._bg_running
 
-    def is_running(self):
-        return self.running
+    @running.setter
+    def running(self, value):
+        self._bg_running = value
+
+    @property
+    def background_thread(self):
+        return self._bg_thread
+
+    @background_thread.setter
+    def background_thread(self, value):
+        self._bg_thread = value
 
     # wrap combination of a vector store and graph store
     # or graph store individually or vector store individually

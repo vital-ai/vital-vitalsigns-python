@@ -13,6 +13,9 @@ from vital_ai_vitalsigns.service.graph.graph_service_constants import VitalGraph
 from vital_ai_vitalsigns.utils.uri_generator import URIGenerator
 from vital_ai_vitalsigns_core.model.RDFStatement import RDFStatement
 from vital_ai_vitalsigns_core.model.VitalSegment import VitalSegment
+import logging
+
+logger = logging.getLogger(__name__)
 
 G = TypeVar('G', bound='GraphObject')
 
@@ -36,7 +39,9 @@ class RDFlibSparqlImpl:
         else:
             self.graph = Graph()
 
-        self.lock = threading.Lock()
+        # RLock, not Lock: these methods call one another (e.g. import -> purge),
+        # so the guard must be reentrant on the same thread.
+        self.lock = threading.RLock()
 
     def _list_graphs_impl(self) -> List[VitalNameGraph]:
 
@@ -83,6 +88,13 @@ class RDFlibSparqlImpl:
             return False
 
     def _create_graph_impl(self, *, graph_uri: str, enforce_segment: bool = True) -> bool:
+        # rdflib Graph/Dataset is not thread-safe. This mutator was
+        # unguarded while _insert_object_list_impl held self.lock,
+        # so concurrent structural changes could race an in-flight insert.
+        with self.lock:
+            return self._create_graph_impl_unlocked(graph_uri=graph_uri, enforce_segment=enforce_segment)
+
+    def _create_graph_impl_unlocked(self, *, graph_uri: str, enforce_segment: bool = True) -> bool:
 
         if not self._multigraph:
             # uni-graph case
@@ -123,6 +135,13 @@ class RDFlibSparqlImpl:
         return True
 
     def _delete_graph_impl(self, *, graph_uri: str, enforce_segment: bool = True) -> bool:
+        # rdflib Graph/Dataset is not thread-safe. This mutator was
+        # unguarded while _insert_object_list_impl held self.lock,
+        # so concurrent structural changes could race an in-flight insert.
+        with self.lock:
+            return self._delete_graph_impl_unlocked(graph_uri=graph_uri, enforce_segment=enforce_segment)
+
+    def _delete_graph_impl_unlocked(self, *, graph_uri: str, enforce_segment: bool = True) -> bool:
 
         if not self._multigraph:
             # uni-graph case
@@ -167,7 +186,7 @@ class RDFlibSparqlImpl:
                 if subject_to_remove:
                     triples_to_remove = list(service_graph.triples((subject_to_remove, None, None)))
                     for triple in triples_to_remove:
-                        print(f"deleting: {triple}")
+                        logger.debug(f"deleting: {triple}")
                         service_graph.remove(triple)
 
                 self.graph.remove_graph(URIRef(graph_uri))
@@ -179,6 +198,13 @@ class RDFlibSparqlImpl:
         return True
 
     def _purge_graph_impl(self, *, graph_uri: str, enforce_segment: bool = True) -> bool:
+        # rdflib Graph/Dataset is not thread-safe. This mutator was
+        # unguarded while _insert_object_list_impl held self.lock,
+        # so concurrent structural changes could race an in-flight insert.
+        with self.lock:
+            return self._purge_graph_impl_unlocked(graph_uri=graph_uri, enforce_segment=enforce_segment)
+
+    def _purge_graph_impl_unlocked(self, *, graph_uri: str, enforce_segment: bool = True) -> bool:
 
         from vital_ai_vitalsigns.vitalsigns import VitalSigns
 
@@ -466,7 +492,7 @@ class RDFlibSparqlImpl:
 
         except Exception as e:
             # log
-            print(f"get_object Exception {e}")
+            logger.error(f"get_object Exception {e}")
 
         return None
 
@@ -593,7 +619,7 @@ class RDFlibSparqlImpl:
                     LIMIT {limit} OFFSET {offset}
             """
 
-        print(query)
+        logger.debug(query)
 
         results = self.graph.query()
 
@@ -690,18 +716,18 @@ class RDFlibSparqlImpl:
         OFFSET {offset}
         """
 
-        print(query)
+        logger.debug(query)
 
         # results = self.graph.query(query)
 
         results = graph.query(query)
 
-        print(results)
+        logger.debug(results)
 
         result_graph = Graph()
 
         for triple in results:
-            print(triple)
+            logger.debug(triple)
             result_graph.add(triple)
 
         subjects = set(result_graph.subjects())
@@ -832,21 +858,21 @@ class RDFlibSparqlImpl:
         # TODO temp override for testing
         enforce_segment = False
 
-        print(f"Exporting: graph_uri {graph_uri}")
-        print(f"Exporting: enforce_segment {enforce_segment}")
-        print(f"Exporting: overwrite {overwrite}")
+        logger.info(f"Exporting: graph_uri {graph_uri}")
+        logger.info(f"Exporting: enforce_segment {enforce_segment}")
+        logger.info(f"Exporting: overwrite {overwrite}")
 
-        print(f"Exporting: into {file_path}")
+        logger.info(f"Exporting: into {file_path}")
 
         if os.path.exists(file_path):
             if overwrite is False:
-                print(f"Exporting canceled. File path exists and overwrite is false.")
+                logger.warning(f"Exporting canceled. File path exists and overwrite is false.")
                 return False
 
         if enforce_segment:
 
             if not graph_uri:
-                print(f"Exporting canceled. Segment is enforced but graph_uri is not set.")
+                logger.warning(f"Exporting canceled. Segment is enforced but graph_uri is not set.")
                 return False
 
             try:
@@ -858,7 +884,7 @@ class RDFlibSparqlImpl:
 
                 source_graph_triple_count = len(graph)
 
-                print(f"Exporting: source_graph_triple_count {source_graph_triple_count}")
+                logger.info(f"Exporting: source_graph_triple_count {source_graph_triple_count}")
 
                 # for s, p, o in graph:
                 #    print(f"Exporting: s {s} p {p} o {o}")
@@ -881,7 +907,7 @@ class RDFlibSparqlImpl:
                     subject = row.subject
 
                     if not subject:
-                        print(f"Exporting: failed.  Segment not found in source graph.")
+                        logger.info(f"Exporting: failed.  Segment not found in source graph.")
                         return False
 
                     original_triples = graph.triples
@@ -907,7 +933,7 @@ class RDFlibSparqlImpl:
 
                     triple_count = len(graph)
 
-                    print(f"Exporting: triple_count {triple_count}")
+                    logger.info(f"Exporting: triple_count {triple_count}")
 
                     with open(file_path, 'wb') as f:
                         graph.serialize(destination=f, format='nt', encoding='utf-8')
@@ -917,7 +943,7 @@ class RDFlibSparqlImpl:
                     return True
 
             except Exception as e:
-                print(f"Export Exception {e}")
+                logger.error(f"Export Exception {e}")
 
         else:
 
@@ -926,7 +952,7 @@ class RDFlibSparqlImpl:
                     if isinstance(self.graph, Dataset):
                         graph = self.graph.get_graph(URIRef(graph_uri))
                 else:
-                    print(f"Export canceled. Multigraph but graph_uri is not set.")
+                    logger.warning(f"Export canceled. Multigraph but graph_uri is not set.")
                     return False
             else:
                 graph = self.graph
@@ -938,13 +964,13 @@ class RDFlibSparqlImpl:
 
             triple_count = len(graph)
 
-            print(f"Exporting: triple_count {triple_count}")
+            logger.info(f"Exporting: triple_count {triple_count}")
 
             with open(file_path, 'wb') as f:
                 graph.serialize(destination=f, format='nt', encoding='utf-8')
             return True
 
-        print(f"Exporting failed.")
+        logger.debug(f"Exporting failed.")
 
         return False
 
@@ -957,42 +983,42 @@ class RDFlibSparqlImpl:
         if enforce_segment:
 
             if not graph_uri:
-                print(f"Importing canceled. Segment is enforced but graph_uri is not set.")
+                logger.warning(f"Importing canceled. Segment is enforced but graph_uri is not set.")
                 return False
 
-            print(f"Importing: {graph_uri}")
+            logger.info(f"Importing: {graph_uri}")
 
-            print(f"Purging: {graph_uri}")
+            logger.info(f"Purging: {graph_uri}")
 
             self._purge_graph_impl(graph_uri=graph_uri)
 
-            print(f"Importing: {graph_uri} from file: {file_path}")
+            logger.info(f"Importing: {graph_uri} from file: {file_path}")
 
             if isinstance(self.graph, Dataset):
                 graph = self.graph.get_graph(URIRef(graph_uri))
 
             try:
                 graph.parse(source=file_path, format='nt')
-                print(f"Imported: {graph_uri} with Triple Count: {len(graph)}")
+                logger.debug(f"Imported: {graph_uri} with Triple Count: {len(graph)}")
                 return True
             except Exception as e:
-                print(f"Import Exception {e}")
+                logger.error(f"Import Exception {e}")
         else:
             if self._multigraph:
                 if graph_uri is not None:
                     if isinstance(self.graph, Dataset):
                         graph = self.graph.get_graph(URIRef(graph_uri))
                 else:
-                    print(f"Importing canceled. Multigraph but graph_uri is not set.")
+                    logger.warning(f"Importing canceled. Multigraph but graph_uri is not set.")
                     return False
             else:
                 graph = self.graph
 
             graph.remove((None, None, None))
             graph.parse(source=file_path, format='nt')
-            print(f"File Path: {file_path} with Triple Count: {len(graph)}")
+            logger.debug(f"File Path: {file_path} with Triple Count: {len(graph)}")
             return True
 
-        print(f"Importing: {graph_uri} failed.")
+        logger.info(f"Importing: {graph_uri} failed.")
 
         return False

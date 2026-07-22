@@ -3,6 +3,9 @@ from typing import List, Union, TypeVar, Generic
 from tempfile import TemporaryDirectory
 import hnswlib
 import numpy as np
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class VectorCollectionImpl:
@@ -48,7 +51,7 @@ class VectorCollectionImpl:
         self.index.set_ef(50)
 
         current_count = self.index.element_count
-        print(f"Current number of elements in the index: {current_count}")
+        logger.debug(f"Current number of elements in the index: {current_count}")
 
         k = limit
 

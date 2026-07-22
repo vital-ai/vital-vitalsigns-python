@@ -1009,6 +1009,12 @@ HiveSQL</rdfs:comment>
     </owl:DatatypeProperty>
     
 
+	<!-- http://vital.ai/ontology/vital-core#hasTablesPrefix -->
+
+    <owl:DatatypeProperty rdf:about="http://vital.ai/ontology/vital-core#hasTablesPrefix">
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:domain rdf:resource="http://vital.ai/ontology/vital-core#VitalServiceSqlConfig"/>
+    </owl:DatatypeProperty>
 
     <!-- http://vital.ai/ontology/vital-core#hasTargetAppID -->
 

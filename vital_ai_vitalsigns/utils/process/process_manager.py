@@ -3,6 +3,9 @@ import psutil
 import os
 import threading
 import time
+import logging
+
+logger = logging.getLogger(__name__)
 
 # TODO switch to logging
 # start/stop processes
@@ -26,35 +29,36 @@ class ProcessManager:
         threading.Thread(target=self._monitor_output, args=(name, process.stdout, 'stdout')).start()
         threading.Thread(target=self._monitor_output, args=(name, process.stderr, 'stderr')).start()
 
-        print(f"Started process {name} with PID {process.pid}")
+        logger.info(f"Started process {name} with PID {process.pid}")
         return process
 
     def _monitor_output(self, name, stream, stream_type):
         for line in iter(stream.readline, ''):
-            print(f"[{name}][{stream_type}] {line.strip()}")
+            level = logging.WARNING if stream_type == 'stderr' else logging.INFO
+            logger.log(level, "[%s][%s] %s", name, stream_type, line.strip())
         stream.close()
 
     def stop_process(self, name):
         process = self.processes.get(name)
         if process:
             process.terminate()
-            print(f"Terminated process {name}")
+            logger.info(f"Terminated process {name}")
         else:
-            print(f"No such process: {name}")
+            logger.warning(f"No such process: {name}")
 
     def kill_process(self, name):
         process = self.processes.get(name)
         if process:
             process.kill()
-            print(f"Killed process {name}")
+            logger.info(f"Killed process {name}")
         else:
-            print(f"No such process: {name}")
+            logger.warning(f"No such process: {name}")
 
     def restart_process(self, name, script_path, java_home_path, working_directory):
         self.stop_process(name)
         time.sleep(2)  # wait a bit for the process to terminate properly
         self.start_process(name, script_path, java_home_path, working_directory)
-        print(f"Restarted process {name}")
+        logger.info(f"Restarted process {name}")
 
     def get_process_info(self, name):
         process = self.processes.get(name)

@@ -1,6 +1,8 @@
 import hashlib
 import json
 import logging
+import os
+import tempfile
 import time
 from importlib.metadata import entry_points, distribution, PackageNotFoundError
 from pathlib import Path
@@ -77,13 +79,36 @@ class VitalSignsRegistryCache:
         data['cache_version'] = CACHE_VERSION
         data['timestamp'] = time.time()
 
+        # Written atomically: open(path, 'w') truncates immediately and fills
+        # incrementally, so a concurrent reader (another worker process starting
+        # at the same time) could see truncated JSON, and two concurrent writers
+        # could interleave into corruption. Write to a unique temp file in the
+        # same directory, then os.replace(), which is atomic on POSIX and
+        # Windows -- a torn write leaves the previous good cache intact.
+        tmp_path = None
         try:
             cache_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(cache_path, 'w') as f:
+            fd, tmp_name = tempfile.mkstemp(
+                dir=str(cache_path.parent),
+                prefix=f".{cache_path.name}.",
+                suffix=".tmp")
+            tmp_path = Path(tmp_name)
+            with os.fdopen(fd, 'w') as f:
                 json.dump(data, f, indent=2)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp_path, cache_path)
+            tmp_path = None
             logging.info(f"Registry cache saved to {cache_path}")
-        except IOError as e:
+        except (IOError, OSError) as e:
             logging.warning(f"Failed to save registry cache: {e}")
+        finally:
+            if tmp_path is not None:
+                # never leave a partial temp file behind
+                try:
+                    tmp_path.unlink()
+                except OSError:
+                    pass
 
     @staticmethod
     def serialize_registry(vitalsigns_classes: dict,
@@ -93,13 +118,19 @@ class VitalSignsRegistryCache:
                            ont_tuple_list: list,
                            ont_iri_list: list) -> Dict[str, Any]:
 
-        classes_cache = {}
-        for uri, cls in vitalsigns_classes.items():
-            classes_cache[uri] = f"{cls.__module__}.{cls.__qualname__}"
+        def _path(entry):
+            # entry may already be a dotted path (restored from a cache) or a
+            # real class (fresh scan). Never force a lazy map to resolve just
+            # to write it back out.
+            if isinstance(entry, str):
+                return entry
+            return f"{entry.__module__}.{entry.__qualname__}"
 
-        properties_cache = {}
-        for uri, cls in vitalsigns_property_classes.items():
-            properties_cache[uri] = f"{cls.__module__}.{cls.__qualname__}"
+        def _raw(mapping):
+            return mapping.raw_items() if hasattr(mapping, 'raw_items') else mapping.items()
+
+        classes_cache = {uri: _path(cls) for uri, cls in _raw(vitalsigns_classes)}
+        properties_cache = {uri: _path(cls) for uri, cls in _raw(vitalsigns_property_classes)}
 
         domain_prop_cache = {}
         for class_uri, class_map in domain_property_map.items():

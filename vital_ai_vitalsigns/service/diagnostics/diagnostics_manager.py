@@ -1,4 +1,7 @@
 from vital_ai_vitalsigns.vitalsigns import VitalSigns
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class VitalserviceDiagnosticsStatusType:
@@ -28,7 +31,7 @@ class DiagnosticsManager:
 
         for vitalservice_name in vitalservice_name_list:
             vitalservice = vitalservice_manager.get_vitalservice(vitalservice_name)
-            print(f"VitalService Name: {vitalservice.get_vitalservice_name()}")
+            logger.info(f"VitalService Name: {vitalservice.get_vitalservice_name()}")
 
 
     # given vitalservice name
@@ -52,7 +55,7 @@ class DiagnosticsManager:
 
         for vitalservice_name in vitalservice_name_list:
             vitalservice = vitalservice_manager.get_vitalservice(vitalservice_name)
-            print(f"VitalService Name: {vitalservice.get_vitalservice_name()}")
+            logger.info(f"VitalService Name: {vitalservice.get_vitalservice_name()}")
 
         vitalservice = vitalservice_manager.get_vitalservice(vitalservice_name)
 

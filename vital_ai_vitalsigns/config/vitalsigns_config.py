@@ -1,7 +1,10 @@
+import logging
 import os
 from typing import Optional, List
 import yaml
 from dataclasses import dataclass
+
+logger = logging.getLogger(__name__)
 
 # TODO use and enforce types
 # potentially different types have different property sets
@@ -108,13 +111,13 @@ class VitalServiceSection:
 @dataclass
 class VitalSignsConfig:
     vitalservice: Optional[VitalServiceSection] = None
-    
+
     # Legacy property for backward compatibility
     @property
     def vitalservice_list(self) -> Optional[List[VitalServiceConfig]]:
         return self.vitalservice.services if self.vitalservice else None
-    
-    # Legacy property for backward compatibility  
+
+    # Legacy property for backward compatibility
     @property
     def database_implementations(self) -> Optional[ImplementationMappingConfig]:
         return self.vitalservice.implementation_mapping if self.vitalservice else None
@@ -144,7 +147,8 @@ class VitalSignsConfigLoader:
 
             return VitalSignsConfigLoader._parse_config(config_content)
         except Exception as e:
-            print(f"exception: {e}")
+            logger.warning("Could not load VitalSigns config from %s: %s; "
+                           "continuing with defaults.", config_path, e)
             return VitalSignsConfig()
 
     @staticmethod
@@ -154,8 +158,12 @@ class VitalSignsConfigLoader:
 
     @staticmethod
     def _parse_config(config_data: dict) -> VitalSignsConfig:
+        # an empty or comment-only YAML file parses to None
+        if not config_data:
+            return VitalSignsConfig()
+
         vitalservice_section = None
-        
+
         if 'vitalservice' in config_data:
             vitalservice_data = config_data['vitalservice']
             

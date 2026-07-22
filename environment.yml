@@ -2,11 +2,14 @@ name: vital-vitalsigns-python
 channels:
   - conda-forge
   - defaults
+# Dependencies are listed explicitly here (conda cannot read pyproject.toml).
+# They must be kept in step with pyproject.toml -- see the audit in
+# planning/issues/packaging-migration-pep621.md.
 dependencies:
   - python=3.12
   - pip
   - setuptools
-  - wheel
+  - wheel>=0.43.0
   - packaging>=23.0
   - python-dotenv>=1.0.1
   - pyyaml>=6.0.1
@@ -17,13 +20,17 @@ dependencies:
   - psutil>=6.0.0
   - urllib3
   - pip:
-    - rdflib>=7.0.0
+    # 7.6.0 stops rdflib calling pyparsing's deprecated camelCase API; below it a
+    # single prepareQuery() emits 579 DeprecationWarnings. See pyproject.toml.
+    - rdflib>=7.6.0
+    - PyLD>=2.0.0
     - hnswlib>=0.8.0
-    - owlready2==0.46
-    - owlrl==6.0.2
+    - owlready2==0.51
+    # owlrl and pyshacl are version-locked to each other; see pyproject.toml
+    - owlrl==7.6.2
     - qdrant-client
     - SPARQLWrapper==2.0.0
-    - pyshacl==0.25.0
+    - pyshacl==0.40.0
     - PyODBC>=5.1.0
     - onnxruntime>=1.18.0
     - onnx>=1.16.1
@@ -37,9 +44,14 @@ dependencies:
     - nltk
     - matplotlib
     - networkx
+    # Needed only by model_test_scripts/script_convert_model.py, which
+    # regenerates the ONNX model. The library's embedding path is pure ONNX and
+    # imports neither; sentence-transformers pulls torch (~113 MB) unconditionally.
     - torch>=2.3.0
     - sentence-transformers==3.3.1
     - dill
     - pytest
+    - pytest-timeout   # pyproject.toml sets a pytest timeout; ignored without this
+    - pytest-repeat    # CI stress job uses --count
     - scikit-learn>=1.6.1
     - scipy>=1.15.2

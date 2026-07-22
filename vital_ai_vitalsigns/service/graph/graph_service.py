@@ -15,6 +15,9 @@ from vital_ai_vitalsigns.service.vital_name_graph import VitalNameGraph
 from vital_ai_vitalsigns.service.graph.vital_graph_status import VitalGraphStatus
 
 from vital_ai_vitalsigns.config.vitalsigns_config import GraphDatabaseConfig
+import logging
+
+logger = logging.getLogger(__name__)
 
 G = TypeVar('G', bound='GraphObject')
 
@@ -62,9 +65,9 @@ class VitalGraphService(ABC):
         base_uri = self.base_uri
         namespace = self.namespace
 
-        print(f"graph_uri: {graph_uri}")
-        print(f"base_uri: {base_uri}")
-        print(f"namespace: {namespace}")
+        logger.debug("graph_uri: %s", graph_uri)
+        logger.debug("base_uri: %s", base_uri)
+        logger.debug("namespace: %s", namespace)
 
         if not graph_uri.startswith(f"{base_uri}/{namespace}"):
             raise ValueError("The URI does not match the given base_uri and namespace.")
