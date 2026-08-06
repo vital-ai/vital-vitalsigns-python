@@ -5,12 +5,17 @@ class VitalBlock:
         if not objects:
             raise ValueError("A block cannot be empty")
 
+        self.triples_only = triples_only
+
         if self._is_graphobject_list(objects):
             self.objects = objects
+            self.triple_list = self.generate_triples(objects) if triples_only else []
             return
         if not triples_only:
             self.objects = [GraphObject.from_json(obj) for obj in objects]
+            self.triple_list = []
         else:
+            self.objects = []
             self.triple_list = self.generate_triples(objects)
 
     @property
@@ -28,13 +33,18 @@ class VitalBlock:
 
         block_triple_list = []
 
-        for object_string in objects:
-            triple_list = GraphObject.from_json_triples(object_string)
+        for obj in objects:
+            if isinstance(obj, GraphObject):
+                triple_list = obj.to_triples()
+            else:
+                triple_list = GraphObject.from_json_triples(obj)
             block_triple_list.extend(triple_list)
 
         return block_triple_list
 
     def __repr__(self):
+        if not self.objects:
+            return f"VitalBlock(triples={len(self.triple_list)})"
         return f"VitalBlock(first_object={self.first_object}, rest_objects={len(self.rest_objects)})"
 
     def _is_graphobject_list(self, objects) -> bool:

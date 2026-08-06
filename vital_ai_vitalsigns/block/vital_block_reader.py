@@ -73,7 +73,7 @@ class VitalBlockReader(VitalBlockIO):
 
                 if stripped_line == '|':
                     if current_block:
-                        yield VitalBlock(current_block)
+                        yield VitalBlock(current_block, triples_only=self.triples_only)
                         current_block = []
                 else:
                     try:
@@ -83,7 +83,7 @@ class VitalBlockReader(VitalBlockIO):
                     except json.JSONDecodeError as e:
                         raise ValueError(f"Failed to parse JSON: {stripped_line}") from e
             if current_block:
-                yield VitalBlock(current_block)  # Yield the last block if any
+                yield VitalBlock(current_block, triples_only=self.triples_only)  # Yield the last block if any
 
     def get_parallel_readers(self, n):
 
